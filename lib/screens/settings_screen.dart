@@ -3,23 +3,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:io';
+
 import '../models/user.dart';
 import '../services/data_service.dart';
-import '../services/backup_service.dart';
-import '../services/excel_export_service.dart';
-import '../services/csv_export_service.dart';
-import '../services/pdf_export_service.dart';
-import 'package:share_plus/share_plus.dart';
-import '../models/export_filter.dart';
 import '../services/theme_service.dart';
 import '../services/notification_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_lock_service.dart';
 import '../services/language_service.dart';
+
 import '../l10n/app_localizations.dart';
 import 'currency_settings_screen.dart';
 import 'user_selection_screen.dart';
@@ -33,6 +28,7 @@ import 'notification_settings_screen.dart';
 import 'recurring_transaction_list_screen.dart';
 import 'change_password_screen.dart';
 import 'cloud_backup_screen.dart';
+import 'backup_and_export_screen.dart';
 
 import '../services/recurring_transaction_service.dart';
 import '../repositories/recurring_transaction_repository.dart';
@@ -50,7 +46,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final DataService _dataService = DataService();
-  final BackupService _backupService = BackupService();
+
   final ThemeService _themeService = ThemeService();
   final NotificationService _notificationService = NotificationService();
   User? _currentUser;
@@ -101,267 +97,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _emailController.text = user.email ?? '';
       }
     });
-  }
-
-  Future<void> _handleBackup() async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    final success = await _backupService.shareBackup();
-
-    if (mounted) {
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            success ? 'Yedek başarıyla oluşturuldu' : 'Yedekleme başarısız',
-          ),
-          backgroundColor: success ? Colors.green : Colors.red,
-        ),
-      );
-    }
-  }
-
-  Future<void> _handleRestore() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Geri Yükle'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Mevcut tüm veriler silinecek ve yedekten geri yüklenecek. Devam etmek istiyor musunuz?',
-            ),
-            SizedBox(height: 16),
-            Text(
-              '📱 Platform Desteği:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '✅ Android yedekleri iPhone\'a yüklenebilir',
-              style: TextStyle(fontSize: 12, color: Colors.green),
-            ),
-            Text(
-              '✅ iPhone yedekleri Android\'e yüklenebilir',
-              style: TextStyle(fontSize: 12, color: Colors.green),
-            ),
-            SizedBox(height: 8),
-            Text(
-              'Yedek dosyası (.mbk) formatında olmalıdır.',
-              style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Geri Yükle',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm != true) return;
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['mbk', 'zip'],
-    );
-
-    if (result == null || result.files.single.path == null) return;
-
-    if (!mounted) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      final backupFile = File(result.files.single.path!);
-      
-      // Metadata kontrol et
-      final metadata = await _backupService.getBackupMetadata(backupFile);
-      
-      if (metadata != null && mounted) {
-        final platformInfo = metadata.isAndroidBackup
-            ? '🤖 Android'
-            : metadata.isIOSBackup
-            ? '🍎 iOS'
-            : '❓ Bilinmeyen';
-            
-        final shouldContinue = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Yedek Bilgisi'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Platform: $platformInfo'),
-                Text('Cihaz: ${metadata.deviceModel}'),
-                Text('Tarih: ${DateFormat('dd/MM/yyyy HH:mm').format(metadata.createdAt)}'),
-                const SizedBox(height: 8),
-                Text('İşlemler: ${metadata.transactionCount}'),
-                Text('Cüzdanlar: ${metadata.walletCount}'),
-                const SizedBox(height: 12),
-                if (metadata.isAndroidBackup && Platform.isIOS)
-                  const Text(
-                    '✅ Android yedeği iPhone\'a yüklenecek',
-                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                  )
-                else if (metadata.isIOSBackup && Platform.isAndroid)
-                  const Text(
-                    '✅ iOS yedeği Android\'e yüklenecek',
-                    style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                  ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('İptal'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Devam Et'),
-              ),
-            ],
-          ),
-        );
-        
-        if (shouldContinue != true) return;
-      }
-      
-      if (!mounted) return;
-      
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
-      );
-      
-      await _backupService.restoreFromBackup(backupFile);
-
-      if (mounted) {
-        Navigator.pop(context);
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Veriler başarıyla geri yüklendi'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        await _loadUser();
-        await Future.delayed(const Duration(seconds: 1));
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const UserSelectionScreen(),
-            ),
-            (route) => false,
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Geri yükleme başarısız: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _handleExport(String format) async {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      final transactions = await _dataService.getTransactions();
-      
-      late final String filePath;
-      switch (format) {
-        case 'excel':
-          final excelService = ExcelExportService();
-          final file = await excelService.exportToExcel(
-            transactions: transactions,
-            currencySymbol: _currentUser?.currencySymbol ?? '₺',
-          );
-          filePath = file.path;
-          break;
-
-        case 'csv':
-          final csvService = CsvExportService();
-          final file = await csvService.exportToCsv(
-            transactions: transactions,
-          );
-          filePath = file.path;
-          break;
-
-        case 'pdf':
-          final pdfService = PdfExportService();
-          DateTime start = DateTime(2024);
-          DateTime end = DateTime.now();
-          if (transactions.isNotEmpty) {
-             final dates = transactions.map((t) => t.date).toList();
-             dates.sort();
-             start = dates.first;
-             end = dates.last;
-          }
-          
-          final file = await pdfService.exportToPdf(
-            transactions: transactions,
-            dateRange: DateRange(start: start, end: end),
-            currencySymbol: _currentUser?.currencySymbol ?? '₺',
-          );
-          filePath = file.path;
-          break;
-      }
-      
-      if (mounted) {
-         Navigator.pop(context);
-         
-         await SharePlus.instance.share(
-            ShareParams(
-              files: [XFile(filePath)],
-              subject: 'Parion $format Export',
-            ),
-         );
-      }
-
-    } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Dışa aktarma başarısız: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   @override
@@ -702,80 +437,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
-          const Divider(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Text(
-              'Dışa & İçe Aktarma',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).brightness == Brightness.dark 
-                    ? Colors.grey[400] 
-                    : Colors.grey[700],
-              ),
-            ),
-          ),
-           _buildSettingItem(
-            icon: Icons.picture_as_pdf,
-            title: 'PDF olarak dışa aktar',
-            subtitle: '',
-            iconColor: Colors.red,
-            onTap: () => _handleExport('pdf'),
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(0xFF8E8E93),
-            ),
-          ),
           _buildSettingItem(
-            icon: Icons.table_chart,
-            title: 'Excel olarak dışa aktar',
-            subtitle: '',
+            icon: Icons.save_alt,
+            title: 'Yedekle',
+            subtitle: 'Yedekleme, geri yükleme ve dışa aktarma işlemleri',
             iconColor: Colors.green,
-            onTap: () => _handleExport('excel'),
             trailing: const Icon(
               Icons.arrow_forward_ios,
               size: 16,
               color: Color(0xFF8E8E93),
             ),
-          ),
-          _buildSettingItem(
-            icon: Icons.text_snippet,
-            title: 'CSV olarak dışa aktar',
-            subtitle: '',
-            iconColor: Colors.blue,
-            onTap: () => _handleExport('csv'),
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(0xFF8E8E93),
-            ),
-          ),
-           const Divider(),
-          _buildSettingItem(
-            icon: Icons.cloud_upload_outlined,
-            title: 'Yedek Oluştur',
-            subtitle: 'Tüm verilerinizi içeren bir dosya oluşturun',
-            iconColor: Colors.purple,
-            onTap: _handleBackup,
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(0xFF8E8E93),
-            ),
-          ),
-          _buildSettingItem(
-            icon: Icons.restore_page_outlined,
-            title: 'Yedekten Geri Yükle',
-            subtitle: 'Daha önceki bir yedeği geri yükleyin',
-            iconColor: Colors.teal,
-            onTap: _handleRestore,
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(0xFF8E8E93),
-            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BackupAndExportScreen(),
+                ),
+              );
+            },
           ),
         ]),
         const SizedBox(height: 20),
