@@ -525,3 +525,4 @@ Proje Linki: [https://github.com/cloude33/Pario](https://github.com/cloude33/Par
 ---
 
 ⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
+# Parion
