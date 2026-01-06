@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:parion/widgets/statistics/accessibility_helpers.dart';
+import 'accessibility_helpers.dart';
 
 /// Example demonstrating accessibility features in statistics widgets
 class AccessibilityExample extends StatelessWidget {

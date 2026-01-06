@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/statistics_background_service.dart';
 import '../../models/cash_flow_data.dart';
-import '../../models/spending_analysis.dart';
 import 'background_progress_indicator.dart';
 class BackgroundComputeExample extends StatefulWidget {
   const BackgroundComputeExample({super.key});

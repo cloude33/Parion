@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
-import '../../models/spending_analysis.dart';
+import '../../models/cash_flow_data.dart';
 class SpendingHabitsCard extends StatefulWidget {
   final SpendingAnalysis spendingData;
   final DateTime startDate;

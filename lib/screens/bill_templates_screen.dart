@@ -3,7 +3,6 @@ import '../utils/format_helper.dart';
 import '../models/bill_template.dart';
 import '../services/bill_template_service.dart';
 import 'add_bill_template_screen.dart';
-import 'bill_template_detail_screen.dart';
 class BillTemplatesScreen extends StatefulWidget {
   const BillTemplatesScreen({super.key});
 
@@ -247,8 +246,12 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  BillTemplateDetailScreen(template: template),
+              builder: (context) => Scaffold(
+                appBar: AppBar(title: Text(template.name)),
+                body: const Center(
+                  child: Text('Fatura detayı geliştiriliyor...'),
+                ),
+              ),
             ),
           );
           if (result == true) {

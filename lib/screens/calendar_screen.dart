@@ -867,27 +867,29 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ? const Color(0xFFFF3B30)
             : const Color(0xFFFF9500);
 
-    return InkWell(
-      onTap: () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditBillPaymentScreen(payment: billPayment),
-          ),
-        );
-        if (result == true) {
-          await _loadData();
-        }
-      },
+    return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? const Color(0xFF2C2C2E)
-            : const Color(0xFFF2F2F7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.5),
+      child: InkWell(
+        onTap: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EditBillPaymentScreen(payment: billPayment),
+            ),
+          );
+          if (result == true) {
+            await _loadData();
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF2C2C2E)
+                : const Color(0xFFF2F2F7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: color.withValues(alpha: 0.5),
           width: 1.5,
         ),
       ),
@@ -1017,6 +1019,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }

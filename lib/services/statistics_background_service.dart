@@ -1,5 +1,4 @@
 import '../models/cash_flow_data.dart';
-import '../models/spending_analysis.dart';
 import '../models/credit_analysis.dart';
 import '../models/asset_analysis.dart';
 import '../models/comparison_data.dart';

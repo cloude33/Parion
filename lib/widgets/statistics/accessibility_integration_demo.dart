@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:parion/widgets/statistics/accessibility_helpers.dart';
-import 'package:parion/widgets/statistics/summary_card.dart';
-import 'package:parion/widgets/statistics/metric_card.dart';
+import 'accessibility_helpers.dart';
+import 'summary_card.dart';
+import 'metric_card.dart';
 import 'package:parion/models/cash_flow_data.dart';
 
 /// Comprehensive demo showing all accessibility features integrated

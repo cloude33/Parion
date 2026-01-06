@@ -10,7 +10,6 @@ import '../services/data_service.dart';
 import '../services/bill_payment_service.dart';
 import '../services/bill_template_service.dart';
 import '../utils/currency_helper.dart';
-import '../widgets/statistics/spending_tab.dart';
 
 class StatisticsScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -435,51 +434,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   Widget _buildSpendingTab() {
-    final now = DateTime.now();
-    DateTime startDate;
-    DateTime endDate;
-
-    switch (_selectedTimeFilter) {
-      case 'Günlük':
-        startDate = DateTime(now.year, now.month, now.day);
-        endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
-        break;
-      case 'Haftalık':
-        startDate = now.subtract(const Duration(days: 7));
-        endDate = now;
-        break;
-      case 'Aylık':
-        startDate = DateTime(now.year, now.month, 1);
-        endDate = now;
-        break;
-      case 'Yıllık':
-        startDate = DateTime(now.year, 1, 1);
-        endDate = now;
-        break;
-      case 'Özel':
-        if (_customStartDate != null && _customEndDate != null) {
-          startDate = _customStartDate!;
-          endDate = _customEndDate!;
-        } else {
-          startDate = DateTime(now.year, now.month, 1);
-          endDate = now;
-        }
-        break;
-      default:
-        startDate = DateTime(now.year, now.month, 1);
-        endDate = now;
-    }
-    List<String>? categories;
-    if (_selectedCategory != 'all') {
-      categories = [_selectedCategory];
-    }
-
-    return SpendingTab(
-      key: ValueKey('$startDate-$endDate-$_selectedCategory'),
-      startDate: startDate,
-      endDate: endDate,
-      categories: categories,
-      budgets: null,
+    return const Center(
+      child: Text(
+        'Harcama analizi geliştiriliyor...',
+        style: TextStyle(fontSize: 16),
+      ),
     );
   }
 

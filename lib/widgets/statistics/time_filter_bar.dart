@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:parion/widgets/statistics/statistics_filter_chip.dart';
+import 'statistics_filter_chip.dart';
 class TimeFilterBar extends StatelessWidget {
   final String selectedFilter;
   final Function(String) onFilterChanged;

@@ -310,7 +310,7 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
                       decoration: BoxDecoration(
                         color: _getStatusColor(
                           payment.status,
-                        ).withValues(alpha: 0.1),
+                        ).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(

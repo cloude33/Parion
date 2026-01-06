@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/spending_analysis.dart';
+import '../../models/cash_flow_data.dart';
 class BudgetTrackerCard extends StatelessWidget {
   final Map<String, BudgetComparison> budgetComparisons;
   final Map<String, Color> categoryColors;

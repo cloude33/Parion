@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../models/spending_analysis.dart';
+import '../../models/cash_flow_data.dart';
 import '../../services/statistics_service.dart';
 import 'summary_card.dart';
 import 'metric_card.dart';

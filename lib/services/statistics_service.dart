@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/credit_card_transaction.dart';
 import '../models/cash_flow_data.dart';
-import '../models/spending_analysis.dart';
 import '../models/credit_analysis.dart';
 import '../models/asset_analysis.dart';
 import '../models/comparison_data.dart';
@@ -15,7 +14,7 @@ import '../services/credit_card_service.dart';
 import '../exceptions/error_codes.dart';
 import '../utils/cache_manager.dart';
 export '../models/asset_analysis.dart' show AssetType, FinancialHealthScore;
-export '../models/spending_analysis.dart' show DayOfWeek;
+export '../models/cash_flow_data.dart' show DayOfWeek;
 export '../models/comparison_data.dart'
     show ComparisonMetric, CategoryComparison;
 export '../models/goal_comparison.dart'

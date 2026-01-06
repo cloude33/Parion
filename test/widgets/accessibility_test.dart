@@ -515,6 +515,10 @@ void main() {
           home: Scaffold(
             body: AccessibleListTile(
               title: const Text('Title'),
+              subtitle: const Text('Subtitle'),
+              leading: const Icon(Icons.person),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {},
               semanticLabel: 'Test Tile',
             ),
           ),
@@ -544,8 +548,10 @@ void main() {
             body: AccessibleListTile(
               title: const Text('Title'),
               subtitle: const Text('Subtitle'),
-              semanticLabel: 'Test Tile',
+              leading: const Icon(Icons.person),
+              trailing: const Icon(Icons.chevron_right),
               onTap: () {},
+              semanticLabel: 'Test Tile',
             ),
           ),
         ),

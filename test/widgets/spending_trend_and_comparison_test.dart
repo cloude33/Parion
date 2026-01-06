@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:parion/models/spending_analysis.dart';
+
 import 'package:parion/models/cash_flow_data.dart';
 import 'package:parion/widgets/statistics/spending_trend_chart.dart';
 import 'package:parion/widgets/statistics/period_comparison_card.dart';

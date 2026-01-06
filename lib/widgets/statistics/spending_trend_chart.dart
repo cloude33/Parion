@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import '../../models/spending_analysis.dart';
 import '../../models/cash_flow_data.dart';
 class SpendingTrendChart extends StatefulWidget {
   final List<CategoryTrend> categoryTrends;
