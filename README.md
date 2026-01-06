@@ -97,4 +97,102 @@ Bu proje MIT Lisansı ile lisanslanmıştır. Detaylar için [LICENSE](LICENSE) 
 Proje ile ilgili sorularınız veya önerileriniz için GitHub Issues üzerinden iletişime geçebilirsiniz.
 
 ---
-⭐ **Parion**'u beğendiyseniz yıldız vermeyi unutmayın!
+
+---
+
+# 🇺🇸 Parion - Personal Finance App v1.0
+
+Modern Flutter-based personal budget, credit card, bill tracking, and financial analysis application.
+
+## 🌟 About
+
+**Parion** is a comprehensive and user-friendly application designed to simplify personal finance management, track expenses, and help you reach financial freedom. With its modern interface, powerful analysis tools, and advanced features, it allows you to manage your income, expenses, debts, and investments from a single place.
+
+## ✨ Features
+
+### 💳 Financial Management
+- **Income/Expense Tracking**: Record all financial transactions with detailed categories.
+- **Wallet Management**: Manage cash, bank accounts, credit cards, and other assets.
+- **Overdraft Account (KMH) Management**:
+  - Track overdraft accounts, limits, and interest rates.
+  - Automatic daily interest calculation and smart limit alerts (at 80% and 95%).
+  - Create and compare payment plans.
+- **Credit Card Management**: Statement tracking, installment management, limit checks.
+- **Debt/Receivable Tracking**: Organize payments and collections with reminders.
+- **Bill Tracking**:
+  - Extensive service provider database (81 Provinces, all sectors).
+  - Smart bill entry and regular tracking.
+  - Detailed bill statistics and payment status tracking.
+- **Installment System**: Plan installment purchases and future payments.
+
+### 🔄 Automation and Smart Features
+- **Recurring Transactions**: Automate regular payments like rent and subscriptions.
+- **Smart Notifications**: Due date reminders, budget overruns, and overdraft limit alerts.
+- **Backup**: Firebase-backed secure cloud backup and cross-device synchronization.
+
+### 📊 Advanced Analytics and Reporting
+- **Detailed Statistics**: Cash flow, expense distribution, net worth change.
+- **Financial Health Score**: Smart scoring system summarizing your financial status.
+- **Trend Analysis**: Examine spending habits and categorical changes.
+- **Comparisons**: Periodical comparisons (Last Month vs This Month).
+- **Reports**: Detailed financial reports in Excel, PDF, and CSV formats.
+
+### 🔒 Security
+- **Biometric Login**: Fingerprint and Face ID support.
+- **PIN Protection**: Extra in-app security layer.
+- **Data Encryption**: Your sensitive data is stored encrypted with AES-256.
+- **Privacy**: Your data is under your control.
+
+## 🚀 Installation
+
+### Requirements
+- Flutter SDK (3.10.0 or higher)
+- Dart SDK
+- Android Studio / VS Code
+
+### Installation Steps
+
+1. **Clone the Project:**
+```bash
+git clone https://github.com/cloude33/Parion.git
+cd Parion
+```
+
+2. **Install Dependencies:**
+```bash
+flutter pub get
+```
+
+3. **Run the Application:**
+```bash
+# For Android
+flutter run -d android
+
+# For iOS (Requires Mac)
+flutter run -d ios
+```
+
+## 🛠️ Tech Stack
+- **Core**: Flutter & Dart
+- **State Management**: Provider / Riverpod
+- **Database**: Hive (Local), Firebase (Cloud)
+- **Charts**: fl_chart
+- **Auth**: Firebase Auth & Local Auth
+
+## 🤝 Contribution
+Contributions are welcome! Please check existing issues before sending a "Pull Request" or open a topic for a new feature suggestion.
+
+1. Fork it
+2. Create your feature branch (`git checkout -b feature/NewFeature`)
+3. Commit your changes (`git commit -m 'Added new feature'`)
+4. Push to the branch (`git push origin feature/NewFeature`)
+5. Create a Pull Request
+
+## 📄 License
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## 📞 Contact
+For questions or suggestions regarding the project, you can contact us via GitHub Issues.
+
+---
+⭐ Don't forget to star **Parion** if you like it!

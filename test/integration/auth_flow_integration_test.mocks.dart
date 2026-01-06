@@ -928,6 +928,75 @@ class MockDataSyncInterface extends _i1.Mock implements _i5.DataSyncInterface {
       ) as _i7.Future<_i5.SyncResult>);
 
   @override
+  _i7.Future<_i5.SyncResult> resolveConflicts() => (super.noSuchMethod(
+        Invocation.method(
+          #resolveConflicts,
+          [],
+        ),
+        returnValue: _i7.Future<_i5.SyncResult>.value(_FakeSyncResult_5(
+          this,
+          Invocation.method(
+            #resolveConflicts,
+            [],
+          ),
+        )),
+      ) as _i7.Future<_i5.SyncResult>);
+
+  @override
+  _i7.Future<void> handleSyncError(Object? error) => (super.noSuchMethod(
+        Invocation.method(
+          #handleSyncError,
+          [error],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<bool> verifyDataConsistency() => (super.noSuchMethod(
+        Invocation.method(
+          #verifyDataConsistency,
+          [],
+        ),
+        returnValue: _i7.Future<bool>.value(false),
+      ) as _i7.Future<bool>);
+
+  @override
+  _i7.Future<_i5.SyncResult> handlePartialSync() => (super.noSuchMethod(
+        Invocation.method(
+          #handlePartialSync,
+          [],
+        ),
+        returnValue: _i7.Future<_i5.SyncResult>.value(_FakeSyncResult_5(
+          this,
+          Invocation.method(
+            #handlePartialSync,
+            [],
+          ),
+        )),
+      ) as _i7.Future<_i5.SyncResult>);
+
+  @override
+  _i7.Future<void> invalidateCache() => (super.noSuchMethod(
+        Invocation.method(
+          #invalidateCache,
+          [],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> refreshCache() => (super.noSuchMethod(
+        Invocation.method(
+          #refreshCache,
+          [],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
   void dispose() => super.noSuchMethod(
         Invocation.method(
           #dispose,

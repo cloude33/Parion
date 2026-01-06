@@ -611,6 +611,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
         if (result == true) {
           await _loadSecuritySettings();
+          _showSuccessSnackBar('Biyometrik doğrulama etkinleştirildi');
         }
       } else {
         // Disable biometric
@@ -626,6 +627,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           await _updateSecurityConfig(
             _securityConfig!.copyWith(isBiometricEnabled: false),
           );
+          _showSuccessSnackBar('Biyometrik doğrulama devre dışı bırakıldı');
         }
       }
     } catch (e) {

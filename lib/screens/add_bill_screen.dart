@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../models/bill_template.dart';
 import '../services/bill_template_service.dart';
 import '../services/bill_payment_service.dart';
+import '../services/data_service.dart';
 import 'bill_templates_screen.dart';
 
 class AddBillScreen extends StatefulWidget {
@@ -27,18 +28,53 @@ class _AddBillScreenState extends State<AddBillScreen> {
   DateTime? _periodEnd;
   bool _isLoading = true;
   bool _isSaving = false;
+  
+  // Payment methods
+  List<Map<String, dynamic>> _paymentMethodOptions = [];
+  String? _selectedPaymentMethodId;
 
   @override
   void initState() {
     super.initState();
-    _loadTemplates();
+    _loadData();
     _calculatePeriod();
   }
 
-  @override
-  void dispose() {
-    _amountController.dispose();
-    super.dispose();
+  Future<void> _loadData() async {
+    try {
+       // Load templates
+       final templates = await _templateService.getActiveTemplates();
+       
+       // Load wallets and cards (DataService puts cards into wallets list with cc_ prefix)
+       final dataService = DataService(); 
+       await dataService.init(); // Ensure init
+       final wallets = await dataService.getWallets();
+       
+       final options = wallets.map((w) => {
+         'id': w.id,
+         'name': w.name,
+         'icon': IconData(
+            w.icon == 'credit_card' ? 0xe19f : 0xe041, // basic mapping
+            fontFamily: 'MaterialIcons'
+         ),
+         'color': Color(int.parse(w.color.replaceAll('#', '0xFF'))),
+       }).toList();
+
+       // Add cash/other fallback?? No, stick to wallets.
+
+      setState(() {
+        _templates = templates;
+        _paymentMethodOptions = options;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('DEBUG AddBillScreen: Error loading data: $e');
+      setState(() {
+        _templates = [];
+        _paymentMethodOptions = [];
+        _isLoading = false;
+      });
+    }
   }
 
   void _calculatePeriod() {
@@ -47,33 +83,15 @@ class _AddBillScreenState extends State<AddBillScreen> {
     final previousMonth = dueMonth == 1 ? 12 : dueMonth - 1;
     final previousYear = dueMonth == 1 ? dueYear - 1 : dueYear;
 
-    _periodStart = DateTime(previousYear, previousMonth, 1);
-    _periodEnd = DateTime(dueYear, dueMonth, 0);
+    setState(() {
+      _periodStart = DateTime(previousYear, previousMonth, 1);
+      _periodEnd = DateTime(dueYear, dueMonth, 0);
+    });
   }
 
+  // Old method replaced by _loadData
   Future<void> _loadTemplates() async {
-    try {
-      final templates = await _templateService.getActiveTemplates();
-      debugPrint('DEBUG AddBillScreen: Loaded ${templates.length} templates');
-      setState(() {
-        _templates = templates;
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('DEBUG AddBillScreen: Error loading templates: $e');
-      setState(() {
-        _templates = [];
-        _isLoading = false;
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Fatura şablonları yüklenemedi: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+      await _loadData();
   }
 
   Future<void> _selectDueDate() async {
@@ -141,6 +159,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
         dueDate: _dueDate,
         periodStart: _periodStart!,
         periodEnd: _periodEnd!,
+        targetWalletId: _selectedPaymentMethodId,
       );
 
       if (mounted) {
@@ -224,28 +243,76 @@ class _AddBillScreenState extends State<AddBillScreen> {
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
-                            if (template.category ==
-                                    BillTemplateCategory.phone &&
-                                template.phoneNumber != null)
-                              Text(
-                                template.phoneNumber!.startsWith('0')
-                                    ? template.phoneNumber!
-                                    : '0${template.phoneNumber!}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: Color(0xFF757575),
-                                ),
-                              ),
                           ],
                         ),
                       );
                     }).toList(),
                     onChanged: (value) {
-                      setState(() => _selectedTemplate = value);
+                      setState(() {
+                         _selectedTemplate = value;
+                         // Şablon değişince varsayılan ödeme aracını güncelle
+                         if (value?.walletId != null) {
+                            if (value!.walletId!.startsWith('cc_')) {
+                               _selectedPaymentMethodId = value.walletId;
+                            } else {
+                               // Normal cüzdan mı kredi kartı mı kontrol et
+                               // ID çakışması olmaması için kredi kartı prefixi eklenmeli mi? 
+                               // Hayır, DataService.getWallets zaten cc_ ekliyor.
+                               // Biz burada UI listesindeki ID ile eşleşeni bulmalıyız.
+                               
+                               // Check if this ID exists in our loaded options
+                               bool exists = _paymentMethodOptions.any((o) => o['id'] == value.walletId);
+                               if (exists) {
+                                  _selectedPaymentMethodId = value.walletId;
+                               } else {
+                                  // Maybe it's a credit card without prefix in template?
+                                  String ccPrefixed = 'cc_${value.walletId}';
+                                  if (_paymentMethodOptions.any((o) => o['id'] == ccPrefixed)) {
+                                     _selectedPaymentMethodId = ccPrefixed;
+                                  } else {
+                                     _selectedPaymentMethodId = null; 
+                                  }
+                               }
+                            }
+                         }
+                      });
                     },
                     validator: (value) {
                       if (value == null) return 'Fatura seçimi gerekli';
                       return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Ödeme Aracı Seçimi
+                  DropdownButtonFormField<String>(
+                    key: ValueKey(_selectedPaymentMethodId),
+                    initialValue: _selectedPaymentMethodId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Ödenecek Hesap/Kart',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.account_balance_wallet),
+                      helperText: 'Otomatik ödeme günü geldiğinde bu araçtan tahsil edilir',
+                    ),
+                    items: _paymentMethodOptions.map((option) {
+                      return DropdownMenuItem<String>(
+                        value: option['id'] as String,
+                        child: Row(
+                          children: [
+                            Icon(
+                              option['icon'] as IconData, 
+                              color: option['color'] as Color,
+                              size: 16
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(option['name'] as String)),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() => _selectedPaymentMethodId = value);
                     },
                   ),
                   const SizedBox(height: 16),

@@ -18,6 +18,7 @@ BillPayment _$BillPaymentFromJson(Map<String, dynamic> json) => BillPayment(
           ? null
           : DateTime.parse(json['paidDate'] as String),
       paidWithWalletId: json['paidWithWalletId'] as String?,
+      targetWalletId: json['targetWalletId'] as String?,
       transactionId: json['transactionId'] as String?,
       notes: json['notes'] as String?,
       createdDate: DateTime.parse(json['createdDate'] as String),
@@ -34,6 +35,7 @@ Map<String, dynamic> _$BillPaymentToJson(BillPayment instance) =>
       'periodEnd': instance.periodEnd.toIso8601String(),
       'status': _$BillPaymentStatusEnumMap[instance.status]!,
       'paidDate': instance.paidDate?.toIso8601String(),
+      'targetWalletId': instance.targetWalletId,
       'paidWithWalletId': instance.paidWithWalletId,
       'transactionId': instance.transactionId,
       'notes': instance.notes,

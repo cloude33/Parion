@@ -16,6 +16,7 @@ class BillPayment {
   final DateTime periodEnd;
   final BillPaymentStatus status;
   final DateTime? paidDate;
+  final String? targetWalletId;
   final String? paidWithWalletId;
   final String? transactionId;
   final String? notes;
@@ -32,6 +33,7 @@ class BillPayment {
     required this.status,
     this.paidDate,
     this.paidWithWalletId,
+    this.targetWalletId,
     this.transactionId,
     this.notes,
     required this.createdDate,
@@ -52,6 +54,7 @@ class BillPayment {
     BillPaymentStatus? status,
     DateTime? paidDate,
     String? paidWithWalletId,
+    String? targetWalletId,
     String? transactionId,
     String? notes,
     DateTime? createdDate,
@@ -67,6 +70,7 @@ class BillPayment {
       status: status ?? this.status,
       paidDate: paidDate ?? this.paidDate,
       paidWithWalletId: paidWithWalletId ?? this.paidWithWalletId,
+      targetWalletId: targetWalletId ?? this.targetWalletId,
       transactionId: transactionId ?? this.transactionId,
       notes: notes ?? this.notes,
       createdDate: createdDate ?? this.createdDate,

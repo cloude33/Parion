@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -61,28 +62,37 @@ class BillPaymentService {
       
       // Vadesi gelmiş veya geçmiş ödemeler
       if (due.isBefore(today) || due.isAtSameMomentAs(today)) {
-        // Şablonu kontrol et - otomatik ödeme için cüzdan tanımlı mı?
+        // Öncelik: Ödeme kaydındaki targetWalletId
+        // Yedek: Şablondaki walletId
         final template = await _templateService.getTemplate(payment.templateId);
+        String? walletIdToUse = payment.targetWalletId;
         
-        if (template != null && template.walletId != null) {
+        if (walletIdToUse == null && template != null) {
+          walletIdToUse = template.walletId;
+        }
+        
+        if (walletIdToUse != null) {
           try {
             await markAsPaid(
               paymentId: payment.id, 
-              walletId: template.walletId!
+              walletId: walletIdToUse
             );
           } catch (e) {
             // Hata durumunda sessizce devam et
+            debugPrint('Error processing payment ${payment.id}: $e');
           }
         }
       }
     }
   }
+
   Future<BillPayment> addPayment({
     required String templateId,
     required double amount,
     required DateTime dueDate,
     required DateTime periodStart,
     required DateTime periodEnd,
+    String? targetWalletId,
     String? notes,
   }) async {
     final template = await _templateService.getTemplate(templateId);
@@ -95,6 +105,9 @@ class BillPaymentService {
     final dueDateOnly = DateTime(dueDate.year, dueDate.month, dueDate.day);
     final isOverdue = dueDateOnly.isBefore(today) || dueDateOnly.isAtSameMomentAs(today);
     
+    // Use selected target wallet or fallback to template default
+    final walletIdToUse = targetWalletId ?? template.walletId;
+    
     final payment = BillPayment(
       id: _uuid.v4(),
       templateId: templateId,
@@ -104,7 +117,8 @@ class BillPaymentService {
       periodEnd: periodEnd,
       status: isOverdue ? BillPaymentStatus.paid : BillPaymentStatus.pending,
       paidDate: isOverdue ? now : null,
-      paidWithWalletId: isOverdue ? template.walletId : null,
+      paidWithWalletId: isOverdue ? walletIdToUse : null,
+      targetWalletId: targetWalletId,
       notes: notes?.trim(),
       createdDate: now,
       updatedDate: now,
@@ -113,37 +127,47 @@ class BillPaymentService {
     final payments = await getPayments();
     payments.add(payment);
     await savePayments(payments);
-    if (isOverdue && template.walletId != null) {
+    
+    // If it's overdue (or paid immediately), process the transaction
+    if (isOverdue && walletIdToUse != null) {
       String? transactionId;
       
       // Check if it is a credit card
-      bool isCreditCard = template.walletId!.startsWith('cc_');
-      String processedWalletId = isCreditCard ? template.walletId!.replaceFirst('cc_', '') : template.walletId!;
+      bool isCreditCard = walletIdToUse.startsWith('cc_');
+      String processedWalletId = isCreditCard ? walletIdToUse.replaceFirst('cc_', '') : walletIdToUse;
       
+      // Double check if it's a credit card ID even without prefix
+      final creditCardService = CreditCardService();
       if (!isCreditCard) {
-         final creditCardService = CreditCardService();
-         final card = await creditCardService.getCard(template.walletId!);
+         final card = await creditCardService.getCard(walletIdToUse);
          if (card != null) {
            isCreditCard = true;
-           processedWalletId = template.walletId!;
+           processedWalletId = walletIdToUse;
          }
       }
 
       if (isCreditCard) {
-          final creditCardService = CreditCardService();
-          final ccTransaction = CreditCardTransaction(
-            id: _uuid.v4(),
-            cardId: processedWalletId,
-            amount: amount,
-            description: '${template.name} Fatura Ödemesi',
-            transactionDate: dueDate, 
-            category: template.categoryDisplayName,
-            installmentCount: 1,
-            installmentsPaid: 0,
-            createdAt: now,
-          );
-          await creditCardService.addTransaction(ccTransaction);
-          transactionId = ccTransaction.id;
+          // Verify the card actually exists
+          final card = await creditCardService.getCard(processedWalletId);
+          if (card != null) {
+            final ccTransaction = CreditCardTransaction(
+              id: _uuid.v4(),
+              cardId: processedWalletId, // Use the CLEAN ID logic
+              amount: amount,
+              description: '${template.name} Fatura Ödemesi',
+              transactionDate: dueDate, 
+              category: template.categoryDisplayName,
+              installmentCount: 1,
+              installmentsPaid: 0,
+              createdAt: now,
+            );
+            await creditCardService.addTransaction(ccTransaction);
+            transactionId = ccTransaction.id;
+          } else {
+             // Fallback to regular transaction if card not found? No, that would be wrong.
+             // Just log error
+             debugPrint('Error: Credit card not found for ID: $processedWalletId');
+          }
       } else {
           final dataService = DataService();
           final transaction = Transaction(
@@ -153,7 +177,7 @@ class BillPaymentService {
             type: 'expense',
             category: template.categoryDisplayName,
             date: dueDate,
-            walletId: template.walletId!,
+            walletId: walletIdToUse,
           );
           
           await dataService.addTransaction(transaction);

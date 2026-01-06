@@ -3,10 +3,11 @@ import 'package:flutter/services.dart';
 import '../core/di/service_locator.dart';
 import '../services/auth/interfaces/auth_orchestrator_interface.dart';
 import '../services/auth/interfaces/biometric_auth_interface.dart';
-import '../models/security/security_models.dart';
+
 import '../widgets/auth_loading_widget.dart';
 import '../widgets/auth_error_widget.dart';
 import '../utils/auth_navigation.dart';
+import '../services/user_service.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -28,6 +29,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   bool _isLoading = false;
   bool _biometricAvailable = false;
   String? _errorMessage;
+  UserProfile? _userProfile;
 
   @override
   void initState() {
@@ -99,12 +101,20 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       }
 
       final biometricService = getIt<IBiometricAuthService>();
+      await biometricService.initialize();
+      
       final isAvailable = await biometricService.isAvailable();
       final isEnabled = await biometricService.isBiometricEnabled();
+
+      // Get user profile for welcome message
+      final userService = UserService();
+      await userService.init();
+      final userProfile = await userService.getUserProfile();
 
       setState(() {
         _isLoading = false;
         _biometricAvailable = isAvailable && isEnabled;
+        _userProfile = userProfile;
       });
     } catch (e) {
       debugPrint('❌ Failed to initialize auth services: $e');
@@ -259,6 +269,34 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Widget _buildSubtitle() {
+    if (_userProfile != null && _userProfile!.name.isNotEmpty) {
+      return Column(
+        children: [
+          Text(
+            'Hoş Geldin,',
+            style: TextStyle(
+              fontSize: 20,
+              color: Colors.white.withValues(alpha: 0.95),
+              height: 1.2,
+              fontWeight: FontWeight.w400,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _userProfile!.name,
+            style: TextStyle(
+              fontSize: 24,
+              color: const Color(0xFFFDB32A),
+              height: 1.2,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    }
+
     return Text(
       'Finansal özgürlüğünüze giden yolda\nyardımcınız',
       style: TextStyle(
@@ -291,14 +329,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               const SizedBox(height: 16),
             ],
             
-            if (_biometricAvailable)
-              _buildSecondaryButton(
-                context,
-                text: 'Biyometrik ile Giriş',
-                onPressed: _isLoading ? null : _handleBiometricAuth,
-                icon: Icons.fingerprint,
-              ),
-            if (_biometricAvailable) const SizedBox(height: 16),
+
 
             _buildPrimaryButton(
               context,
@@ -319,42 +350,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
-  Future<void> _handleBiometricAuth() async {
-    if (_isLoading) return;
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final result = await _authOrchestrator!.authenticate(
-        AuthMethod.biometric,
-        {
-          'reason': 'Uygulamaya erişmek için kimliğinizi doğrulayın',
-          'fallbackTitle': 'PIN Kullan',
-          'cancelText': 'İptal',
-        },
-      );
-      if (mounted) {
-        if (!result.isSuccess) {
-          setState(() {
-            _errorMessage = result.errorMessage ?? 'Biyometrik doğrulama başarısız';
-          });
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Biyometrik doğrulama sırasında bir hata oluştu';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
-  }
+
 
   Widget _buildPrimaryButton(
     BuildContext context, {

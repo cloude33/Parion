@@ -10,6 +10,11 @@ import 'dart:io';
 import '../models/user.dart';
 import '../services/data_service.dart';
 import '../services/backup_service.dart';
+import '../services/excel_export_service.dart';
+import '../services/csv_export_service.dart';
+import '../services/pdf_export_service.dart';
+import 'package:share_plus/share_plus.dart';
+import '../models/export_filter.dart';
 import '../services/theme_service.dart';
 import '../services/notification_service.dart';
 import '../services/auth_service.dart';
@@ -31,7 +36,7 @@ import 'cloud_backup_screen.dart';
 
 import '../services/recurring_transaction_service.dart';
 import '../repositories/recurring_transaction_repository.dart';
-import '../widgets/export_dialog.dart';
+
 import '../widgets/theme_toggle_button.dart';
 import '../widgets/debug_background_lock_widget.dart';
 
@@ -279,6 +284,79 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Geri yükleme başarısız: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleExport(String format) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final transactions = await _dataService.getTransactions();
+      
+      late final String filePath;
+      switch (format) {
+        case 'excel':
+          final excelService = ExcelExportService();
+          final file = await excelService.exportToExcel(
+            transactions: transactions,
+            currencySymbol: _currentUser?.currencySymbol ?? '₺',
+          );
+          filePath = file.path;
+          break;
+
+        case 'csv':
+          final csvService = CsvExportService();
+          final file = await csvService.exportToCsv(
+            transactions: transactions,
+          );
+          filePath = file.path;
+          break;
+
+        case 'pdf':
+          final pdfService = PdfExportService();
+          DateTime start = DateTime(2024);
+          DateTime end = DateTime.now();
+          if (transactions.isNotEmpty) {
+             final dates = transactions.map((t) => t.date).toList();
+             dates.sort();
+             start = dates.first;
+             end = dates.last;
+          }
+          
+          final file = await pdfService.exportToPdf(
+            transactions: transactions,
+            dateRange: DateRange(start: start, end: end),
+            currencySymbol: _currentUser?.currencySymbol ?? '₺',
+          );
+          filePath = file.path;
+          break;
+      }
+      
+      if (mounted) {
+         Navigator.pop(context);
+         
+         await SharePlus.instance.share(
+            ShareParams(
+              files: [XFile(filePath)],
+              subject: 'Parion $format Export',
+            ),
+         );
+      }
+
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Dışa aktarma başarısız: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -624,46 +702,80 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
-          _buildSettingItem(
-            icon: Icons.backup_outlined,
-            title: AppLocalizations.of(context)!.backup,
-            subtitle: AppLocalizations.of(context)!.backupDesc,
-            iconColor: Colors.blue,
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Text(
+              'Dışa & İçe Aktarma',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).brightness == Brightness.dark 
+                    ? Colors.grey[400] 
+                    : Colors.grey[700],
+              ),
+            ),
+          ),
+           _buildSettingItem(
+            icon: Icons.picture_as_pdf,
+            title: 'PDF olarak dışa aktar',
+            subtitle: '',
+            iconColor: Colors.red,
+            onTap: () => _handleExport('pdf'),
             trailing: const Icon(
               Icons.arrow_forward_ios,
               size: 16,
               color: Color(0xFF8E8E93),
             ),
-            onTap: _handleBackup,
           ),
           _buildSettingItem(
-            icon: Icons.restore_outlined,
-            title: AppLocalizations.of(context)!.restore,
-            subtitle: AppLocalizations.of(context)!.restoreDesc,
+            icon: Icons.table_chart,
+            title: 'Excel olarak dışa aktar',
+            subtitle: '',
             iconColor: Colors.green,
+            onTap: () => _handleExport('excel'),
             trailing: const Icon(
               Icons.arrow_forward_ios,
               size: 16,
               color: Color(0xFF8E8E93),
             ),
-            onTap: _handleRestore,
           ),
           _buildSettingItem(
-            icon: Icons.file_download_outlined,
-            title: AppLocalizations.of(context)!.export,
-            subtitle: AppLocalizations.of(context)!.exportDesc,
-            iconColor: Colors.indigo,
+            icon: Icons.text_snippet,
+            title: 'CSV olarak dışa aktar',
+            subtitle: '',
+            iconColor: Colors.blue,
+            onTap: () => _handleExport('csv'),
             trailing: const Icon(
               Icons.arrow_forward_ios,
               size: 16,
               color: Color(0xFF8E8E93),
             ),
-            onTap: () async {
-              await showDialog(
-                context: context,
-                builder: (context) => const ExportDialog(),
-              );
-            },
+          ),
+           const Divider(),
+          _buildSettingItem(
+            icon: Icons.cloud_upload_outlined,
+            title: 'Yedek Oluştur',
+            subtitle: 'Tüm verilerinizi içeren bir dosya oluşturun',
+            iconColor: Colors.purple,
+            onTap: _handleBackup,
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Color(0xFF8E8E93),
+            ),
+          ),
+          _buildSettingItem(
+            icon: Icons.restore_page_outlined,
+            title: 'Yedekten Geri Yükle',
+            subtitle: 'Daha önceki bir yedeği geri yükleyin',
+            iconColor: Colors.teal,
+            onTap: _handleRestore,
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Color(0xFF8E8E93),
+            ),
           ),
         ]),
         const SizedBox(height: 20),
