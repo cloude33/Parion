@@ -152,3 +152,5 @@ class StatisticsDarkModeColors {
     return primaryColor.withValues(alpha: isDark ? 0.2 : 0.1);
   }
 }
+
+

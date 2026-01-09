@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
@@ -259,6 +260,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -300,7 +302,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: Theme.of(context).appBarTheme.backgroundColor,
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
@@ -312,7 +314,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: Icon(Icons.arrow_back, color: Theme.of(context).appBarTheme.foregroundColor),
                 onPressed: () => Navigator.pop(context),
               ),
               Text(
@@ -321,18 +323,18 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     : _selectedType == 'expense'
                     ? 'Gider Düzenle'
                     : 'Transfer Düzenle',
-                style: const TextStyle(
-                  color: Colors.black,
+                style: TextStyle(
+                  color: Theme.of(context).appBarTheme.foregroundColor,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               TextButton(
                 onPressed: _updateTransaction,
-                child: const Text(
-                  'KAYDET',
+                child: Text(
+                  AppLocalizations.of(context)!.save,
                   style: TextStyle(
-                    color: Color(0xFF5E5CE6),
+                    color: Theme.of(context).primaryColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -586,7 +588,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.circular(10),
           ),
           child: DropdownButtonHideUnderline(
@@ -713,9 +715,11 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(40),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.grey.shade800
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300, width: 2),
+                border: Border.all(color: Theme.of(context).dividerColor, width: 2),
               ),
               child: Column(
                 children: [
@@ -763,7 +767,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                   icon: const Icon(Icons.camera_alt, size: 20),
                   label: const Text('Ekle'),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF5E5CE6),
+                    foregroundColor: Theme.of(context).primaryColor,
                   ),
                 ),
               ),
@@ -874,10 +878,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text(
-                                'Tamam',
+                              child: Text(
+                                AppLocalizations.of(context)!.ok,
                                 style: TextStyle(
-                                  color: Color(0xFF5E5CE6),
+                                  color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -944,7 +948,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: Theme.of(context).dividerColor),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -954,7 +958,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                   _formatDateTurkish(_selectedDate),
                   style: const TextStyle(fontSize: 16),
                 ),
-                const Icon(Icons.calendar_today, color: Color(0xFF5E5CE6)),
+                Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
               ],
             ),
           ),
@@ -979,3 +983,5 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     );
   }
 }
+
+

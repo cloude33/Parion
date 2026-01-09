@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import '../l10n/app_localizations.dart';
 import '../models/category.dart';
 import '../models/transaction.dart';
 import '../models/credit_card_transaction.dart';
+import '../models/user.dart';
+import '../utils/currency_helper.dart';
 import '../services/data_service.dart';
 import '../services/credit_card_service.dart';
 import 'add_category_screen.dart';
@@ -26,6 +28,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   bool _showIncome = false;
   String _searchQuery = '';
   bool _showStats = true;
+  User? _currentUser;
 
   @override
   void initState() {
@@ -34,6 +37,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   Future<void> _loadCategories() async {
+    final user = await _dataService.getCurrentUser();
     final categories = (await _dataService.getCategories()).cast<Category>();
     final transactions = await _dataService.getTransactions();
     
@@ -45,6 +49,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     }
 
     setState(() {
+      _currentUser = user;
       _categories = categories;
       _transactions = transactions;
       _creditCardTransactions = ccTransactions;
@@ -115,21 +120,19 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Kategori Kullanımda'),
+          title: Text(AppLocalizations.of(context)!.categoryInUse),
           content: Text(
-            '${category.name} kategorisi $usageCount işlemde kullanılıyor.\n\n'
-            'Bu kategoriyi silmek istediğinizden emin misiniz? '
-            'İşlemler silinmeyecek ancak kategori bilgisi kaybolacak.',
+            '${category.name} ${AppLocalizations.of(context)!.categoryInUseDesc(usageCount)}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('İptal'),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Yine de Sil'),
+              child: Text(AppLocalizations.of(context)!.deleteAnyway),
             ),
           ],
         ),
@@ -140,7 +143,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Kategoriyi Sil'),
+          title: Text(AppLocalizations.of(context)!.delete),
           content: Text(
             '${category.name} kategorisini silmek istediğinizden emin misiniz?',
           ),
@@ -152,7 +155,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context, true),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Sil'),
+              child: Text(AppLocalizations.of(context)!.delete),
             ),
           ],
         ),
@@ -204,11 +207,11 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'Kategoriler',
+                  AppLocalizations.of(context)!.categories,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -250,7 +253,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ),
                     ),
                     child: Text(
-                      '${_categories.where((c) => c.type == 'income').length} GELİR',
+                      '${_categories.where((c) => c.type == 'income').length} ${AppLocalizations.of(context)!.income.toUpperCase()}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: !_showIncome
@@ -286,7 +289,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ),
                     ),
                     child: Text(
-                      '${_categories.where((c) => c.type == 'expense').length} GİDER',
+                      '${_categories.where((c) => c.type == 'expense').length} ${AppLocalizations.of(context)!.expense.toUpperCase()}',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: _showIncome
@@ -316,7 +319,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
-          hintText: 'Kategori ara...',
+          hintText: AppLocalizations.of(context)!.searchCategory,
           prefixIcon: const Icon(Icons.search, color: Color(0xFF00BFA5)),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
@@ -383,8 +386,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             const SizedBox(height: 16),
             Text(
               _searchQuery.isNotEmpty
-                  ? 'Kategori bulunamadı'
-                  : 'Henüz kategori eklenmemiş',
+                  ? AppLocalizations.of(context)!.noCategories
+                  : AppLocalizations.of(context)!.noData,
               style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
             if (_searchQuery.isEmpty) ...[
@@ -392,7 +395,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               TextButton.icon(
                 onPressed: _addCategory,
                 icon: const Icon(Icons.add),
-                label: const Text('Kategori Ekle'),
+                label: Text(AppLocalizations.of(context)!.addCategory),
               ),
             ],
           ],
@@ -470,7 +473,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                           if (_showStats) ...[
                             const SizedBox(height: 4),
                             Text(
-                              '$count işlem • ₺${NumberFormat('#,##0', 'tr_TR').format(amount)}',
+                              '${AppLocalizations.of(context)!.transactionCount(count)} • ${CurrencyHelper.formatAmountCompact(amount, _currentUser)}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Theme.of(context)
@@ -512,7 +515,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     children: [
                       Expanded(
                         child: _buildStatItem(
-                          'Kullanım',
+                          AppLocalizations.of(context)!.usage,
                           '$count',
                           Icons.receipt_long,
                           Colors.blue,
@@ -525,8 +528,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ),
                       Expanded(
                         child: _buildStatItem(
-                          'Toplam',
-                          '₺${NumberFormat('#,##0', 'tr_TR').format(amount)}',
+                          AppLocalizations.of(context)!.total,
+                          CurrencyHelper.formatAmountCompact(amount, _currentUser),
                           Icons.attach_money,
                           Colors.green,
                         ),
@@ -538,8 +541,8 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ),
                       Expanded(
                         child: _buildStatItem(
-                          'Ortalama',
-                          '₺${NumberFormat('#,##0', 'tr_TR').format(amount / count)}',
+                          AppLocalizations.of(context)!.average,
+                          CurrencyHelper.formatAmountCompact(count > 0 ? amount / count : 0, _currentUser),
                           Icons.trending_up,
                           Colors.orange,
                         ),
@@ -581,3 +584,5 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     );
   }
 }
+
+

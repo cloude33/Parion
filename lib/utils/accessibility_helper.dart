@@ -575,3 +575,4 @@ class AccessibilityConstants {
   static const EdgeInsets compactPadding = EdgeInsets.all(8.0);
   static const EdgeInsets spaciousPadding = EdgeInsets.all(24.0);
 }
+

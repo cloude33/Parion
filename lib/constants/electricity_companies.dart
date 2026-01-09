@@ -1207,3 +1207,92 @@ InternetProvider? getInternetProviderByCode(String code) {
 InternetProvider? getInternetProviderByName(String name) {
   return providerByName[name.toLowerCase()];
 }
+
+class SubscriptionProvider {
+  final String code;
+  final String name;
+  final String shortName;
+  final String website;
+
+  const SubscriptionProvider({
+    required this.code,
+    required this.name,
+    required this.shortName,
+    this.website = "",
+  });
+}
+
+const List<SubscriptionProvider> subscriptionProviders = [
+  SubscriptionProvider(
+    code: "NETFLIX",
+    name: "Netflix",
+    shortName: "Netflix",
+    website: "https://www.netflix.com",
+  ),
+  SubscriptionProvider(
+    code: "YOUTUBE",
+    name: "YouTube Premium",
+    shortName: "YouTube",
+    website: "https://www.youtube.com/premium",
+  ),
+  SubscriptionProvider(
+    code: "DISNEY",
+    name: "Disney+",
+    shortName: "Disney+",
+    website: "https://www.disneyplus.com",
+  ),
+  SubscriptionProvider(
+    code: "SPOTIFY",
+    name: "Spotify",
+    shortName: "Spotify",
+    website: "https://www.spotify.com",
+  ),
+  SubscriptionProvider(
+    code: "AMAZON_PRIME",
+    name: "Amazon Prime",
+    shortName: "Amazon Prime",
+    website: "https://www.amazon.com.tr/prime",
+  ),
+  SubscriptionProvider(
+    code: "ICLOUD",
+    name: "iCloud+",
+    shortName: "iCloud",
+    website: "https://www.apple.com/icloud",
+  ),
+  SubscriptionProvider(
+    code: "GOOGLE_ONE",
+    name: "Google One",
+    shortName: "Google One",
+    website: "https://one.google.com",
+  ),
+  SubscriptionProvider(
+    code: "EXXEN",
+    name: "Exxen",
+    shortName: "Exxen",
+    website: "https://www.exxen.com",
+  ),
+  SubscriptionProvider(
+    code: "GAIN",
+    name: "Gain",
+    shortName: "Gain",
+    website: "https://www.gain.tv",
+  ),
+  SubscriptionProvider(
+    code: "MUBI",
+    name: "MUBI",
+    shortName: "MUBI",
+    website: "https://mubi.com",
+  ),
+  SubscriptionProvider(
+    code: "PS_PLUS",
+    name: "PlayStation Plus",
+    shortName: "PS Plus",
+    website: "https://www.playstation.com/ps-plus",
+  ),
+  SubscriptionProvider(
+    code: "GAME_PASS",
+    name: "Xbox Game Pass",
+    shortName: "Xbox Game Pass",
+    website: "https://www.xbox.com/game-pass",
+  ),
+];

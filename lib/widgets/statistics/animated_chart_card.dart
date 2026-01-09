@@ -91,3 +91,5 @@ class AnimatedChartCard extends StatelessWidget {
     );
   }
 }
+
+

@@ -22,6 +22,8 @@ class BillTemplate {
   final String? phoneNumber;
   final String? description;
   final String? walletId;
+  final double? monthlyAmount;
+  final int? paymentDay;
   final bool isActive;
   final DateTime createdDate;
   final DateTime updatedDate;
@@ -35,6 +37,8 @@ class BillTemplate {
     this.phoneNumber,
     this.description,
     this.walletId,
+    this.monthlyAmount,
+    this.paymentDay,
     this.isActive = true,
     required this.createdDate,
     required this.updatedDate,
@@ -53,6 +57,8 @@ class BillTemplate {
     String? phoneNumber,
     String? description,
     String? walletId,
+    double? monthlyAmount,
+    int? paymentDay,
     bool? isActive,
     DateTime? createdDate,
     DateTime? updatedDate,
@@ -66,6 +72,8 @@ class BillTemplate {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       description: description ?? this.description,
       walletId: walletId ?? this.walletId,
+      monthlyAmount: monthlyAmount ?? this.monthlyAmount,
+      paymentDay: paymentDay ?? this.paymentDay,
       isActive: isActive ?? this.isActive,
       createdDate: createdDate ?? this.createdDate,
       updatedDate: updatedDate ?? this.updatedDate,

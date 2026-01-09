@@ -3,6 +3,9 @@ import '../utils/format_helper.dart';
 import '../models/bill_template.dart';
 import '../services/bill_template_service.dart';
 import 'add_bill_template_screen.dart';
+import 'bill_template_detail_screen.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/bill_helper.dart';
 class BillTemplatesScreen extends StatefulWidget {
   const BillTemplatesScreen({super.key});
 
@@ -57,7 +60,7 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Faturalarım'),
+        title: Text(AppLocalizations.of(context)!.myBills),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -101,7 +104,7 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
           Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'Henüz fatura tanımlamadınız',
+            AppLocalizations.of(context)!.noBillsDefined,
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey[600],
@@ -110,7 +113,7 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Elektrik, su, doğalgaz gibi\nfaturalarınızı buradan tanımlayın',
+            AppLocalizations.of(context)!.noBillsDefinedDesc,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
@@ -128,9 +131,9 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
               }
             },
             icon: const Icon(Icons.add),
-            label: const Text('İlk Faturanı Ekle'),
+            label: Text(AppLocalizations.of(context)!.addBillTemplate),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00BFA5),
+              backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -172,12 +175,12 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
           height: 48,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: const Color(0xFF00BFA5).withValues(alpha: 0.1),
+            color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
             _getCategoryIcon(template.category),
-            color: const Color(0xFF00BFA5),
+            color: Theme.of(context).primaryColor,
             size: 24,
           ),
         ),
@@ -203,7 +206,7 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
                   border: Border.all(color: Colors.grey[400]!),
                 ),
                 child: Text(
-                  'PASİF',
+                  AppLocalizations.of(context)!.inactive.toUpperCase(),
                   style: TextStyle(
                     fontSize: 9,
                     color: Colors.grey[700],
@@ -223,12 +226,12 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
                   detailText,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               Text(
-                template.categoryDisplayName,
+                BillHelper.getCategoryName(context, template.category),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -246,12 +249,7 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => Scaffold(
-                appBar: AppBar(title: Text(template.name)),
-                body: const Center(
-                  child: Text('Fatura detayı geliştiriliyor...'),
-                ),
-              ),
+              builder: (context) => BillTemplateDetailScreen(template: template),
             ),
           );
           if (result == true) {
@@ -262,3 +260,5 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
     );
   }
 }
+
+

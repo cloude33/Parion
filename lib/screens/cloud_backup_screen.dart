@@ -40,10 +40,25 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
+      
+      // Make error message more user-friendly
+      String errorMessage;
+      final errorStr = e.toString();
+      if (errorStr.contains('network_error') || 
+          errorStr.contains('NetworkException') ||
+          errorStr.contains('SocketException') ||
+          errorStr.contains('Failed host lookup') ||
+          errorStr.contains('PlatformException')) {
+        errorMessage = 'İnternet bağlantınızı kontrol edin';
+      } else {
+        errorMessage = 'Yedekler yüklenirken hata oluştu: $e';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Yedekler yüklenirken hata oluştu: $e'),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -242,10 +257,31 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
             color: Colors.grey.withValues(alpha: 0.5),
           ),
           const SizedBox(height: 16),
-          const Text(
-            'Henüz bulut yedeğiniz yok',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
+          Text(
+            _backupService.lastError.value != null && 
+            (_backupService.lastError.value!.contains('network') ||
+             _backupService.lastError.value!.contains('NetworkException') ||
+             _backupService.lastError.value!.contains('PlatformException'))
+                ? 'İnternet bağlantınızı kontrol edin'
+                : 'Henüz bulut yedeğiniz yok',
+            style: const TextStyle(fontSize: 16, color: Colors.grey),
+            textAlign: TextAlign.center,
           ),
+          if (_backupService.lastError.value != null &&
+              (_backupService.lastError.value!.contains('network') ||
+               _backupService.lastError.value!.contains('NetworkException') ||
+               _backupService.lastError.value!.contains('PlatformException'))) ...[
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadCloudBackups,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Yeniden Dene'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00BFA5),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -356,14 +392,34 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
     if (!mounted) return;
     
     final errorMessage = _backupService.lastError.value;
+    
+    // Make error messages more user-friendly
+    String displayMessage;
+    if (success) {
+      displayMessage = '✅ Yedekleme başarılı';
+    } else {
+      // Check for common error types
+      if (errorMessage != null) {
+        if (errorMessage.contains('network_error') || 
+            errorMessage.contains('NetworkException') ||
+            errorMessage.contains('SocketException') ||
+            errorMessage.contains('Failed host lookup')) {
+          displayMessage = '❌ İnternet bağlantınızı kontrol edin';
+        } else if (errorMessage.contains('PlatformException')) {
+          displayMessage = '❌ İnternet bağlantınızı kontrol edin';
+        } else {
+          displayMessage = '❌ Yedekleme başarısız: $errorMessage';
+        }
+      } else {
+        displayMessage = '❌ Yedekleme başarısız';
+      }
+    }
+    
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          success
-              ? '✅ Yedekleme başarılı'
-              : '❌ Yedekleme başarısız${errorMessage != null ? ': $errorMessage' : ''}',
-        ),
+        content: Text(displayMessage),
         backgroundColor: success ? Colors.green : Colors.red,
+        duration: const Duration(seconds: 4),
       ),
     );
     if (success) _loadCloudBackups();
@@ -488,3 +544,5 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }
+
+

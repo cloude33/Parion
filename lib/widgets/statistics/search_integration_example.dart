@@ -239,3 +239,5 @@ class _SearchIntegrationExampleState extends State<SearchIntegrationExample> {
     );
   }
 }
+
+

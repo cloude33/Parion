@@ -6,6 +6,8 @@ import '../services/bill_template_service.dart';
 import '../services/data_service.dart';
 import '../constants/electricity_companies.dart';
 import '../utils/format_helper.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/bill_helper.dart';
 
 const List<String> phoneOperators = ['Turkcell', 'Vodafone', 'Türk Telekom'];
 const List<String> turkishCities = [
@@ -108,6 +110,8 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
   late TextEditingController _accountNumberController;
   late TextEditingController _phoneNumberController;
   late TextEditingController _descriptionController;
+  late TextEditingController _monthlyAmountController;
+  late TextEditingController _paymentDayController;
 
   BillTemplateCategory _selectedCategory = BillTemplateCategory.electricity;
   String? _selectedCity;
@@ -132,6 +136,12 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
     );
     _descriptionController = TextEditingController(
       text: template?.description ?? '',
+    );
+    _monthlyAmountController = TextEditingController(
+      text: template?.monthlyAmount?.toString() ?? '',
+    );
+    _paymentDayController = TextEditingController(
+      text: template?.paymentDay?.toString() ?? '',
     );
 
     if (template != null) {
@@ -161,13 +171,16 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
     _accountNumberController.dispose();
     _phoneNumberController.dispose();
     _descriptionController.dispose();
+    _monthlyAmountController.dispose();
+    _paymentDayController.dispose();
     super.dispose();
   }
 
   void _updateProviderList() {
     setState(() {
       _availableProviders = [];
-      _selectedProvider = null;
+      // Do not reset _selectedProvider if it's already set (e.g. from template)
+      // and it's compatible with the current category (checked below)
 
       switch (_selectedCategory) {
         case BillTemplateCategory.phone:
@@ -205,8 +218,18 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
             }
           }
           break;
+        case BillTemplateCategory.subscription:
+          _availableProviders = subscriptionProviders.map((p) => p.shortName).toList();
+          break;
         default:
           break;
+      }
+
+      // If the current _selectedProvider is not in the new _availableProviders, reset it
+      if (_selectedProvider != null &&
+          _availableProviders.isNotEmpty &&
+          !_availableProviders.contains(_selectedProvider)) {
+        _selectedProvider = null;
       }
     });
   }
@@ -224,7 +247,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
     if (_selectedProvider != null) {
       return _selectedProvider!;
     }
-    return _getCategoryName(_selectedCategory);
+    return BillHelper.getCategoryName(context, _selectedCategory);
   }
 
   Future<void> _save() async {
@@ -269,6 +292,8 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
           description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
+          monthlyAmount: double.tryParse(_monthlyAmountController.text.trim()),
+          paymentDay: int.tryParse(_paymentDayController.text.trim()),
         );
       } else {
         final updated = widget.template!.copyWith(
@@ -285,6 +310,8 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
           description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
+          monthlyAmount: double.tryParse(_monthlyAmountController.text.trim()),
+          paymentDay: int.tryParse(_paymentDayController.text.trim()),
           isActive: _isActive,
         );
         await _service.updateTemplate(updated);
@@ -324,12 +351,12 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Sil'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -344,8 +371,8 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fatura şablonu silindi'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.billTemplateDeleted),
             backgroundColor: Colors.green,
           ),
         );
@@ -354,7 +381,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${AppLocalizations.of(context)!.errorOccurred}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -377,9 +404,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isEdit ? 'Fatura Düzenle' : 'Fatura Ekle'),
-        backgroundColor: const Color(0xFF00BFA5),
-        foregroundColor: Colors.white,
+        title: Text(isEdit ? AppLocalizations.of(context)!.editBillTemplate : AppLocalizations.of(context)!.addBillTemplate),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -391,19 +416,19 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                   DropdownButtonFormField<BillTemplateCategory>(
                     initialValue: _selectedCategory,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Kategori',
-                      prefixIcon: Icon(Icons.category),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.billCategory,
+                      prefixIcon: const Icon(Icons.category),
+                      border: const OutlineInputBorder(),
                     ),
                     items: BillTemplateCategory.values.map((category) {
                       return DropdownMenuItem(
                         value: category,
                         child: Row(
                           children: [
-                            Icon(_getCategoryIcon(category), size: 20),
+                            Icon(BillHelper.getCategoryIcon(category), size: 20),
                             const SizedBox(width: 12),
-                            Text(_getCategoryName(category)),
+                            Text(BillHelper.getCategoryName(context, category)),
                           ],
                         ),
                       );
@@ -423,10 +448,10 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _selectedCity,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'İl *',
-                        prefixIcon: Icon(Icons.location_city),
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: '${AppLocalizations.of(context)!.city} *',
+                        prefixIcon: const Icon(Icons.location_city),
+                        border: const OutlineInputBorder(),
                       ),
                       items: turkishCities.map((city) {
                         return DropdownMenuItem(value: city, child: Text(city));
@@ -445,9 +470,11 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                       initialValue: _selectedProvider,
                       isExpanded: true,
                       decoration: InputDecoration(
-                        labelText: _requiresProviderSelection()
-                            ? 'Sağlayıcı *'
-                            : 'Sağlayıcı',
+                        labelText: _selectedCategory == BillTemplateCategory.rent
+                            ? 'Mülk Sahibi / Alıcı *'
+                            : _requiresProviderSelection()
+                                ? 'Sağlayıcı *'
+                                : 'Sağlayıcı',
                         prefixIcon: const Icon(Icons.business),
                         border: const OutlineInputBorder(),
                       ),
@@ -469,8 +496,8 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                     DropdownButtonFormField<String>(
                       initialValue: _selectedWalletId,
                       isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Ödeme Aracı',
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.autoPaymentWallet,
                         prefixIcon: Icon(Icons.account_balance_wallet),
                         border: OutlineInputBorder(),
                       ),
@@ -499,7 +526,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                       },
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Lütfen ödeme aracı seçin';
+                          return AppLocalizations.of(context)!.selectPaymentMethod;
                         }
                         return null;
                       },
@@ -508,34 +535,67 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                   ],
                   TextFormField(
                     controller: _accountNumberController,
-                    decoration: const InputDecoration(
-                      labelText: 'Abone/Hesap Numarası (Opsiyonel)',
-                      hintText: 'Örn: 123456789',
-                      prefixIcon: Icon(Icons.numbers),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: _selectedCategory == BillTemplateCategory.rent
+                          ? AppLocalizations.of(context)!.roomShopNo
+                          : AppLocalizations.of(context)!.accountNumberLabel,
+                      hintText: AppLocalizations.of(context)!.hintExampleNumber,
+                      prefixIcon: const Icon(Icons.numbers),
+                      border: const OutlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   if (_selectedCategory == BillTemplateCategory.phone) ...[
                     TextFormField(
                       controller: _phoneNumberController,
-                      decoration: const InputDecoration(
-                        labelText: 'Telefon Numarası',
-                        hintText: '5XX XXX XX XX',
-                        prefixIcon: Icon(Icons.phone),
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.billPhoneNumber,
+                        hintText: AppLocalizations.of(context)!.phoneHint,
+                        prefixIcon: const Icon(Icons.phone),
+                        border: const OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.phone,
                     ),
                     const SizedBox(height: 16),
                   ],
                   TextFormField(
+                    controller: _monthlyAmountController,
+                    decoration: InputDecoration(
+                      labelText: '${AppLocalizations.of(context)!.billAmount} ${AppLocalizations.of(context)!.optional}',
+                      hintText: '0.00',
+                      prefixIcon: const Icon(Icons.attach_money),
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _paymentDayController,
+                    decoration: InputDecoration(
+                      labelText: '${AppLocalizations.of(context)!.billPaymentDay} (1-31)',
+                      hintText: AppLocalizations.of(context)!.hintExampleDay,
+                      prefixIcon: const Icon(Icons.calendar_today),
+                      border: const OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final day = int.tryParse(value);
+                        if (day == null || day < 1 || day > 31) {
+                          return AppLocalizations.of(context)!.enterDayRange;
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
                     controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'Açıklama (Opsiyonel)',
-                      hintText: 'Örn: Ev adresi için',
-                      prefixIcon: Icon(Icons.note),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: '${AppLocalizations.of(context)!.description} ${AppLocalizations.of(context)!.optional}',
+                      hintText: AppLocalizations.of(context)!.hintExampleDescription,
+                      prefixIcon: const Icon(Icons.note),
+                      border: const OutlineInputBorder(),
                     ),
                     maxLines: 2,
                   ),
@@ -549,7 +609,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                     onChanged: (value) {
                       setState(() => _isActive = value);
                     },
-                    activeTrackColor: const Color(0xFF00BFA5),
+                    activeTrackColor: Theme.of(context).primaryColor,
                   ),
                   const SizedBox(height: 32),
                   SizedBox(
@@ -558,7 +618,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                       onPressed: _save,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF00BFA5),
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                       ),
                       child: Text(
@@ -581,9 +641,9 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                           foregroundColor: Colors.red,
                           side: const BorderSide(color: Colors.red),
                         ),
-                        child: const Text(
-                          'Sil',
-                          style: TextStyle(
+                        child: Text(
+                          AppLocalizations.of(context)!.delete,
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -595,51 +655,5 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
               ),
             ),
     );
-  }
-
-  IconData _getCategoryIcon(BillTemplateCategory category) {
-    switch (category) {
-      case BillTemplateCategory.electricity:
-        return Icons.bolt;
-      case BillTemplateCategory.water:
-        return Icons.water_drop;
-      case BillTemplateCategory.gas:
-        return Icons.local_fire_department;
-      case BillTemplateCategory.internet:
-        return Icons.wifi;
-      case BillTemplateCategory.phone:
-        return Icons.phone;
-      case BillTemplateCategory.rent:
-        return Icons.home;
-      case BillTemplateCategory.insurance:
-        return Icons.shield;
-      case BillTemplateCategory.subscription:
-        return Icons.subscriptions;
-      case BillTemplateCategory.other:
-        return Icons.receipt;
-    }
-  }
-
-  String _getCategoryName(BillTemplateCategory category) {
-    switch (category) {
-      case BillTemplateCategory.electricity:
-        return 'Elektrik';
-      case BillTemplateCategory.water:
-        return 'Su';
-      case BillTemplateCategory.gas:
-        return 'Doğalgaz';
-      case BillTemplateCategory.internet:
-        return 'İnternet';
-      case BillTemplateCategory.phone:
-        return 'Telefon';
-      case BillTemplateCategory.rent:
-        return 'Kira';
-      case BillTemplateCategory.insurance:
-        return 'Sigorta';
-      case BillTemplateCategory.subscription:
-        return 'Abonelik';
-      case BillTemplateCategory.other:
-        return 'Diğer';
-    }
   }
 }

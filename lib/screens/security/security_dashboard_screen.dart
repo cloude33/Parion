@@ -1024,3 +1024,5 @@ class SecurityRecommendation {
 
 /// Güvenlik önerisi şiddeti
 enum SecurityRecommendationSeverity { low, medium, high, critical }
+
+

@@ -186,3 +186,4 @@ class _InactivityMonitorWidgetState extends State<InactivityMonitorWidget> {
     }
   }
 }
+

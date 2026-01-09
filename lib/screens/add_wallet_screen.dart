@@ -549,3 +549,5 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
     );
   }
 }
+
+

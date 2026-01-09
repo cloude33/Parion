@@ -667,3 +667,5 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
     }
   }
 }
+
+

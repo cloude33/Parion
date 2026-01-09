@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
+import '../l10n/app_localizations.dart';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import '../models/wallet.dart';
@@ -297,13 +298,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           child: FaIcon(
                             AppIcons.wallet,
                             size: 64,
-                            color: Color(0xFF5E5CE6),
+                            color: Theme.of(context).primaryColor,
                           ),
                         ),
                         const SizedBox(height: 24),
-                        const Text(
-                          'Cüzdan Bulunamadı',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.noData,
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1C1C1E),
@@ -311,7 +312,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'İşlem eklemek için önce bir cüzdan oluşturmalısınız',
+                          AppLocalizations.of(context)!.createWalletFirst,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 16,
@@ -322,7 +323,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ElevatedButton.icon(
                           onPressed: () => Navigator.pop(context),
                           icon: FaIcon(FontAwesomeIcons.arrowLeft, size: 16),
-                          label: const Text('Ana Sayfaya Dön'),
+                          label: Text(AppLocalizations.of(context)!.cancel),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 32,
@@ -342,7 +343,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -380,24 +381,24 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFEEEEEE), width: 1)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).appBarTheme.backgroundColor,
+        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black, size: 20),
+            icon: FaIcon(FontAwesomeIcons.arrowLeft, color: Theme.of(context).appBarTheme.foregroundColor, size: 20),
             onPressed: () => Navigator.pop(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             style: IconButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
           ),
           Text(
-            _isIncome ? 'Gelir' : 'Gider',
-            style: const TextStyle(
-              color: Colors.black,
+            _isIncome ? AppLocalizations.of(context)!.income : AppLocalizations.of(context)!.expense,
+            style: TextStyle(
+              color: Theme.of(context).appBarTheme.foregroundColor,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -409,10 +410,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text(
-              'KAYDET',
+            child: Text(
+              AppLocalizations.of(context)!.save.toUpperCase(),
               style: TextStyle(
-                color: Color(0xFF5E5CE6),
+                color: Theme.of(context).primaryColor,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -427,7 +428,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Tutar', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.amount, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         TextField(
           controller: _amountController,
@@ -436,23 +437,31 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             hintText: '0,00',
             border: OutlineInputBorder(borderRadius: BorderRadius.zero),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Color(0xFF5E5CE6))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Theme.of(context).primaryColor)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
           ),
           onChanged: (value) {
             if (value.isEmpty) return;
-            String cleanValue = value.replaceAll('.', '');
-            cleanValue = cleanValue.replaceAll(RegExp(r'[^0-9,]'), '');
-            int firstCommaIndex = cleanValue.indexOf(',');
-            if (firstCommaIndex != -1) {
-              String integerPart = cleanValue.substring(0, firstCommaIndex);
+            
+            final locale = Localizations.localeOf(context).toString() == 'tr' ? 'tr_TR' : 'en_US';
+            final separator = locale == 'tr_TR' ? ',' : '.';
+            final thousandsSeparator = locale == 'tr_TR' ? '.' : ',';
+
+            // Remove thousands separator and anything not numeric or the decimal separator
+            String cleanValue = value.replaceAll(thousandsSeparator, '');
+            cleanValue = cleanValue.replaceAll(RegExp('[^0-9$separator]'), '');
+            
+            int firstSeparatorIndex = cleanValue.indexOf(separator);
+            if (firstSeparatorIndex != -1) {
+              String integerPart = cleanValue.substring(0, firstSeparatorIndex);
               String decimalPart = cleanValue
-                  .substring(firstCommaIndex + 1)
-                  .replaceAll(',', '');
-              cleanValue = '$integerPart,$decimalPart';
+                  .substring(firstSeparatorIndex + 1)
+                  .replaceAll(separator, ''); // Only one separator allowed
+              cleanValue = '$integerPart$separator$decimalPart';
             }
-            final parts = cleanValue.split(',');
+            
+            final parts = cleanValue.split(separator);
             String formattedValue;
 
             if (parts.length > 1) {
@@ -466,15 +475,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   : (int.tryParse(integerPart) ?? 0);
               final formattedInteger = NumberFormat(
                 '#,##0',
-                'tr_TR',
+                locale,
               ).format(parsedInteger);
 
-              formattedValue = '$formattedInteger,$decimalPart';
+              formattedValue = '$formattedInteger$separator$decimalPart';
             } else {
               final numericValue = int.tryParse(cleanValue) ?? 0;
               formattedValue = NumberFormat(
                 '#,##0',
-                'tr_TR',
+                locale,
               ).format(numericValue);
             }
 
@@ -526,7 +535,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Kategori önerisi uygulandı: ${_suggestion!.category}'),
+          content: Text(AppLocalizations.of(context)!.categorySuggestionApplied(_suggestion!.category)),
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.green,
         ),
@@ -538,7 +547,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Açıklama', style: TextStyle(fontWeight: FontWeight.bold)),
+        Text(AppLocalizations.of(context)!.description, style: const TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         TextField(
           controller: _descriptionController,
@@ -547,14 +556,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             hintText: 'Örn: Market alışverişi',
             border: OutlineInputBorder(borderRadius: BorderRadius.zero),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Color(0xFF5E5CE6))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Theme.of(context).primaryColor)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
             suffixIcon: _suggestion != null
                 ? IconButton(
                     icon: FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber, size: 16),
                     onPressed: _applySuggestion,
-                    tooltip: 'Öneriyi uygula',
+                    tooltip: AppLocalizations.of(context)!.applySuggestion,
                   )
                 : null,
           ),
@@ -577,14 +586,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Önerilen: ${_suggestion!.category}',
+                        AppLocalizations.of(context)!.suggested(_suggestion!.category),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
                       Text(
-                        '${_suggestion!.reason} • %${(_suggestion!.confidence * 100).toInt()} güven',
+                        '${_suggestion!.reason} • ${AppLocalizations.of(context)!.confidence((_suggestion!.confidence * 100).toInt().toString())}',
                         style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                       ),
                     ],
@@ -633,9 +642,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey.shade300),
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.zero,
-            color: Colors.white,
+            color: Theme.of(context).inputDecorationTheme.fillColor,
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
@@ -708,9 +717,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.zero),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Color(0xFF5E5CE6))),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Theme.of(context).primaryColor)),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
           ),
           items: widget.wallets
               .map(
@@ -820,7 +829,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   icon: FaIcon(AppIcons.camera, size: 16),
                   label: const Text('Ekle'),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF5E5CE6),
+                    foregroundColor: Theme.of(context).primaryColor,
                   ),
                 ),
               ),
@@ -909,7 +918,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: Colors.grey.shade200),
+                            bottom: BorderSide(color: Theme.of(context).dividerColor),
                           ),
                         ),
                         child: Row(
@@ -931,10 +940,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             ),
                             TextButton(
                               onPressed: () => Navigator.pop(context),
-                              child: const Text(
+                              child: Text(
                                 'Tamam',
                                 style: TextStyle(
-                                  color: Color(0xFF5E5CE6),
+                                  color: Theme.of(context).primaryColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -1001,9 +1010,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              border: Border.all(color: Theme.of(context).dividerColor),
               borderRadius: BorderRadius.zero,
-              color: Colors.white,
+              color: Theme.of(context).inputDecorationTheme.fillColor,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1012,7 +1021,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   _formatDateTurkish(_selectedDate),
                   style: const TextStyle(fontSize: 16),
                 ),
-                FaIcon(AppIcons.calendar, color: Color(0xFF5E5CE6), size: 20),
+                FaIcon(AppIcons.calendar, color: Theme.of(context).primaryColor, size: 20),
               ],
             ),
           ),
@@ -1021,3 +1030,5 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 }
+
+

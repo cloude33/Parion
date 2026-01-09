@@ -212,3 +212,5 @@ class BiometricAuthCustomThemeExample extends StatelessWidget {
     );
   }
 }
+
+

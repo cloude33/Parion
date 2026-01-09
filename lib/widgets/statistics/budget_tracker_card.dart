@@ -544,3 +544,5 @@ class BudgetSummaryCard extends StatelessWidget {
     return '₺${NumberFormat('#,##0', 'tr_TR').format(value.abs())}';
   }
 }
+
+

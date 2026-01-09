@@ -5,6 +5,10 @@ import '../services/debt_service.dart';
 import 'add_debt_screen.dart';
 import 'debt_detail_screen.dart';
 import 'debt_statistics_screen.dart';
+import '../models/user.dart';
+import '../services/data_service.dart';
+import '../utils/currency_helper.dart';
+import '../l10n/app_localizations.dart';
 
 class DebtListScreen extends StatefulWidget {
   const DebtListScreen({super.key});
@@ -26,6 +30,8 @@ class _DebtListScreenState extends State<DebtListScreen>
   double _totalLent = 0;
   double _totalBorrowed = 0;
   double _netBalance = 0;
+  User? _currentUser;
+  final DataService _dataService = DataService();
 
   @override
   void initState() {
@@ -52,12 +58,14 @@ class _DebtListScreenState extends State<DebtListScreen>
 
     try {
       final debts = await _debtService.getDebts(forceRefresh: true);
+      final user = await _dataService.getCurrentUser();
       final lent = await _debtService.getTotalLent();
       final borrowed = await _debtService.getTotalBorrowed();
       final net = await _debtService.getNetBalance();
 
       setState(() {
         _allDebts = debts;
+        _currentUser = user;
         _totalLent = lent;
         _totalBorrowed = borrowed;
         _netBalance = net;
@@ -136,11 +144,43 @@ class _DebtListScreenState extends State<DebtListScreen>
     }
   }
 
+  String _getLocalizedCategory(DebtCategory category) {
+    switch (category) {
+      case DebtCategory.friend:
+        return AppLocalizations.of(context)!.debtCategoryFriend;
+      case DebtCategory.family:
+        return AppLocalizations.of(context)!.debtCategoryFamily;
+      case DebtCategory.business:
+        return AppLocalizations.of(context)!.debtCategoryBusiness;
+      case DebtCategory.other:
+        return AppLocalizations.of(context)!.debtCategoryOther;
+    }
+  }
+
+  String _getLocalizedDueDateStatus(Debt debt) {
+    if (debt.dueDate == null) return AppLocalizations.of(context)!.noDueDate;
+    if (debt.isPaid) return AppLocalizations.of(context)!.paid;
+
+    final now = DateTime.now();
+    final difference = debt.dueDate!.difference(now).inDays;
+
+    if (difference < 0) {
+      return AppLocalizations.of(context)!.daysOverdue(difference.abs().toString());
+    } else if (difference == 0) {
+      return AppLocalizations.of(context)!.dueToday;
+    } else if (difference <= 3) {
+      return AppLocalizations.of(context)!.daysLeft(difference.toString());
+    } else {
+      final dateStr = DateFormat('dd.MM.yyyy').format(debt.dueDate!);
+      return AppLocalizations.of(context)!.dueDateLabel(dateStr);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Borç/Alacak Takibi'),
+        title: Text(AppLocalizations.of(context)!.debtsTracking),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
@@ -152,7 +192,7 @@ class _DebtListScreenState extends State<DebtListScreen>
                 ),
               );
             },
-            tooltip: 'İstatistikler',
+            tooltip: AppLocalizations.of(context)!.stats,
           ),
         ],
         bottom: PreferredSize(
@@ -166,7 +206,7 @@ class _DebtListScreenState extends State<DebtListScreen>
                 ),
                 child: TextField(
                   decoration: InputDecoration(
-                    hintText: 'Kişi ara...',
+                    hintText: AppLocalizations.of(context)!.searchPerson,
                     prefixIcon: const Icon(Icons.search),
                     filled: true,
                     fillColor: Theme.of(context).brightness == Brightness.dark
@@ -182,10 +222,10 @@ class _DebtListScreenState extends State<DebtListScreen>
               ),
               TabBar(
                 controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Tümü'),
-                  Tab(text: 'Verdiklerim'),
-                  Tab(text: 'Aldıklarım'),
+                tabs: [
+                  Tab(text: AppLocalizations.of(context)!.all),
+                  Tab(text: AppLocalizations.of(context)!.lent),
+                  Tab(text: AppLocalizations.of(context)!.borrowed),
                 ],
               ),
             ],
@@ -215,7 +255,6 @@ class _DebtListScreenState extends State<DebtListScreen>
   }
 
   Widget _buildSummaryCard() {
-    final formatter = NumberFormat('#,##0.00', 'tr_TR');
 
     return Card(
       margin: const EdgeInsets.all(16),
@@ -223,29 +262,29 @@ class _DebtListScreenState extends State<DebtListScreen>
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Text(
-              'Özet',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Text(
+              AppLocalizations.of(context)!.summary,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildSummaryItem(
-                  'Alacak',
-                  '₺${formatter.format(_totalLent)}',
+                  AppLocalizations.of(context)!.asset,
+                  CurrencyHelper.formatAmountCompact(_totalLent, _currentUser),
                   Colors.green,
                   Icons.trending_up,
                 ),
                 _buildSummaryItem(
-                  'Borç',
-                  '₺${formatter.format(_totalBorrowed)}',
+                  AppLocalizations.of(context)!.borrowed, // Borrowed as label
+                  CurrencyHelper.formatAmountCompact(_totalBorrowed, _currentUser),
                   Colors.red,
                   Icons.trending_down,
                 ),
                 _buildSummaryItem(
-                  'Net',
-                  '₺${formatter.format(_netBalance)}',
+                  AppLocalizations.of(context)!.net,
+                  CurrencyHelper.formatAmountCompact(_netBalance, _currentUser),
                   _netBalance >= 0 ? Colors.green : Colors.red,
                   _netBalance >= 0 ? Icons.add_circle : Icons.remove_circle,
                 ),
@@ -293,12 +332,12 @@ class _DebtListScreenState extends State<DebtListScreen>
           ),
           const SizedBox(height: 16),
           Text(
-            'Henüz borç/alacak kaydı yok',
+            AppLocalizations.of(context)!.noDebts,
             style: TextStyle(fontSize: 18, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Yeni eklemek için + butonuna tıklayın',
+            AppLocalizations.of(context)!.clickToAddDebt,
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
         ],
@@ -318,7 +357,6 @@ class _DebtListScreenState extends State<DebtListScreen>
   }
 
   Widget _buildDebtCard(Debt debt) {
-    final formatter = NumberFormat('#,##0.00', 'tr_TR');
     final isLent = debt.type == DebtType.lent;
     final color = isLent ? Colors.green : Colors.red;
     final icon = isLent ? Icons.trending_up : Icons.trending_down;
@@ -353,7 +391,7 @@ class _DebtListScreenState extends State<DebtListScreen>
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          debt.categoryText,
+                          _getLocalizedCategory(debt.category),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey[600],
@@ -366,7 +404,7 @@ class _DebtListScreenState extends State<DebtListScreen>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '₺${formatter.format(debt.remainingAmount)}',
+                        CurrencyHelper.formatAmountCompact(debt.remainingAmount, _currentUser),
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -375,11 +413,11 @@ class _DebtListScreenState extends State<DebtListScreen>
                       ),
                       if (debt.originalAmount != debt.remainingAmount)
                         Text(
-                          '/ ₺${formatter.format(debt.originalAmount)}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
+                        '/ ${CurrencyHelper.formatAmountCompact(debt.originalAmount, _currentUser)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
                         ),
                     ],
                   ),
@@ -400,7 +438,7 @@ class _DebtListScreenState extends State<DebtListScreen>
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      debt.dueDateStatus,
+                      _getLocalizedDueDateStatus(debt),
                       style: TextStyle(
                         fontSize: 12,
                         color: debt.isOverdue
@@ -431,7 +469,7 @@ class _DebtListScreenState extends State<DebtListScreen>
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '%${debt.paymentPercentage.toStringAsFixed(0)} ödendi',
+                  AppLocalizations.of(context)!.paidPercentage(debt.paymentPercentage.toStringAsFixed(0)),
                   style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                 ),
               ],
@@ -442,3 +480,5 @@ class _DebtListScreenState extends State<DebtListScreen>
     );
   }
 }
+
+

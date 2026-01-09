@@ -5,6 +5,8 @@ import '../models/bill_template.dart';
 import '../services/bill_payment_service.dart';
 import '../services/bill_template_service.dart';
 import '../services/data_service.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/bill_helper.dart';
 
 class EditBillPaymentScreen extends StatefulWidget {
   final BillPayment payment;
@@ -102,17 +104,17 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Faturayı Sil'),
-        content: const Text('Bu fatura kaydını silmek istediğinizden emin misiniz?'),
+        title: Text(AppLocalizations.of(context)!.delete),
+        content: Text(AppLocalizations.of(context)!.confirmDeleteBillPayment),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Sil'),
+            child: Text(AppLocalizations.of(context)!.delete),
           ),
         ],
       ),
@@ -127,8 +129,8 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
         if (mounted) {
           Navigator.pop(context, true); // true = deleted
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Fatura başarıyla silindi'),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.billPaymentDeleted),
               backgroundColor: Colors.green,
             ),
           );
@@ -152,9 +154,7 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Faturayı Düzenle'),
-        backgroundColor: const Color(0xFF00BFA5),
-        foregroundColor: Colors.white,
+        title: Text(AppLocalizations.of(context)!.editBill),
         actions: [
           IconButton(
             onPressed: _deletePayment,
@@ -181,12 +181,12 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF00BFA5).withValues(alpha: 0.1),
+                                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
-                                  _getCategoryIcon(_template!.category),
-                                  color: const Color(0xFF00BFA5),
+                                  BillHelper.getCategoryIcon(_template!.category),
+                                  color: Theme.of(context).primaryColor,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -222,10 +222,10 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
                     // Amount
                     TextFormField(
                       controller: _amountController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tutar',
-                        prefixIcon: Icon(Icons.attach_money),
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: AppLocalizations.of(context)!.amount,
+                        prefixIcon: const Icon(Icons.attach_money),
+                        border: const OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -247,8 +247,8 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.calendar_today),
-                      title: const Text('Vade Tarihi'),
-                      subtitle: Text(DateFormat('dd MMM yyyy', 'tr_TR').format(_dueDate)),
+                      title: Text(AppLocalizations.of(context)!.dueTally),
+                      subtitle: Text(DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'tr' ? 'tr_TR' : 'en_US').format(_dueDate)),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () async {
                         final date = await showDatePicker(
@@ -268,8 +268,8 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.payment),
-                      title: const Text('Ödeme Tarihi'),
-                      subtitle: Text(DateFormat('dd MMM yyyy', 'tr_TR').format(_selectedDate)),
+                      title: Text(AppLocalizations.of(context)!.paymentDate),
+                      subtitle: Text(DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'tr' ? 'tr_TR' : 'en_US').format(_selectedDate)),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () async {
                         final date = await showDatePicker(
@@ -293,13 +293,13 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _updatePayment,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00BFA5),
+                          backgroundColor: Theme.of(context).primaryColor,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
                         child: _isLoading
                             ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Güncelle'),
+                            : Text(AppLocalizations.of(context)!.update),
                       ),
                     ),
                   ],
@@ -308,27 +308,5 @@ class _EditBillPaymentScreenState extends State<EditBillPaymentScreen> {
             ),
     );
   }
-
-  IconData _getCategoryIcon(BillTemplateCategory category) {
-    switch (category) {
-      case BillTemplateCategory.electricity:
-        return Icons.bolt;
-      case BillTemplateCategory.water:
-        return Icons.water_drop;
-      case BillTemplateCategory.gas:
-        return Icons.local_fire_department;
-      case BillTemplateCategory.internet:
-        return Icons.wifi;
-      case BillTemplateCategory.phone:
-        return Icons.phone;
-      case BillTemplateCategory.rent:
-        return Icons.home;
-      case BillTemplateCategory.insurance:
-        return Icons.security;
-      case BillTemplateCategory.subscription:
-        return Icons.subscriptions;
-      case BillTemplateCategory.other:
-        return Icons.receipt;
-    }
-  }
 }
+

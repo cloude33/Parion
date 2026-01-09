@@ -343,3 +343,5 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
     return '₺${value.toStringAsFixed(0)}';
   }
 }
+
+

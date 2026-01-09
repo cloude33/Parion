@@ -480,3 +480,5 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
     return '₺${NumberFormat('#,##0', 'tr_TR').format(value.abs())}';
   }
 }
+
+

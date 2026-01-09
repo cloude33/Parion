@@ -166,3 +166,5 @@ class _StatisticsSearchBarState extends State<StatisticsSearchBar> {
     );
   }
 }
+
+

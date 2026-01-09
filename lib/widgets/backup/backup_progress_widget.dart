@@ -591,3 +591,5 @@ class _BackupProgressWidgetState extends State<BackupProgressWidget>
 
 /// Enum for backup progress states
 enum BackupProgressState { idle, inProgress, completed, error, cancelled }
+
+

@@ -617,3 +617,5 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
     return '₺${NumberFormat('#,##0.00', 'tr_TR').format(value.abs())}';
   }
 }
+
+

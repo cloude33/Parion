@@ -6,6 +6,7 @@ import '../services/auth/interfaces/auth_orchestrator_interface.dart';
 import '../services/auth/interfaces/biometric_auth_interface.dart';
 import '../models/security/security_models.dart';
 import '../services/user_service.dart';
+import '../services/data_service.dart';
 import '../utils/auth_navigation.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -102,16 +103,42 @@ class _LoginScreenState extends State<LoginScreen>
   Future<void> _loadUserNameFromEmail(String email) async {
     try {
       if (email.isNotEmpty) {
+        // Try getting from DataService first (main app storage)
+        final dataService = DataService();
+        await dataService.init();
+        
+        final currentUser = await dataService.getCurrentUser();
+        if (currentUser != null && currentUser.email?.toLowerCase() == email.toLowerCase()) {
+          if (mounted) {
+            setState(() {
+              _userName = currentUser.name.toUpperCase();
+            });
+          }
+          return;
+        }
+
+        final allUsers = await dataService.getAllUsers();
+        final matchingUser = allUsers.where((u) => u.email?.toLowerCase() == email.toLowerCase()).firstOrNull;
+        if (matchingUser != null) {
+          if (mounted) {
+            setState(() {
+              _userName = matchingUser.name.toUpperCase();
+            });
+          }
+          return;
+        }
+
+        // Legacy/Fallback to UserService
         final userService = UserService();
         await userService.init();
         final profile = await userService.getUserProfile();
 
         if (mounted) {
           setState(() {
-            if (profile != null && profile.email == email) {
+            if (profile != null && profile.email.toLowerCase() == email.toLowerCase()) {
               _userName = profile.name.toUpperCase();
             } else {
-              // Fallback to email prefix if profile not found or email mismatch
+              // Fallback to email prefix
               if (email.contains('@')) {
                 _userName = email.split('@')[0].toUpperCase();
               } else {
@@ -1135,3 +1162,5 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 }
+
+

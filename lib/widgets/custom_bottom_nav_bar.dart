@@ -18,7 +18,7 @@ class CustomBottomNavBar extends StatelessWidget {
     return Container(
 
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).bottomNavigationBarTheme.backgroundColor ?? Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -32,24 +32,28 @@ class CustomBottomNavBar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(
+              context,
               icon: LucideIcons.home,
               label: AppLocalizations.of(context)!.home,
               index: 0,
               isActive: currentIndex == 0,
             ),
             _buildNavItem(
+              context,
               icon: LucideIcons.creditCard,
               label: AppLocalizations.of(context)!.cards,
               index: 1,
               isActive: currentIndex == 1,
             ),
             _buildNavItem(
+              context,
               icon: LucideIcons.pieChart,
               label: AppLocalizations.of(context)!.stats,
               index: 2,
               isActive: currentIndex == 2,
             ),
             _buildNavItem(
+              context,
               icon: LucideIcons.settings,
               label: AppLocalizations.of(context)!.settings,
               index: 3,
@@ -61,12 +65,17 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem({
+  Widget _buildNavItem(
+    BuildContext context, {
     required IconData icon,
     required String label,
     required int index,
     required bool isActive,
   }) {
+    final theme = Theme.of(context);
+    final activeColor = theme.bottomNavigationBarTheme.selectedItemColor ?? const Color(0xFFE91E63);
+    final inactiveColor = theme.bottomNavigationBarTheme.unselectedItemColor ?? const Color(0xFF8E8E93);
+
     return GestureDetector(
       onTap: () => onTap(index),
       behavior: HitTestBehavior.opaque,
@@ -79,9 +88,7 @@ class CustomBottomNavBar extends StatelessWidget {
             Icon(
               icon,
               size: 24,
-              color: isActive
-                  ? const Color(0xFFE91E63)
-                  : const Color(0xFF8E8E93),
+              color: isActive ? activeColor : inactiveColor,
             ),
             const SizedBox(height: 4),
             Text(
@@ -89,9 +96,7 @@ class CustomBottomNavBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                color: isActive
-                    ? const Color(0xFFE91E63)
-                    : const Color(0xFF8E8E93),
+                color: isActive ? activeColor : inactiveColor,
               ),
             ),
           ],
@@ -100,3 +105,5 @@ class CustomBottomNavBar extends StatelessWidget {
     );
   }
 }
+
+

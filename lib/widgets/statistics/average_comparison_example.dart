@@ -250,3 +250,5 @@ class _AverageComparisonExampleState extends State<AverageComparisonExample> {
     );
   }
 }
+
+

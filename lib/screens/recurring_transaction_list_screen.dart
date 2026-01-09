@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 import '../services/recurring_transaction_service.dart';
 import '../widgets/recurring_transaction_card.dart';
 import 'add_recurring_transaction_screen.dart';
@@ -36,12 +37,12 @@ class _RecurringTransactionListScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Tekrarlayan İşlemler'),
+        title: Text(AppLocalizations.of(context)!.recurringTransactions),
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Aktif'),
-            Tab(text: 'Pasif'),
+          tabs: [
+            Tab(text: AppLocalizations.of(context)!.active),
+            Tab(text: AppLocalizations.of(context)!.inactive),
           ],
         ),
         actions: [
@@ -85,15 +86,15 @@ class _RecurringTransactionListScreenState
     final transactions = widget.service.getActive();
 
     if (transactions.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.repeat, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            const Icon(Icons.repeat, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
             Text(
-              'Henüz tekrarlayan işlem yok',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              AppLocalizations.of(context)!.noRecurringTransactions,
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),
@@ -130,10 +131,10 @@ class _RecurringTransactionListScreenState
     final transactions = widget.service.getInactive();
 
     if (transactions.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'Pasif işlem yok',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          AppLocalizations.of(context)!.inactive,
+          style: const TextStyle(fontSize: 16, color: Colors.grey),
         ),
       );
     }

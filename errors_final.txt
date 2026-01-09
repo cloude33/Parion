@@ -1,7 +1,0 @@
-Analyzing Parion...                                             
-
-warning - Duplicate import - test\services\statistics_service_spending_analysis_property_test.dart:3:8 - duplicate_import
-  error - The named parameter 'currency' isn't defined - test\widgets\accessibility_test.dart:25:66 - undefined_named_parameter
-  error - The named parameter 'description' is required, but there's no corresponding argument - test\widgets\accessibility_test.dart:141:47 - missing_required_argument
-  error - The argument type 'Null' can't be assigned to the parameter type 'VoidCallback'.  - test\widgets\accessibility_test.dart:277:26 - argument_type_not_assignable
-

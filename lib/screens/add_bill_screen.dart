@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import '../l10n/app_localizations.dart';
 import '../models/bill_template.dart';
 import '../services/bill_template_service.dart';
 import '../services/bill_payment_service.dart';
@@ -130,8 +131,8 @@ class _AddBillScreenState extends State<AddBillScreen> {
 
     if (_selectedTemplate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen bir fatura seçin'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.pleaseSelectBill),
           backgroundColor: Colors.red,
         ),
       );
@@ -165,8 +166,8 @@ class _AddBillScreenState extends State<AddBillScreen> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Fatura ödeme bilgisi eklendi'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.billAdded),
             backgroundColor: Colors.green,
           ),
         );
@@ -185,9 +186,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fatura Ekle'),
-        backgroundColor: const Color(0xFF00BFA5),
-        foregroundColor: Colors.white,
+        title: Text(AppLocalizations.of(context)!.addBill),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -208,10 +207,12 @@ class _AddBillScreenState extends State<AddBillScreen> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'Ayarlarda tanımladığınız faturalar için bu ayın tutarını ve son ödeme tarihini girin.',
-                              style: const TextStyle(
+                              AppLocalizations.of(context)!.billFormInfo,
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF0D47A1),
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.blue.shade200
+                                    : const Color(0xFF0D47A1),
                               ),
                             ),
                           ),
@@ -223,10 +224,10 @@ class _AddBillScreenState extends State<AddBillScreen> {
                   DropdownButtonFormField<BillTemplate>(
                     initialValue: _selectedTemplate,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Fatura *',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.receipt_long),
+                    decoration: InputDecoration(
+                      labelText: '${AppLocalizations.of(context)!.bill} *',
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.receipt_long),
                     ),
                     items: _templates.map((template) {
                       return DropdownMenuItem<BillTemplate>(
@@ -278,7 +279,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                       });
                     },
                     validator: (value) {
-                      if (value == null) return 'Fatura seçimi gerekli';
+                      if (value == null) return AppLocalizations.of(context)!.pleaseSelectBill;
                       return null;
                     },
                   ),
@@ -289,11 +290,11 @@ class _AddBillScreenState extends State<AddBillScreen> {
                     key: ValueKey(_selectedPaymentMethodId),
                     initialValue: _selectedPaymentMethodId,
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Ödenecek Hesap/Kart',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.account_balance_wallet),
-                      helperText: 'Otomatik ödeme günü geldiğinde bu araçtan tahsil edilir',
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.paymentMethod,
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.account_balance_wallet),
+                      helperText: AppLocalizations.of(context)!.paymentMethodDesc,
                     ),
                     items: _paymentMethodOptions.map((option) {
                       return DropdownMenuItem<String>(
@@ -318,12 +319,12 @@ class _AddBillScreenState extends State<AddBillScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _amountController,
-                    decoration: const InputDecoration(
-                      labelText: 'Fatura Tutarı *',
+                    decoration: InputDecoration(
+                      labelText: '${AppLocalizations.of(context)!.amount} *',
                       hintText: '0.00',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
                       prefixText: '₺ ',
-                      prefixIcon: Icon(Icons.payments),
+                      prefixIcon: const Icon(Icons.payments),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
@@ -348,18 +349,16 @@ class _AddBillScreenState extends State<AddBillScreen> {
                   InkWell(
                     onTap: _selectDueDate,
                     child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Son Ödeme Tarihi *',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.calendar_today),
+                      decoration: InputDecoration(
+                        labelText: '${AppLocalizations.of(context)!.dueTally} *',
+                        border: const OutlineInputBorder(),
+                        prefixIcon: const Icon(Icons.calendar_today),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             DateFormat(
-                              'dd MMMM yyyy',
-                              'tr_TR',
                             ).format(_dueDate),
                             style: const TextStyle(fontSize: 16),
                           ),
@@ -389,8 +388,8 @@ class _AddBillScreenState extends State<AddBillScreen> {
                         Expanded(
                           child: Text(
                             _periodStart != null && _periodEnd != null
-                                ? 'Fatura Dönemi: ${DateFormat('dd MMM', 'tr_TR').format(_periodStart!)} - ${DateFormat('dd MMM yyyy', 'tr_TR').format(_periodEnd!)}'
-                                : 'Fatura Dönemi: -',
+                                ? '${AppLocalizations.of(context)!.billPeriod}: ${DateFormat('dd MMM').format(_periodStart!)} - ${DateFormat('dd MMM yyyy').format(_periodEnd!)}'
+                                : '${AppLocalizations.of(context)!.billPeriod}: -',
                             style: const TextStyle(fontSize: 13),
                           ),
                         ),
@@ -404,7 +403,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                       onPressed: _isSaving ? null : _savePayment,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: const Color(0xFF00BFA5),
+                        backgroundColor: Theme.of(context).primaryColor,
                         foregroundColor: Colors.white,
                       ),
                       child: _isSaving
@@ -418,9 +417,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
                                 ),
                               ),
                             )
-                          : const Text(
-                              'Fatura Ekle',
-                              style: TextStyle(
+                          : Text(
+                              AppLocalizations.of(context)!.addBill,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -445,18 +444,20 @@ class _AddBillScreenState extends State<AddBillScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Henüz fatura tanımlamadınız',
-            style: const TextStyle(
+            AppLocalizations.of(context)!.noBillsDefined,
+            style: TextStyle(
               fontSize: 18,
-              color: Color(0xFF757575),
+              color: Theme.of(context).textTheme.bodyLarge?.color,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Önce Ayarlar > Faturalarım bölümünden\nfatura tanımlamanız gerekiyor',
+            AppLocalizations.of(context)!.noBillsDefinedDesc,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 14, color: Color(0xFF9E9E9E)),
+            style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).textTheme.bodySmall?.color),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
@@ -472,9 +473,9 @@ class _AddBillScreenState extends State<AddBillScreen> {
               }
             },
             icon: const Icon(Icons.add),
-            label: const Text('Fatura Tanımla'),
+            label: Text(AppLocalizations.of(context)!.defineBill),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF00BFA5),
+              backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
@@ -485,10 +486,12 @@ class _AddBillScreenState extends State<AddBillScreen> {
               Navigator.pop(context);
             },
             icon: const Icon(Icons.arrow_back),
-            label: const Text('Geri Dön'),
+            label: Text(AppLocalizations.of(context)!.back),
           ),
         ],
       ),
     );
   }
 }
+
+

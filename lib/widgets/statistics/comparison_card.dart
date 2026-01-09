@@ -394,3 +394,5 @@ class _ComparisonCardState extends State<ComparisonCard> {
     return '₺${NumberFormat('#,##0.00', 'tr_TR').format(value.abs())}';
   }
 }
+
+

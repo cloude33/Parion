@@ -183,3 +183,4 @@ class AuthSuccessWidget extends StatelessWidget {
     );
   }
 }
+

@@ -38,6 +38,8 @@ class BillTemplateService {
     String? phoneNumber,
     String? description,
     String? walletId,
+    double? monthlyAmount,
+    int? paymentDay,
   }) async {
     final now = DateTime.now();
     final template = BillTemplate(
@@ -49,6 +51,8 @@ class BillTemplateService {
       phoneNumber: phoneNumber?.trim(),
       description: description?.trim(),
       walletId: walletId,
+      monthlyAmount: monthlyAmount,
+      paymentDay: paymentDay,
       isActive: true,
       createdDate: now,
       updatedDate: now,

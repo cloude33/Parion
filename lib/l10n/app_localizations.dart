@@ -230,6 +230,18 @@ abstract class AppLocalizations {
   /// **'Cüzdan Ekle'**
   String get addWallet;
 
+  /// No description provided for @addCategory.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori Ekle'**
+  String get addCategory;
+
+  /// No description provided for @addDebt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borç/Alacak Ekle'**
+  String get addDebt;
+
   /// No description provided for @netLoss.
   ///
   /// In tr, this message translates to:
@@ -499,6 +511,900 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tüm verileri sil ve baştan başla'**
   String get resetAppDesc;
+
+  /// No description provided for @save.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get save;
+
+  /// No description provided for @edit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Düzenle'**
+  String get edit;
+
+  /// No description provided for @delete.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sil'**
+  String get delete;
+
+  /// No description provided for @amount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutar'**
+  String get amount;
+
+  /// No description provided for @description.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açıklama'**
+  String get description;
+
+  /// No description provided for @category.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori'**
+  String get category;
+
+  /// No description provided for @wallet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Cüzdan'**
+  String get wallet;
+
+  /// No description provided for @date.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tarih'**
+  String get date;
+
+  /// No description provided for @memo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Not'**
+  String get memo;
+
+  /// No description provided for @allTransactions.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm İşlemler'**
+  String get allTransactions;
+
+  /// No description provided for @list.
+  ///
+  /// In tr, this message translates to:
+  /// **'Liste'**
+  String get list;
+
+  /// No description provided for @calendar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Takvim'**
+  String get calendar;
+
+  /// No description provided for @add.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ekle'**
+  String get add;
+
+  /// No description provided for @update.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güncelle'**
+  String get update;
+
+  /// No description provided for @confirmDelete.
+  ///
+  /// In tr, this message translates to:
+  /// **'Silmek istediğinize emin misiniz?'**
+  String get confirmDelete;
+
+  /// No description provided for @yes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evet'**
+  String get yes;
+
+  /// No description provided for @no.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hayır'**
+  String get no;
+
+  /// No description provided for @search.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ara'**
+  String get search;
+
+  /// No description provided for @filter.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtrele'**
+  String get filter;
+
+  /// No description provided for @clear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Temizle'**
+  String get clear;
+
+  /// No description provided for @apply.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygula'**
+  String get apply;
+
+  /// No description provided for @ok.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tamam'**
+  String get ok;
+
+  /// No description provided for @loading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yükleniyor...'**
+  String get loading;
+
+  /// No description provided for @noData.
+  ///
+  /// In tr, this message translates to:
+  /// **'Veri bulunamadı'**
+  String get noData;
+
+  /// No description provided for @errorOccurred.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir hata oluştu'**
+  String get errorOccurred;
+
+  /// No description provided for @successMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem başarılı'**
+  String get successMessage;
+
+  /// No description provided for @selectBill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Seçin'**
+  String get selectBill;
+
+  /// No description provided for @pleaseSelectBill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lütfen bir fatura seçin'**
+  String get pleaseSelectBill;
+
+  /// No description provided for @billPeriod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Dönemi'**
+  String get billPeriod;
+
+  /// No description provided for @billAdded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura ödeme bilgisi eklendi'**
+  String get billAdded;
+
+  /// No description provided for @billFormInfo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayarlarda tanımladığınız faturalar için bu ayın tutarını ve son ödeme tarihini girin.'**
+  String get billFormInfo;
+
+  /// No description provided for @dueTally.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son Ödeme Tarihi'**
+  String get dueTally;
+
+  /// No description provided for @paymentMethod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödeme Aracı'**
+  String get paymentMethod;
+
+  /// No description provided for @paymentMethodDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik ödeme günü geldiğinde bu araçtan tahsil edilir'**
+  String get paymentMethodDesc;
+
+  /// No description provided for @noBillsDefined.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz fatura tanımlamadınız'**
+  String get noBillsDefined;
+
+  /// No description provided for @noBillsDefinedDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce Ayarlar > Faturalarım bölümünden fatura tanımlamanız gerekiyor'**
+  String get noBillsDefinedDesc;
+
+  /// No description provided for @defineBill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Tanımla'**
+  String get defineBill;
+
+  /// No description provided for @back.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri Dön'**
+  String get back;
+
+  /// No description provided for @noTransactions.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem yok'**
+  String get noTransactions;
+
+  /// No description provided for @installment.
+  ///
+  /// In tr, this message translates to:
+  /// **'Taksit'**
+  String get installment;
+
+  /// No description provided for @netBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net Kazanç'**
+  String get netBalance;
+
+  /// No description provided for @backupAndExport.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yedekle ve Dışa Aktar'**
+  String get backupAndExport;
+
+  /// No description provided for @backupAndExportDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yerel yedekleme, geri yükleme ve veri aktarımı'**
+  String get backupAndExportDesc;
+
+  /// No description provided for @minutes.
+  ///
+  /// In tr, this message translates to:
+  /// **'dk'**
+  String get minutes;
+
+  /// No description provided for @version.
+  ///
+  /// In tr, this message translates to:
+  /// **'Versiyon'**
+  String get version;
+
+  /// No description provided for @changeProfilePicture.
+  ///
+  /// In tr, this message translates to:
+  /// **'Profil Resmini Değiştir'**
+  String get changeProfilePicture;
+
+  /// No description provided for @profilePictureChanged.
+  ///
+  /// In tr, this message translates to:
+  /// **'Profil resmi başarıyla güncellendi'**
+  String get profilePictureChanged;
+
+  /// No description provided for @selectAuthMethod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kimlik doğrulama yöntemi seçin'**
+  String get selectAuthMethod;
+
+  /// No description provided for @english.
+  ///
+  /// In tr, this message translates to:
+  /// **'İngilizce'**
+  String get english;
+
+  /// No description provided for @autoLockDuration.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik Kilit Süresi'**
+  String get autoLockDuration;
+
+  /// No description provided for @resetWarningTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'⚠️ Uyarı'**
+  String get resetWarningTitle;
+
+  /// No description provided for @resetWarningDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamayı sıfırlamak üzeresiniz. Bu işlem:\n\n• Tüm kullanıcıları\n• Tüm cüzdanları\n• Tüm işlemleri\n• Tüm kredi kartlarını\n• Tüm borçları\n• Tüm ayarları\n\nkalıcı olarak silecektir. Bu işlem geri alınamaz!\n\nDevam etmek istediğinizden emin misiniz?'**
+  String get resetWarningDesc;
+
+  /// No description provided for @resetFinalWarningTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'🚨 Son Uyarı'**
+  String get resetFinalWarningTitle;
+
+  /// No description provided for @resetFinalWarningDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu işlem GERİ ALINAMAZ!\n\nTüm verileriniz kalıcı olarak silinecek.\n\nYedek almadıysanız, verilerinizi geri getiremezsiniz.\n\nUygulamayı sıfırlamak istediğinizden kesinlikle emin misiniz?'**
+  String get resetFinalWarningDesc;
+
+  /// No description provided for @resetSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama başarıyla sıfırlandı'**
+  String get resetSuccess;
+
+  /// No description provided for @yesReset.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evet, Sıfırla'**
+  String get yesReset;
+
+  /// No description provided for @continueText.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam Et'**
+  String get continueText;
+
+  /// No description provided for @profileUpdated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Profil güncellendi'**
+  String get profileUpdated;
+
+  /// No description provided for @emailUpdated.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta güncellendi'**
+  String get emailUpdated;
+
+  /// No description provided for @failedToPickImage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Resim seçilemedi'**
+  String get failedToPickImage;
+
+  /// No description provided for @active.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aktif'**
+  String get active;
+
+  /// No description provided for @inactive.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pasif'**
+  String get inactive;
+
+  /// No description provided for @noRecurringTransactions.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz tekrarlayan işlem yok'**
+  String get noRecurringTransactions;
+
+  /// No description provided for @categoryInUse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori Kullanımda'**
+  String get categoryInUse;
+
+  /// No description provided for @categoryInUseDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} işlemde kullanılıyor. İşlemler silinmeyecek ancak kategori bilgisi kaybolacak.'**
+  String categoryInUseDesc(Object count);
+
+  /// No description provided for @deleteAnyway.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yine de Sil'**
+  String get deleteAnyway;
+
+  /// No description provided for @searchCategory.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori ara...'**
+  String get searchCategory;
+
+  /// No description provided for @noCategories.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori bulunamadı'**
+  String get noCategories;
+
+  /// No description provided for @usage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanım'**
+  String get usage;
+
+  /// No description provided for @total.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam'**
+  String get total;
+
+  /// No description provided for @average.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortalama'**
+  String get average;
+
+  /// No description provided for @transactionCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} işlem'**
+  String transactionCount(Object count);
+
+  /// No description provided for @debtsTracking.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borç/Alacak Takibi'**
+  String get debtsTracking;
+
+  /// No description provided for @searchPerson.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişi ara...'**
+  String get searchPerson;
+
+  /// No description provided for @all.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümü'**
+  String get all;
+
+  /// No description provided for @lent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verdiklerim'**
+  String get lent;
+
+  /// No description provided for @borrowed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aldıklarım'**
+  String get borrowed;
+
+  /// No description provided for @summary.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özet'**
+  String get summary;
+
+  /// No description provided for @asset.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alacak'**
+  String get asset;
+
+  /// No description provided for @net.
+  ///
+  /// In tr, this message translates to:
+  /// **'Net'**
+  String get net;
+
+  /// No description provided for @noDebts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz borç/alacak kaydı yok'**
+  String get noDebts;
+
+  /// No description provided for @clickToAddDebt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni eklemek için + butonuna tıklayın'**
+  String get clickToAddDebt;
+
+  /// No description provided for @paidPercentage.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{percentage} ödendi'**
+  String paidPercentage(Object percentage);
+
+  /// No description provided for @filteredTotal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Filtrelenmiş Toplam'**
+  String get filteredTotal;
+
+  /// No description provided for @turkish.
+  ///
+  /// In tr, this message translates to:
+  /// **'Türkçe'**
+  String get turkish;
+
+  /// No description provided for @bill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura'**
+  String get bill;
+
+  /// No description provided for @createWalletFirst.
+  ///
+  /// In tr, this message translates to:
+  /// **'İşlem eklemek için önce bir cüzdan oluşturmalısınız'**
+  String get createWalletFirst;
+
+  /// No description provided for @categorySuggestionApplied.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori önerisi uygulandı: {category}'**
+  String categorySuggestionApplied(Object category);
+
+  /// No description provided for @descriptionHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn: Market alışverişi'**
+  String get descriptionHint;
+
+  /// No description provided for @applySuggestion.
+  ///
+  /// In tr, this message translates to:
+  /// **'Öneriyi uygula'**
+  String get applySuggestion;
+
+  /// No description provided for @suggested.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önerilen: {category}'**
+  String suggested(Object category);
+
+  /// No description provided for @confidence.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{percentage} güven'**
+  String confidence(Object percentage);
+
+  /// No description provided for @debtCategoryFriend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Arkadaş'**
+  String get debtCategoryFriend;
+
+  /// No description provided for @debtCategoryFamily.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aile'**
+  String get debtCategoryFamily;
+
+  /// No description provided for @debtCategoryBusiness.
+  ///
+  /// In tr, this message translates to:
+  /// **'İş'**
+  String get debtCategoryBusiness;
+
+  /// No description provided for @debtCategoryOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get debtCategoryOther;
+
+  /// No description provided for @noDueDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade yok'**
+  String get noDueDate;
+
+  /// No description provided for @paid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödendi'**
+  String get paid;
+
+  /// No description provided for @daysOverdue.
+  ///
+  /// In tr, this message translates to:
+  /// **'{days} gün gecikmiş'**
+  String daysOverdue(Object days);
+
+  /// No description provided for @dueToday.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün vade'**
+  String get dueToday;
+
+  /// No description provided for @daysLeft.
+  ///
+  /// In tr, this message translates to:
+  /// **'{days} gün kaldı'**
+  String daysLeft(Object days);
+
+  /// No description provided for @dueDateLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vade: {date}'**
+  String dueDateLabel(Object date);
+
+  /// No description provided for @editBillTemplate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Şablonunu Düzenle'**
+  String get editBillTemplate;
+
+  /// No description provided for @addBillTemplate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Şablonu Ekle'**
+  String get addBillTemplate;
+
+  /// No description provided for @billCategory.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kategori'**
+  String get billCategory;
+
+  /// No description provided for @city.
+  ///
+  /// In tr, this message translates to:
+  /// **'İl'**
+  String get city;
+
+  /// No description provided for @billAccountNumber.
+  ///
+  /// In tr, this message translates to:
+  /// **'Abone/Müşteri Numarası'**
+  String get billAccountNumber;
+
+  /// No description provided for @billPhoneNumber.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefon Numarası'**
+  String get billPhoneNumber;
+
+  /// No description provided for @billAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık Tutar'**
+  String get billAmount;
+
+  /// No description provided for @billPaymentDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödeme Günü'**
+  String get billPaymentDay;
+
+  /// No description provided for @autoPaymentWallet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik Ödeme Cüzdanı'**
+  String get autoPaymentWallet;
+
+  /// No description provided for @billTemplateDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura şablonu silindi'**
+  String get billTemplateDeleted;
+
+  /// No description provided for @confirmDeleteBillTemplate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu fatura şablonunu silmek istediğinize emin misiniz?'**
+  String get confirmDeleteBillTemplate;
+
+  /// No description provided for @billElectricity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Elektrik'**
+  String get billElectricity;
+
+  /// No description provided for @billWater.
+  ///
+  /// In tr, this message translates to:
+  /// **'Su'**
+  String get billWater;
+
+  /// No description provided for @billGas.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğalgaz'**
+  String get billGas;
+
+  /// No description provided for @billInternet.
+  ///
+  /// In tr, this message translates to:
+  /// **'İnternet'**
+  String get billInternet;
+
+  /// No description provided for @billPhone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefon'**
+  String get billPhone;
+
+  /// No description provided for @billRent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kira'**
+  String get billRent;
+
+  /// No description provided for @billInsurance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sigorta'**
+  String get billInsurance;
+
+  /// No description provided for @billSubscription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Abonelik'**
+  String get billSubscription;
+
+  /// No description provided for @billOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get billOther;
+
+  /// No description provided for @selectCity.
+  ///
+  /// In tr, this message translates to:
+  /// **'İl Seçin'**
+  String get selectCity;
+
+  /// No description provided for @selectProvider.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurum Seçin'**
+  String get selectProvider;
+
+  /// No description provided for @billProvider.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurum'**
+  String get billProvider;
+
+  /// No description provided for @billName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Adı'**
+  String get billName;
+
+  /// No description provided for @billProviderName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kurum Adı'**
+  String get billProviderName;
+
+  /// No description provided for @selectPaymentMethod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lütfen ödeme aracı seçin'**
+  String get selectPaymentMethod;
+
+  /// No description provided for @roomShopNo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Daire / Dükkan No (Opsiyonel)'**
+  String get roomShopNo;
+
+  /// No description provided for @accountNumberLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Abone/Müşteri Numarası (Opsiyonel)'**
+  String get accountNumberLabel;
+
+  /// No description provided for @enterDayRange.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lütfen 1-31 arasında bir gün girin'**
+  String get enterDayRange;
+
+  /// No description provided for @optional.
+  ///
+  /// In tr, this message translates to:
+  /// **'(Opsiyonel)'**
+  String get optional;
+
+  /// No description provided for @hintExampleNumber.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn: 123456789'**
+  String get hintExampleNumber;
+
+  /// No description provided for @hintExampleDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn: 15'**
+  String get hintExampleDay;
+
+  /// No description provided for @hintExampleDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn: Ev adresi için'**
+  String get hintExampleDescription;
+
+  /// No description provided for @phoneHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'5XX XXX XX XX'**
+  String get phoneHint;
+
+  /// No description provided for @paymentDayDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her ayın {day}. günü'**
+  String paymentDayDescription(Object day);
+
+  /// No description provided for @noPaymentRecords.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz ödeme kaydı yok'**
+  String get noPaymentRecords;
+
+  /// No description provided for @paymentRecordsHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu fatura için ödeme yaptığınızda burada görünecektir'**
+  String get paymentRecordsHint;
+
+  /// No description provided for @billDetail.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Detayı'**
+  String get billDetail;
+
+  /// No description provided for @statusPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödendi'**
+  String get statusPaid;
+
+  /// No description provided for @statusPending.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekliyor'**
+  String get statusPending;
+
+  /// No description provided for @statusOverdue.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gecikmiş'**
+  String get statusOverdue;
+
+  /// No description provided for @editBill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura Düzenle'**
+  String get editBill;
+
+  /// No description provided for @autoPayment.
+  ///
+  /// In tr, this message translates to:
+  /// **'Otomatik Ödeme'**
+  String get autoPayment;
+
+  /// No description provided for @billPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura ödendi olarak işaretlendi'**
+  String get billPaid;
+
+  /// No description provided for @billPaymentDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fatura ödemesi silindi'**
+  String get billPaymentDeleted;
+
+  /// No description provided for @confirmDeleteBillPayment.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu fatura ödemesini silmek istediğinize emin misiniz?'**
+  String get confirmDeleteBillPayment;
+
+  /// No description provided for @paymentDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödeme Tarihi'**
+  String get paymentDate;
 }
 
 class _AppLocalizationsDelegate

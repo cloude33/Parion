@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../l10n/app_localizations.dart';
 import '../models/transaction.dart';
 import '../models/user.dart';
 import '../models/category.dart';
@@ -212,7 +213,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   children: [
                     _buildCalendarHeader(),
                     _buildCalendarGrid(),
-                    Container(height: 1, color: const Color(0xFFE5E5EA)),
+                    Container(height: 1, color: Theme.of(context).dividerColor),
                     SizedBox(
                       height: screenHeight * 0.4,
                       child: _buildDayTransactions(),
@@ -252,9 +253,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(color: Color(0xFFE5E5EA)),
+                bottom: BorderSide(color: Theme.of(context).dividerColor),
               ),
             ),
             child: Column(
@@ -297,9 +298,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Gelir',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.income,
+                            style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF8E8E93),
                             ),
@@ -322,9 +323,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Gider',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(context)!.expense,
+                            style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF8E8E93),
                             ),
@@ -442,7 +443,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
                 if (transaction.installments != null)
                   Text(
-                    '${transaction.currentInstallment}/${transaction.installments} Taksit',
+                    '${transaction.currentInstallment}/${transaction.installments} ${AppLocalizations.of(context)!.installment}',
                     style: const TextStyle(
                       fontSize: 11,
                       color: Color(0xFF8E8E93),
@@ -550,7 +551,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                           ),
                         ),
                         Text(
-                          '${transaction.installmentsPaid}/${transaction.installmentCount} Taksit',
+                          '${transaction.installmentsPaid}/${transaction.installmentCount} ${AppLocalizations.of(context)!.installment}',
                           style: const TextStyle(
                             fontSize: 11,
                             color: Color(0xFF8E8E93),
@@ -588,9 +589,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        color: Theme.of(context).appBarTheme.backgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor,
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -610,21 +615,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2C2C2E)
+                      : const Color(0xFFF2F2F7),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_back_ios,
-                  color: Color(0xFF1C1C1E),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : const Color(0xFF1C1C1E),
                   size: 16,
                 ),
               ),
             ),
           ),
           Text(
-            DateFormat('MMMM yyyy', 'tr_TR').format(_selectedMonth),
-            style: const TextStyle(
-              color: Color(0xFF1C1C1E),
+            DateFormat('MMMM yyyy').format(_selectedMonth),
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : const Color(0xFF1C1C1E),
               fontSize: 20,
               fontWeight: FontWeight.w500,
             ),
@@ -643,12 +654,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF2F2F7),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? const Color(0xFF2C2C2E)
+                      : const Color(0xFFF2F2F7),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_forward_ios,
-                  color: Color(0xFF1C1C1E),
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : const Color(0xFF1C1C1E),
                   size: 16,
                 ),
               ),
@@ -682,11 +697,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const Color(0xFFFF3B30),
                 ),
               ),
-              Flexible(
+               Flexible(
                 child: _buildSummaryItem(
                   'Toplam',
                   _monthTotal,
-                  const Color(0xFF1C1C1E),
+                  Theme.of(context).textTheme.bodyLarge?.color ??
+                      const Color(0xFF1C1C1E),
                 ),
               ),
             ],
@@ -741,7 +757,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   fontWeight: FontWeight.bold,
                   color: isWeekend
                       ? Colors.red
-                      : const Color(0xFF1C1C1E),
+                      : Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
             ),
@@ -804,7 +820,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         margin: const EdgeInsets.all(2),
         padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(8),
           border: isSelected
               ? Border.all(color: const Color(0xFF007AFF), width: 2)
@@ -825,14 +841,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 fontWeight: FontWeight.normal,
                 color: isWeekend
                     ? Colors.red
-                    : const Color(0xFF1C1C1E),
+                    : Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             if (hasTransactions) ...[
               const SizedBox(height: 2),
               if (income > 0)
                 Text(
-                  '+${NumberFormat('#,##0.00', 'tr_TR').format(income)}',
+                  '+${CurrencyHelper.formatAmount(income, _currentUser)}',
                   style: const TextStyle(
                     fontSize: 10,
                     color: Color(0xFF34C759),
@@ -843,7 +859,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               if (expense > 0)
                 Text(
-                  '-${NumberFormat('#,##0.00', 'tr_TR').format(expense)}',
+                  '-${CurrencyHelper.formatAmount(expense, _currentUser)}',
                   style: const TextStyle(
                     fontSize: 10,
                     color: Color(0xFFFF3B30),
@@ -1025,3 +1041,5 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 }
+
+

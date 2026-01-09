@@ -37,6 +37,10 @@ import 'kmh_list_screen.dart';
 import '../services/kmh_alert_service.dart';
 import '../models/kmh_alert.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../services/bill_template_service.dart';
+import '../models/bill_template.dart';
+import 'bill_templates_screen.dart';
+import 'add_bill_template_screen.dart';
 
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/inactivity_monitor_widget.dart';
@@ -55,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final NotificationService _notificationService = NotificationService();
   final CreditCardService _creditCardService = CreditCardService();
   final KmhAlertService _kmhAlertService = KmhAlertService();
+  final BillTemplateService _billService = BillTemplateService();
 
   User? _currentUser;
   List<Wallet> wallets = [];
@@ -72,6 +77,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final List<String> _selectedCardIds = [];
   bool _isFilterActive = false;
   double _totalCreditCardDebt = 0.0;
+  List<BillTemplate> _recurringTemplates = [];
+  double _totalRecurringAmount = 0.0;
 
   late PageController _pageController;
   int _currentPage = 0;
@@ -118,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       if (user == null) {
         user = User(
           id: DateTime.now().millisecondsSinceEpoch.toString(),
-          name: 'Kullanıcı',
+          name: AppLocalizations.of(context)?.userDefault ?? 'Kullanıcı',
           email: null,
           avatar: null,
           currencyCode: 'TRY',
@@ -184,6 +191,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       } catch (e) {
         debugPrint('WARN _loadData: cards $e');
       }
+
+      List<BillTemplate> recurringTemplates = [];
+      double totalRecurringAmount = 0.0;
+      try {
+        final templates = await _billService.getTemplates();
+        recurringTemplates = templates.where((t) => t.monthlyAmount != null && t.isActive).toList();
+        totalRecurringAmount = recurringTemplates.fold(0.0, (sum, t) => sum + (t.monthlyAmount ?? 0.0));
+      } catch (e) {
+        debugPrint('WARN _loadData: recurring templates $e');
+      }
       debugPrint('Found ${cards.length} credit cards');
 
       final Map<String, CreditCard> cardMap = {};
@@ -228,6 +245,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _creditCards = cardMap;
           _kmhAlerts = kmhAlerts;
           _totalCreditCardDebt = totalCCDebt;
+          _recurringTemplates = recurringTemplates;
+          _totalRecurringAmount = totalRecurringAmount;
           _loading = false;
         });
       }
@@ -259,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           }
         },
         child: Scaffold(
-          backgroundColor: const Color(0xFFFCF8F8),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _selectedIndex == 0
               ? AppBar(
                   automaticallyImplyLeading: false,
@@ -351,8 +370,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildToggleOption('Liste', 0),
-          _buildToggleOption('Takvim', 1),
+          _buildToggleOption(AppLocalizations.of(context)!.list, 0),
+          _buildToggleOption(AppLocalizations.of(context)!.calendar, 1),
         ],
       ),
     );
@@ -368,7 +387,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         alignment: Alignment.center,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00BFA5) : Colors.transparent,
+          color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Text(
@@ -510,8 +529,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Filtrelenmiş Toplam:',
+                  Text(
+                    '${AppLocalizations.of(context)!.filteredTotal}:',
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   Text(
@@ -551,21 +570,21 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     children: [
                       Text(
                         _getDateHeader(entry.key),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                      if (dailyExpenseTotal > 0)
-                        Text(
-                          CurrencyHelper.formatAmount(dailyExpenseTotal, _currentUser),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1C1C1E),
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
+                        if (dailyExpenseTotal > 0)
+                          Text(
+                            CurrencyHelper.formatAmount(dailyExpenseTotal, _currentUser),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ),
+                          ),
                     ],
                   ),
                 ),
@@ -706,10 +725,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     children: [
                       Text(
                         transaction.description,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1C1C1E),
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -728,13 +747,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           if (transaction.installments != null) ...[
                             const Text(
                               ' • ',
-                              style: TextStyle(color: Color(0xFF212121)),
+                              style: TextStyle(color: Color(0xFF8E8E93)),
                             ),
                             Text(
                               '${transaction.currentInstallment}/${transaction.installments} Taksit',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF212121),
+                                color: Theme.of(context).textTheme.bodySmall?.color,
                               ),
                             ),
                           ],
@@ -902,9 +921,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             Flexible(
                               child: Text(
                                 '${card.bankName} •••• ${card.last4Digits}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF212121), // Siyaha yakın çok koyu gri
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -912,15 +931,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             if (isInstallment) ...[
                               const Text(
                                 ' • ',
-                                style: TextStyle(
-                                  color: Color(0xFF212121),
-                                ),
+                                style: TextStyle(color: Color(0xFF8E8E93)),
                               ),
                               Text(
                                 '${transaction.installmentsPaid}/${transaction.installmentCount} Taksit',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF212121),
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
                                 ),
                               ),
                             ],
@@ -928,9 +945,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             Flexible(
                               child: Text(
                                 transaction.category,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF212121),
+                                  color: Theme.of(context).textTheme.bodySmall?.color,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -1049,21 +1066,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       (sum, loan) => sum + loan.remainingAmount,
     );
     final totalDebts = creditCardDebts + kmhDebts + loanDebts;
-    final monthNames = [
-      'Ocak',
-      'Şubat',
-      'Mart',
-      'Nisan',
-      'Mayıs',
-      'Haziran',
-      'Temmuz',
-      'Ağustos',
-      'Eylül',
-      'Ekim',
-      'Kasım',
-      'Aralık',
-    ];
-    final monthName = monthNames[now.month - 1];
+    final monthName = DateFormat.MMMM().format(now);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1088,6 +1091,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   kmhDebts: kmhDebts,
                   loanDebts: loanDebts,
                 ),
+                _buildRecurringPaymentsCard(),
               ],
             ),
           ),
@@ -1095,7 +1099,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
-              2,
+              3,
               (index) => Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 width: _currentPage == index ? 24 : 8,
@@ -1161,7 +1165,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          '$monthName $year ${netBalance >= 0 ? 'Net Kazanç' : 'Net Kayıp'}',
+                          '$monthName $year ${netBalance >= 0 ? AppLocalizations.of(context)!.netGain : AppLocalizations.of(context)!.netLoss}',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.white.withValues(alpha: 0.9),
@@ -1193,14 +1197,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 _buildDetailedStat(
-                  'Gelir',
+                  AppLocalizations.of(context)!.income,
                   monthlyIncome,
                   AppIcons.income,
                   const Color(0xFF29CC2F),
                 ),
                 Container(width: 1, height: 40, color: const Color(0xFFE5E5EA)),
                 _buildDetailedStat(
-                  'Gider',
+                  AppLocalizations.of(context)!.expense,
                   monthlyExpense,
                   AppIcons.expense,
                   const Color(0xFFEB372A),
@@ -1318,6 +1322,117 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRecurringPaymentsCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+                color: Color(0xFF673AB7), // Deep Purple
+              ),
+              child: Row(
+                children: [
+                  const FaIcon(FontAwesomeIcons.repeat, color: Colors.white, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Düzenli Ödemeler',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          CurrencyHelper.formatAmount(_totalRecurringAmount, _currentUser),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const BillTemplatesScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildRecurringStat('Aktif', _recurringTemplates.length.toDouble(), Icons.check_circle_outline),
+                Container(width: 1, height: 40, color: const Color(0xFFE5E5EA)),
+                _buildRecurringStat('Kira/Ab.', _recurringTemplates.where((t) => t.category == BillTemplateCategory.rent || t.category == BillTemplateCategory.subscription).length.toDouble(), Icons.category_outlined),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecurringStat(String label, double value, IconData icon) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 14, color: Colors.grey[600]),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value.toInt().toString(),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1C1C1E),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1801,6 +1916,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           const SizedBox(height: 12),
           _buildFabMenuItem(
+            label: 'Abonelik Ekle',
+            icon: FontAwesomeIcons.repeat,
+            color: const Color(0xFF673AB7),
+            onTap: () async {
+              setState(() => _showFabMenu = false);
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddBillTemplateScreen(),
+                ),
+              );
+              if (result == true) _loadData();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildFabMenuItem(
             label: AppLocalizations.of(context)!.addWallet,
             icon: AppIcons.wallet,
             color: const Color(0xFF2196F3),
@@ -1889,4 +2020,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 }
+
+
 

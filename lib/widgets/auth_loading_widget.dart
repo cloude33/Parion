@@ -118,3 +118,4 @@ class AuthButtonProgress extends StatelessWidget {
     );
   }
 }
+

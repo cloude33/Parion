@@ -4,23 +4,41 @@ import '../models/user.dart';
 class CurrencyHelper {
   static String formatAmount(double amount, [User? user]) {
     final symbol = user?.currencySymbol ?? '₺';
-    final formatted = NumberFormat('#,##0.00', 'tr_TR').format(amount);
+    final locale = Intl.defaultLocale ?? 'tr_TR';
+    final formatted = NumberFormat('#,##0.00', locale).format(amount);
     return '$symbol $formatted';
   }
+
   static String formatAmountCompact(double amount, [User? user]) {
     final symbol = user?.currencySymbol ?? '₺';
-    final formatted = NumberFormat('#,##0.00', 'tr_TR').format(amount);
+    final locale = Intl.defaultLocale ?? 'tr_TR';
+    final formatted = NumberFormat('#,##0.00', locale).format(amount);
     return '$symbol$formatted';
   }
+
   static String formatAmountNoDecimal(double amount, [User? user]) {
     final symbol = user?.currencySymbol ?? '₺';
-    final formatted = NumberFormat('#,##0', 'tr_TR').format(amount);
+    final locale = Intl.defaultLocale ?? 'tr_TR';
+    final formatted = NumberFormat('#,##0', locale).format(amount);
     return '$symbol$formatted';
   }
+
   static double parse(String value) {
+    if (value.isEmpty) return 0.0;
+    
+    // Remove symbols and whitespace
     String cleanValue = value.replaceAll(RegExp(r'[₺$€£\s]'), '');
-    cleanValue = cleanValue.replaceAll('.', '');
-    cleanValue = cleanValue.replaceAll(',', '.');
+    
+    final locale = Intl.defaultLocale ?? 'tr_TR';
+    
+    if (locale == 'tr_TR' || locale.startsWith('tr')) {
+      // Turkish: 1.234,56 -> 1234.56
+      cleanValue = cleanValue.replaceAll('.', '');
+      cleanValue = cleanValue.replaceAll(',', '.');
+    } else {
+      // English/Standard: 1,234.56 -> 1234.56
+      cleanValue = cleanValue.replaceAll(',', '');
+    }
 
     return double.tryParse(cleanValue) ?? 0.0;
   }

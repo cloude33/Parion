@@ -865,3 +865,5 @@ class _CashFlowTabState extends State<CashFlowTab> {
     return '$sign${changePercent.toStringAsFixed(1)}% önceki döneme göre';
   }
 }
+
+

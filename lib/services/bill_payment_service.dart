@@ -53,6 +53,9 @@ class BillPaymentService {
   }
 
   Future<void> checkAndProcessDuePayments() async {
+    // Önce eksik olan rutin faturaları oluştur
+    await generateRecurringPayments();
+    
     final payments = await getPendingPayments();
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -317,5 +320,33 @@ class BillPaymentService {
     final payments = await getPayments();
     payments.add(payment);
     await savePayments(payments);
+  }
+
+  Future<void> generateRecurringPayments() async {
+    final activeTemplates = await _templateService.getActiveTemplates();
+    final now = DateTime.now();
+    
+    for (final template in activeTemplates) {
+      if (template.monthlyAmount != null && template.paymentDay != null) {
+        final hasPayment = await hasPaymentForCurrentMonth(template.id);
+        
+        if (!hasPayment) {
+          // Bu ay için henüz ödeme oluşturulmamış
+          final dueDate = DateTime(now.year, now.month, template.paymentDay!);
+          final periodStart = DateTime(now.year, now.month, 1);
+          final periodEnd = DateTime(now.year, now.month + 1, 0); // Ayın son günü
+          
+          await addPayment(
+            templateId: template.id,
+            amount: template.monthlyAmount!,
+            dueDate: dueDate,
+            periodStart: periodStart,
+            periodEnd: periodEnd,
+            targetWalletId: template.walletId,
+            notes: 'Sistem tarafından otomatik oluşturuldu',
+          );
+        }
+      }
+    }
   }
 }

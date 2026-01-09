@@ -6,6 +6,9 @@ import 'add_bill_template_screen.dart';
 import 'edit_bill_payment_screen.dart';
 import 'package:intl/intl.dart';
 import '../utils/format_helper.dart';
+import '../utils/currency_helper.dart';
+import '../l10n/app_localizations.dart';
+import '../utils/bill_helper.dart';
 
 class BillTemplateDetailScreen extends StatefulWidget {
   final BillTemplate template;
@@ -77,11 +80,11 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
   String _getStatusText(BillPaymentStatus status) {
     switch (status) {
       case BillPaymentStatus.paid:
-        return 'Ödendi';
+        return AppLocalizations.of(context)!.statusPaid;
       case BillPaymentStatus.pending:
-        return 'Bekliyor';
+        return AppLocalizations.of(context)!.statusPending;
       case BillPaymentStatus.overdue:
-        return 'Gecikmiş';
+        return AppLocalizations.of(context)!.statusOverdue;
     }
   }
 
@@ -137,12 +140,12 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00BFA5).withValues(alpha: 0.1),
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   _getCategoryIcon(widget.template.category),
-                  color: const Color(0xFF00BFA5),
+                  color: Theme.of(context).primaryColor,
                   size: 32,
                 ),
               ),
@@ -160,7 +163,7 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.template.categoryDisplayName,
+                      BillHelper.getCategoryName(context, widget.template.category),
                       style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                     ),
                   ],
@@ -176,9 +179,9 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
                     color: Colors.grey[300],
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Text(
-                    'Pasif',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  child: Text(
+                    AppLocalizations.of(context)!.inactive,
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                   ),
                 ),
             ],
@@ -187,7 +190,7 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
             const SizedBox(height: 16),
             _buildInfoRow(
               Icons.business,
-              'Sağlayıcı',
+              AppLocalizations.of(context)!.billProvider,
               widget.template.provider!,
             ),
           ],
@@ -195,7 +198,7 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
             const SizedBox(height: 8),
             _buildInfoRow(
               Icons.numbers,
-              'Abone No',
+              AppLocalizations.of(context)!.billAccountNumber,
               widget.template.accountNumber!,
             ),
           ],
@@ -203,13 +206,29 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
             const SizedBox(height: 8),
             _buildInfoRow(
               Icons.phone,
-              'Telefon',
+              AppLocalizations.of(context)!.billPhoneNumber,
               FormatHelper.formatPhoneNumber(widget.template.phoneNumber!),
             ),
           ],
           if (widget.template.description != null) ...[
             const SizedBox(height: 8),
-            _buildInfoRow(Icons.note, 'Açıklama', widget.template.description!),
+            _buildInfoRow(Icons.note, AppLocalizations.of(context)!.description, widget.template.description!),
+          ],
+          if (widget.template.monthlyAmount != null) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              Icons.attach_money,
+              AppLocalizations.of(context)!.billAmount,
+              CurrencyHelper.formatAmount(widget.template.monthlyAmount!),
+            ),
+          ],
+          if (widget.template.paymentDay != null) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow(
+              Icons.calendar_today,
+              AppLocalizations.of(context)!.billPaymentDay,
+              AppLocalizations.of(context)!.paymentDayDescription(widget.template.paymentDay.toString()),
+            ),
           ],
         ],
       ),
@@ -242,12 +261,12 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
           Icon(Icons.receipt_long_outlined, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'Henüz ödeme kaydı yok',
+            AppLocalizations.of(context)!.noPaymentRecords,
             style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Bu fatura için ödeme yaptığınızda\nburada görünecektir',
+            AppLocalizations.of(context)!.paymentRecordsHint,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: Colors.grey[500]),
           ),
@@ -268,7 +287,7 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
   }
 
   Widget _buildPaymentCard(BillPayment payment) {
-    final dateFormat = DateFormat('dd MMM yyyy', 'tr_TR');
+    final dateFormat = DateFormat('dd MMM yyyy', Localizations.localeOf(context).languageCode == 'tr' ? 'tr_TR' : 'en_US');
     final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
 
     return Card(
@@ -310,7 +329,7 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
                       decoration: BoxDecoration(
                         color: _getStatusColor(
                           payment.status,
-                        ).withOpacity(0.1),
+                        ).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
@@ -414,6 +433,7 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
               _buildPaymentInfoRow(Icons.note, 'Not', payment.notes!),
             ],
           ],
+          ),
         ),
       ),
     );
@@ -433,3 +453,4 @@ class _BillTemplateDetailScreenState extends State<BillTemplateDetailScreen> {
     );
   }
 }
+

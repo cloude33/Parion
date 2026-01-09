@@ -12,6 +12,9 @@ import '../services/notification_service.dart';
 import '../services/auth_service.dart';
 import '../services/app_lock_service.dart';
 import '../services/language_service.dart';
+import '../services/user_service.dart';
+import '../services/auth/interfaces/data_sync_interface.dart';
+import '../core/di/service_locator.dart';
 
 import '../l10n/app_localizations.dart';
 import 'currency_settings_screen.dart';
@@ -400,8 +403,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.language,
             title: AppLocalizations.of(context)!.language,
             subtitle: Localizations.localeOf(context).languageCode == 'tr' 
-                ? 'Türkçe' 
-                : 'English',
+                ? AppLocalizations.of(context)!.turkish 
+                : AppLocalizations.of(context)!.english,
             iconColor: Colors.teal,
             trailing: const Icon(
               Icons.arrow_forward_ios,
@@ -437,8 +440,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildSettingItem(
             icon: Icons.save_alt,
-            title: 'Yedekle',
-            subtitle: 'Yedekleme, geri yükleme ve dışa aktarma işlemleri',
+            title: AppLocalizations.of(context)!.backupAndExport,
+            subtitle: AppLocalizations.of(context)!.backupAndExportDesc,
             iconColor: Colors.green,
             trailing: const Icon(
               Icons.arrow_forward_ios,
@@ -461,7 +464,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.lock_clock,
             title: AppLocalizations.of(context)!.autoLock,
             subtitle:
-                '${AppLocalizations.of(context)!.autoLock} ${AppLockService().getLockTimeout()} dk',
+                '${AppLockService().getLockTimeout()} ${AppLocalizations.of(context)!.minutes}',
             iconColor: Colors.red,
             trailing: const Icon(
               Icons.arrow_forward_ios,
@@ -515,7 +518,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSettingItem(
             icon: Icons.info_outline,
             title: AppLocalizations.of(context)!.about,
-            subtitle: 'Versiyon 1.0.0',
+            subtitle: '${AppLocalizations.of(context)!.version} 1.0.0',
             iconColor: Colors.blueGrey,
             trailing: const Icon(
               Icons.arrow_forward_ios,
@@ -726,7 +729,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: onCancel, child: const Text('İptal')),
+                    TextButton(onPressed: onCancel, child: Text(AppLocalizations.of(context)!.cancel)),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: onSave,
@@ -734,7 +737,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         backgroundColor: const Color(0xFF5E5CE6),
                         foregroundColor: Colors.white,
                       ),
-                      child: const Text('Kaydet'),
+                      child: Text(AppLocalizations.of(context)!.save),
                     ),
                   ],
                 ),
@@ -770,6 +773,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         currencySymbol: _currentUser!.currencySymbol,
       );
       await _dataService.updateUser(updatedUser);
+      
+      // Keep UserService in sync for LoginScreen name display
+      try {
+        final userService = UserService();
+        await userService.init();
+        await userService.updateUserProfile(
+          name: updatedUser.name,
+          email: updatedUser.email,
+        );
+      } catch (e) {
+        debugPrint('Error updating UserService: $e');
+      }
+
+      // Sync with Firebase if online
+      try {
+        await getIt<DataSyncInterface>().syncUserProfile(updatedUser);
+      } catch (e) {
+        debugPrint('Error syncing profile to Firebase: $e');
+      }
+
       setState(() {
         _currentUser = updatedUser;
         _isEditingProfile = false;
@@ -777,7 +800,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Profil güncellendi')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.profileUpdated)));
       }
     }
   }
@@ -814,7 +837,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('E-posta güncellendi')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.emailUpdated)));
       }
     }
   }
@@ -849,9 +872,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profil resmi güncellendi'),
-              backgroundColor: Color(0xFF00BFA5),
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.profilePictureChanged),
+              backgroundColor: const Color(0xFF00BFA5),
             ),
           );
         }
@@ -860,7 +883,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Resim seçilemedi')));
+        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.failedToPickImage)));
       }
     }
   }
@@ -882,12 +905,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              title: const Text('Otomatik Kilit Süresi'),
+              title: Text(AppLocalizations.of(context)!.autoLockDuration),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   RadioListTile<int>(
-                    title: const Text('1 Dakika'),
+                    title: Text('1 ${AppLocalizations.of(context)!.minutes}'),
                     value: 1,
                     groupValue: selectedTimeout,
                     activeColor: const Color(0xFF5E5CE6),
@@ -896,7 +919,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   RadioListTile<int>(
-                    title: const Text('5 Dakika'),
+                    title: Text('5 ${AppLocalizations.of(context)!.minutes}'),
                     value: 5,
                     groupValue: selectedTimeout,
                     activeColor: const Color(0xFF5E5CE6),
@@ -905,7 +928,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   RadioListTile<int>(
-                    title: const Text('10 Dakika'),
+                    title: Text('10 ${AppLocalizations.of(context)!.minutes}'),
                     value: 10,
                     groupValue: selectedTimeout,
                     activeColor: const Color(0xFF5E5CE6),
@@ -914,7 +937,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                   RadioListTile<int>(
-                    title: const Text('30 Dakika'),
+                    title: Text('30 ${AppLocalizations.of(context)!.minutes}'),
                     value: 30,
                     groupValue: selectedTimeout,
                     activeColor: const Color(0xFF5E5CE6),
@@ -927,7 +950,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: Text(AppLocalizations.of(context)!.cancel),
                 ),
                 TextButton(
                   onPressed: () async {
@@ -937,15 +960,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Navigator.pop(context);
                         this.setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Kilit süresi güncellendi'),
+                          SnackBar(
+                            content: Text(AppLocalizations.of(context)!.successMessage),
                             backgroundColor: Colors.green,
                           ),
                         );
                       }
                     }
                   },
-                  child: const Text('Kaydet'),
+                  child: Text(AppLocalizations.of(context)!.save),
                 ),
               ],
             );
@@ -959,28 +982,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final firstConfirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('⚠️ Uyarı'),
-        content: const Text(
-          'Uygulamayı sıfırlamak üzeresiniz. Bu işlem:\n\n'
-          '• Tüm kullanıcıları\n'
-          '• Tüm cüzdanları\n'
-          '• Tüm işlemleri\n'
-          '• Tüm kredi kartlarını\n'
-          '• Tüm borçları\n'
-          '• Tüm ayarları\n\n'
-          'kalıcı olarak silecektir. Bu işlem geri alınamaz!\n\n'
-          'Devam etmek istediğinizden emin misiniz?',
+        title: Text(AppLocalizations.of(context)!.resetWarningTitle),
+        content: Text(
+          AppLocalizations.of(context)!.resetWarningDesc,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal'),
+            child: Text(AppLocalizations.of(context)!.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Devam Et',
-              style: TextStyle(color: Colors.orange),
+            child: Text(
+              AppLocalizations.of(context)!.continueText,
+              style: const TextStyle(color: Colors.orange),
             ),
           ),
         ],
@@ -994,28 +1009,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFF3B30),
-        title: const Text(
-          '🚨 Son Uyarı',
-          style: TextStyle(color: Colors.white),
+        title: Text(
+          AppLocalizations.of(context)!.resetFinalWarningTitle,
+          style: const TextStyle(color: Colors.white),
         ),
-        content: const Text(
-          'Bu işlem GERİ ALINAMAZ!\n\n'
-          'Tüm verileriniz kalıcı olarak silinecek.\n\n'
-          'Yedek almadıysanız, verilerinizi geri getiremezsiniz.\n\n'
-          'Uygulamayı sıfırlamak istediğinizden kesinlikle emin misiniz?',
-          style: TextStyle(color: Colors.white),
+        content: Text(
+          AppLocalizations.of(context)!.resetFinalWarningDesc,
+          style: const TextStyle(color: Colors.white),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('İptal', style: TextStyle(color: Colors.white)),
+            child: Text(AppLocalizations.of(context)!.cancel, style: const TextStyle(color: Colors.white)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(backgroundColor: Colors.white),
-            child: const Text(
-              'Evet, Sıfırla',
-              style: TextStyle(
+            child: Text(
+              AppLocalizations.of(context)!.yesReset,
+              style: const TextStyle(
                 color: Color(0xFFFF3B30),
                 fontWeight: FontWeight.bold,
               ),
@@ -1040,10 +1052,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Uygulama başarıyla sıfırlandı'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.resetSuccess),
             backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+            duration: const Duration(seconds: 2),
           ),
         );
         await Future.delayed(const Duration(milliseconds: 500));
@@ -1124,3 +1136,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+
+
