@@ -9,6 +9,7 @@ import 'spending_trend_chart.dart';
 import 'period_comparison_card.dart';
 import 'budget_tracker_card.dart';
 import 'spending_habits_card.dart';
+import 'responsive_statistics_layout.dart';
 class SpendingTab extends StatefulWidget {
   final DateTime startDate;
   final DateTime endDate;
@@ -154,46 +155,31 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return RefreshIndicator(
       onRefresh: _loadSpendingData,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      child: ResponsiveStatisticsLayout(
         children: [
           _buildComparisonToggle(),
-          const SizedBox(height: 16),
           _buildSummaryCards(),
-          const SizedBox(height: 16),
-          if (_showComparison && _previousPeriodData != null) ...[
+          if (_showComparison && _previousPeriodData != null)
             _buildPeriodComparison(),
-            const SizedBox(height: 16),
-          ],
-          if (_spendingData!.budgetComparisons.isNotEmpty) ...[
+          if (_spendingData!.budgetComparisons.isNotEmpty)
             BudgetSummaryCard(
               budgetComparisons: _spendingData!.budgetComparisons,
             ),
-            const SizedBox(height: 16),
-          ],
           _buildPieChartCard(),
-          const SizedBox(height: 16),
-          if (_spendingData!.categoryTrends.isNotEmpty) ...[
+          if (_spendingData!.categoryTrends.isNotEmpty)
             _buildCategoryTrendCard(),
-            const SizedBox(height: 16),
-          ],
-          if (_spendingData!.budgetComparisons.isNotEmpty) ...[
+          if (_spendingData!.budgetComparisons.isNotEmpty)
             BudgetTrackerCard(
               budgetComparisons: _spendingData!.budgetComparisons,
               categoryColors: categoryColors,
             ),
-            const SizedBox(height: 16),
-          ],
           _buildPaymentMethodCard(),
-          const SizedBox(height: 16),
           _buildCategoryList(),
-          const SizedBox(height: 16),
           SpendingHabitsCard(
             spendingData: _spendingData!,
             startDate: widget.startDate,
             endDate: widget.endDate,
           ),
-          const SizedBox(height: 16),
           _buildSpendingInsights(),
         ],
       ),

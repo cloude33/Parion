@@ -62,6 +62,15 @@ class CreditCard extends HiveObject {
   @HiveField(18)
   double? cashAdvanceLimit;
 
+  @HiveField(19)
+  double? overLimitInterestRate;
+
+  @HiveField(20)
+  double? cashAdvanceOverdueInterestRate;
+
+  @HiveField(21)
+  double? minimumPaymentRate;
+
   CreditCard({
     required this.id,
     required this.bankName,
@@ -82,6 +91,9 @@ class CreditCard extends HiveObject {
     this.pointsConversionRate,
     this.cashAdvanceRate,
     this.cashAdvanceLimit,
+    this.overLimitInterestRate,
+    this.cashAdvanceOverdueInterestRate,
+    this.minimumPaymentRate,
   });
   Color get color => Color(cardColor);
   String? validate() {
@@ -132,6 +144,9 @@ class CreditCard extends HiveObject {
     double? pointsConversionRate,
     double? cashAdvanceRate,
     double? cashAdvanceLimit,
+    double? overLimitInterestRate,
+    double? cashAdvanceOverdueInterestRate,
+    double? minimumPaymentRate,
   }) {
     return CreditCard(
       id: id ?? this.id,
@@ -153,6 +168,9 @@ class CreditCard extends HiveObject {
       pointsConversionRate: pointsConversionRate ?? this.pointsConversionRate,
       cashAdvanceRate: cashAdvanceRate ?? this.cashAdvanceRate,
       cashAdvanceLimit: cashAdvanceLimit ?? this.cashAdvanceLimit,
+      overLimitInterestRate: overLimitInterestRate ?? this.overLimitInterestRate,
+      cashAdvanceOverdueInterestRate: cashAdvanceOverdueInterestRate ?? this.cashAdvanceOverdueInterestRate,
+      minimumPaymentRate: minimumPaymentRate ?? this.minimumPaymentRate,
     );
   }
 
@@ -177,6 +195,9 @@ class CreditCard extends HiveObject {
       'pointsConversionRate': pointsConversionRate,
       'cashAdvanceRate': cashAdvanceRate,
       'cashAdvanceLimit': cashAdvanceLimit,
+      'overLimitInterestRate': overLimitInterestRate,
+      'cashAdvanceOverdueInterestRate': cashAdvanceOverdueInterestRate,
+      'minimumPaymentRate': minimumPaymentRate,
     };
   }
 
@@ -201,6 +222,9 @@ class CreditCard extends HiveObject {
       pointsConversionRate: (json['pointsConversionRate'] as num?)?.toDouble(),
       cashAdvanceRate: (json['cashAdvanceRate'] as num?)?.toDouble(),
       cashAdvanceLimit: (json['cashAdvanceLimit'] as num?)?.toDouble(),
+      overLimitInterestRate: (json['overLimitInterestRate'] as num?)?.toDouble(),
+      cashAdvanceOverdueInterestRate: (json['cashAdvanceOverdueInterestRate'] as num?)?.toDouble(),
+      minimumPaymentRate: (json['minimumPaymentRate'] as num?)?.toDouble(),
     );
   }
 

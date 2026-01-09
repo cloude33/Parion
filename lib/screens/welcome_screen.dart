@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+
 import '../core/di/service_locator.dart';
 import '../services/auth/interfaces/auth_orchestrator_interface.dart';
 import '../services/auth/interfaces/biometric_auth_interface.dart';
@@ -16,73 +16,20 @@ class WelcomeScreen extends StatefulWidget {
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
-class _WelcomeScreenState extends State<WelcomeScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _pulseController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _pulseAnimation;
+class _WelcomeScreenState extends State<WelcomeScreen> {
+
   
-  IAuthOrchestrator? _authOrchestrator;
   bool _isLoading = false;
-  bool _biometricAvailable = false;
   String? _errorMessage;
   UserProfile? _userProfile;
 
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
     _initializeAuthServices();
   }
 
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
 
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2000),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeInOut),
-      ),
-    );
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3), 
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-      ),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.4, 1.0, curve: Curves.elasticOut),
-      ),
-    );
-
-    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(
-        parent: _pulseController,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    _animationController.forward();
-    _pulseController.repeat(reverse: true);
-  }
 
   Future<void> _initializeAuthServices() async {
     setState(() {
@@ -91,10 +38,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     });
 
     try {
-      _authOrchestrator = getIt<IAuthOrchestrator>();
+      final authOrchestrator = getIt<IAuthOrchestrator>();
       
       // Check if user is already authenticated
-      final isAuthenticated = await _authOrchestrator!.isAuthenticated();
+      final isAuthenticated = await authOrchestrator.isAuthenticated();
       if (isAuthenticated && mounted) {
         context.toHome();
         return;
@@ -102,9 +49,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
       final biometricService = getIt<IBiometricAuthService>();
       await biometricService.initialize();
-      
-      final isAvailable = await biometricService.isAvailable();
-      final isEnabled = await biometricService.isBiometricEnabled();
 
       // Get user profile for welcome message
       final userService = UserService();
@@ -113,26 +57,19 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
       setState(() {
         _isLoading = false;
-        _biometricAvailable = isAvailable && isEnabled;
         _userProfile = userProfile;
       });
     } catch (e) {
       debugPrint('❌ Failed to initialize auth services: $e');
       // Set biometric as unavailable on error
       setState(() {
-        _biometricAvailable = false;
         _isLoading = false;
         _errorMessage = 'Kimlik doğrulama servisleri başlatılamadı';
       });
     }
   }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _pulseController.dispose();
-    super.dispose();
-  }
+
 
   Widget _buildContent() {
     final screenSize = MediaQuery.of(context).size;
@@ -186,32 +123,15 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Widget _buildHeader() {
-    return FadeTransition(
-      opacity: _fadeAnimation,
-      child: SlideTransition(
-        position: _slideAnimation,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ScaleTransition(
-              scale: _scaleAnimation,
-              child: AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: _buildLogo(),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 32),
-            _buildTitle(),
-            const SizedBox(height: 16),
-            _buildSubtitle(),
-          ],
-        ),
-      ),
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildLogo(),
+        const SizedBox(height: 32),
+        _buildTitle(),
+        const SizedBox(height: 16),
+        _buildSubtitle(),
+      ],
     );
   }
 
@@ -310,43 +230,37 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Error display
-            if (_errorMessage != null) ...[
-              AuthErrorWidget(
-                message: _errorMessage!,
-                onRetry: _initializeAuthServices,
-                onDismiss: () => setState(() => _errorMessage = null),
-                showRetryButton: true,
-              ),
-              const SizedBox(height: 16),
-            ],
-            
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Error display
+        if (_errorMessage != null) ...[
+          AuthErrorWidget(
+            message: _errorMessage!,
+            onRetry: _initializeAuthServices,
+            onDismiss: () => setState(() => _errorMessage = null),
+            showRetryButton: true,
+          ),
+          const SizedBox(height: 16),
+        ],
+        
 
 
-            _buildPrimaryButton(
-              context,
-              text: 'Giriş Yap',
-              onPressed: _isLoading ? null : () => context.toLogin(),
-              icon: Icons.login,
-            ),
-            const SizedBox(height: 16),
-            _buildSecondaryButton(
-              context,
-              text: 'Kayıt Ol',
-              onPressed: _isLoading ? null : () => context.toRegister(),
-              icon: Icons.person_add,
-            ),
-          ],
+        _buildPrimaryButton(
+          context,
+          text: 'Giriş Yap',
+          onPressed: _isLoading ? null : () => context.toLogin(),
+          icon: Icons.login,
         ),
-      ),
+        const SizedBox(height: 16),
+        _buildSecondaryButton(
+          context,
+          text: 'Kayıt Ol',
+          onPressed: _isLoading ? null : () => context.toRegister(),
+          icon: Icons.person_add,
+        ),
+      ],
     );
   }
 
@@ -464,44 +378,41 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Widget _buildFooter() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 24),
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Column(
-          children: [
-            Text(
-              'Giriş yaparak Kullanım Koşulları ve\nGizlilik Politikası\'nı kabul etmiş olursunuz',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.7),
-                height: 1.4,
+      child: Column(
+        children: [
+          Text(
+            'Giriş yaparak Kullanım Koşulları ve\nGizlilik Politikası\'nı kabul etmiş olursunuz',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white.withValues(alpha: 0.7),
+              height: 1.4,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDB32A),
+                  shape: BoxShape.circle,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFDB32A),
-                    shape: BoxShape.circle,
-                  ),
+              const SizedBox(width: 8),
+              Text(
+                'Güvenli ve Hızlı',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white.withValues(alpha: 0.8),
+                  fontWeight: FontWeight.w500,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Güvenli ve Hızlı',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

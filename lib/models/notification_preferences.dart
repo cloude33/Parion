@@ -15,6 +15,8 @@ class NotificationPreferences {
   final List<double> limitAlertThresholds;
   final bool statementCutNotificationsEnabled;
   final bool installmentEndingNotificationsEnabled;
+  final bool dailyTransactionReminderEnabled;
+  final TimeOfDay dailyTransactionReminderTime;
 
   const NotificationPreferences({
     required this.dailySummaryEnabled,
@@ -31,6 +33,8 @@ class NotificationPreferences {
     required this.limitAlertThresholds,
     required this.statementCutNotificationsEnabled,
     required this.installmentEndingNotificationsEnabled,
+    required this.dailyTransactionReminderEnabled,
+    required this.dailyTransactionReminderTime,
   });
   static NotificationPreferences get defaults => const NotificationPreferences(
     dailySummaryEnabled: false,
@@ -47,6 +51,8 @@ class NotificationPreferences {
     limitAlertThresholds: [80.0, 90.0, 100.0],
     statementCutNotificationsEnabled: true,
     installmentEndingNotificationsEnabled: true,
+    dailyTransactionReminderEnabled: false,
+    dailyTransactionReminderTime: TimeOfDay(hour: 21, minute: 0),
   );
 
   Map<String, dynamic> toJson() => {
@@ -70,6 +76,11 @@ class NotificationPreferences {
     'limitAlertThresholds': limitAlertThresholds,
     'statementCutNotificationsEnabled': statementCutNotificationsEnabled,
     'installmentEndingNotificationsEnabled': installmentEndingNotificationsEnabled,
+    'dailyTransactionReminderEnabled': dailyTransactionReminderEnabled,
+    'dailyTransactionReminderTime': {
+      'hour': dailyTransactionReminderTime.hour,
+      'minute': dailyTransactionReminderTime.minute,
+    },
   };
 
   factory NotificationPreferences.fromJson(Map<String, dynamic> json) {
@@ -102,6 +113,13 @@ class NotificationPreferences {
           : [80.0, 90.0, 100.0],
       statementCutNotificationsEnabled: json['statementCutNotificationsEnabled'] ?? true,
       installmentEndingNotificationsEnabled: json['installmentEndingNotificationsEnabled'] ?? true,
+      dailyTransactionReminderEnabled: json['dailyTransactionReminderEnabled'] ?? false,
+      dailyTransactionReminderTime: json['dailyTransactionReminderTime'] != null
+          ? TimeOfDay(
+              hour: json['dailyTransactionReminderTime']['hour'],
+              minute: json['dailyTransactionReminderTime']['minute'],
+            )
+          : const TimeOfDay(hour: 21, minute: 0),
     );
   }
 
@@ -120,6 +138,8 @@ class NotificationPreferences {
     List<double>? limitAlertThresholds,
     bool? statementCutNotificationsEnabled,
     bool? installmentEndingNotificationsEnabled,
+    bool? dailyTransactionReminderEnabled,
+    TimeOfDay? dailyTransactionReminderTime,
   }) {
     return NotificationPreferences(
       dailySummaryEnabled: dailySummaryEnabled ?? this.dailySummaryEnabled,
@@ -138,6 +158,8 @@ class NotificationPreferences {
       limitAlertThresholds: limitAlertThresholds ?? this.limitAlertThresholds,
       statementCutNotificationsEnabled: statementCutNotificationsEnabled ?? this.statementCutNotificationsEnabled,
       installmentEndingNotificationsEnabled: installmentEndingNotificationsEnabled ?? this.installmentEndingNotificationsEnabled,
+      dailyTransactionReminderEnabled: dailyTransactionReminderEnabled ?? this.dailyTransactionReminderEnabled,
+      dailyTransactionReminderTime: dailyTransactionReminderTime ?? this.dailyTransactionReminderTime,
     );
   }
 }

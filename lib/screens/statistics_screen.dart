@@ -6,11 +6,30 @@ import '../models/category.dart';
 import '../models/wallet.dart';
 import '../models/loan.dart';
 import '../models/credit_card_transaction.dart';
+import '../models/asset_analysis.dart';
+import '../models/comparison_data.dart';
 import '../services/data_service.dart';
+import '../services/statistics_service.dart';
 import '../services/bill_payment_service.dart';
 import '../services/bill_template_service.dart';
 import '../utils/currency_helper.dart';
 import '../widgets/statistics/spending_tab.dart';
+import '../widgets/statistics/cash_flow_tab.dart';
+import '../widgets/statistics/time_filter_bar.dart';
+import '../widgets/statistics/responsive_statistics_layout.dart';
+import '../widgets/statistics/statistics_state_builder.dart';
+import '../widgets/cards/bank_card_visual_widget.dart';
+import 'manage_goals_screen.dart';
+import '../utils/cache_manager.dart';
+import '../widgets/statistics/interactive_pie_chart.dart';
+
+enum TimeFilter {
+  daily,
+  weekly,
+  monthly,
+  yearly,
+  custom,
+}
 
 class StatisticsScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -33,7 +52,7 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  String _selectedTimeFilter = 'Aylık';
+  TimeFilter _selectedTimeFilter = TimeFilter.monthly;
   DateTime? _customStartDate;
   DateTime? _customEndDate;
   final String _selectedWalletId = 'all';
@@ -41,7 +60,41 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   final String _selectedTransactionType = 'all';
 
   final DataService _dataService = DataService();
+  final StatisticsService _statisticsService = StatisticsService();
   List<Category> _categories = [];
+
+  static const Map<TimeFilter, String> _timeFilterLabels = {
+    TimeFilter.daily: 'Günlük',
+    TimeFilter.weekly: 'Haftalık',
+    TimeFilter.monthly: 'Aylık',
+    TimeFilter.yearly: 'Yıllık',
+    TimeFilter.custom: 'Özel',
+  };
+
+  /// Seçili zaman filtresine göre başlangıç/bitiş tarihini hesaplar
+  DateTimeRange _getCurrentPeriod() {
+    final now = DateTime.now();
+
+    switch (_selectedTimeFilter) {
+      case TimeFilter.daily:
+        final start = DateTime(now.year, now.month, now.day);
+        final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        return DateTimeRange(start: start, end: end);
+      case TimeFilter.weekly:
+        final start = now.subtract(const Duration(days: 7));
+        return DateTimeRange(start: start, end: now);
+      case TimeFilter.monthly:
+        final start = DateTime(now.year, now.month, 1);
+        return DateTimeRange(start: start, end: now);
+      case TimeFilter.yearly:
+        final start = DateTime(now.year, 1, 1);
+        return DateTimeRange(start: start, end: now);
+      case TimeFilter.custom:
+        final start = _customStartDate ?? DateTime(now.year, now.month, 1);
+        final end = _customEndDate ?? now;
+        return DateTimeRange(start: start, end: end);
+    }
+  }
 
   // Fatura kategorileri için renk haritası
   final Map<String, Color> _billCategoryColors = {
@@ -84,77 +137,19 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   List<dynamic> get _filteredTransactions {
-    final now = DateTime.now();
-    DateTime startDate;
-    DateTime? endDate;
+    final period = _getCurrentPeriod();
+    final startDate = period.start;
+    final endDate = period.end;
 
-    switch (_selectedTimeFilter) {
-      case 'Günlük':
-        startDate = DateTime(now.year, now.month, now.day);
-        endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
-        break;
-      case 'Haftalık':
-        startDate = now.subtract(const Duration(days: 7));
-        break;
-      case 'Aylık':
-        startDate = DateTime(now.year, now.month, 1);
-        break;
-      case 'Yıllık':
-        startDate = DateTime(now.year, 1, 1);
-        break;
-      case 'Özel':
-        if (_customStartDate != null && _customEndDate != null) {
-          final regularFiltered = widget.transactions
-              .where(
-                (t) =>
-                    t.date.isAfter(
-                      _customStartDate!.subtract(const Duration(seconds: 1)),
-                    ) &&
-                    t.date.isBefore(
-                      _customEndDate!.add(const Duration(days: 1)),
-                    ) &&
-                    (_selectedWalletId == 'all' ||
-                        t.walletId == _selectedWalletId) &&
-                    (_selectedCategory == 'all' ||
-                        t.category == _selectedCategory) &&
-                    (_selectedTransactionType == 'all' ||
-                        t.type == _selectedTransactionType),
-              )
-              .toList();
-
-          final creditCardFiltered = widget.creditCardTransactions
-              .where(
-                (t) =>
-                    t.transactionDate.isAfter(
-                      _customStartDate!.subtract(const Duration(seconds: 1)),
-                    ) &&
-                    t.transactionDate.isBefore(
-                      _customEndDate!.add(const Duration(days: 1)),
-                    ) &&
-                    (_selectedCategory == 'all' ||
-                        t.category == _selectedCategory),
-              )
-              .toList();
-          return [...regularFiltered, ...creditCardFiltered];
-        }
-        startDate = DateTime(now.year, now.month, 1);
-        break;
-      default:
-        startDate = DateTime(now.year, now.month, 1);
-    }
     final regularFiltered = widget.transactions
         .where(
           (t) =>
-              (endDate != null
-                  ? (t.date.isAfter(
-                          startDate.subtract(const Duration(seconds: 1)),
-                        ) &&
-                        t.date.isBefore(
-                          endDate.add(const Duration(seconds: 1)),
-                        ))
-                  : t.date.isAfter(
-                      startDate.subtract(const Duration(seconds: 1)),
-                    )) &&
+              t.date.isAfter(
+                startDate.subtract(const Duration(seconds: 1)),
+              ) &&
+              t.date.isBefore(
+                endDate.add(const Duration(seconds: 1)),
+              ) &&
               (_selectedWalletId == 'all' || t.walletId == _selectedWalletId) &&
               (_selectedCategory == 'all' || t.category == _selectedCategory) &&
               (_selectedTransactionType == 'all' ||
@@ -164,16 +159,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     final creditCardFiltered = widget.creditCardTransactions
         .where(
           (t) =>
-              (endDate != null
-                  ? (t.transactionDate.isAfter(
-                          startDate.subtract(const Duration(seconds: 1)),
-                        ) &&
-                        t.transactionDate.isBefore(
-                          endDate.add(const Duration(seconds: 1)),
-                        ))
-                  : t.transactionDate.isAfter(
-                      startDate.subtract(const Duration(seconds: 1)),
-                    )) &&
+              t.transactionDate.isAfter(
+                startDate.subtract(const Duration(seconds: 1)),
+              ) &&
+              t.transactionDate.isBefore(
+                endDate.add(const Duration(seconds: 1)),
+              ) &&
               (_selectedCategory == 'all' || t.category == _selectedCategory),
         )
         .toList();
@@ -207,17 +198,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     child: _buildHeaderTimeFilter(),
                   ),
-                  TabBar(
+                  AdaptiveTabBar(
                     controller: _tabController,
-                    isScrollable: true,
-                    indicatorColor: const Color(0xFF00BFA5),
-                    indicatorWeight: 3,
-                    labelColor: const Color(0xFF00BFA5),
-                    unselectedLabelColor: Colors.grey,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
                     tabs: const [
                       Tab(text: 'Raporlar'),
                       Tab(text: 'Harcama'),
@@ -248,226 +230,24 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   Widget _buildCashFlowTab() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-      children: [
-        SizedBox(
-          height: 300,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Gelir vs Gider',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                Expanded(child: _buildLineChart()),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildCashFlowTableCard(),
-      ],
+    final period = _getCurrentPeriod();
+
+    return CashFlowTab(
+      startDate: period.start,
+      endDate: period.end,
+      walletId: _selectedWalletId == 'all' ? null : _selectedWalletId,
+      category: _selectedCategory == 'all' ? null : _selectedCategory,
     );
   }
 
-  Widget _buildLineChart() {
-    final Map<DateTime, double> incomeMap = {};
-    final Map<DateTime, double> expenseMap = {};
-
-    final now = DateTime.now();
-    final twelveMonthsAgo = DateTime(now.year - 1, now.month, 1);
-    for (int i = 0; i < 12; i++) {
-      final month = DateTime(
-        twelveMonthsAgo.year,
-        twelveMonthsAgo.month + i,
-        1,
-      );
-      incomeMap[month] = 0.0;
-      expenseMap[month] = 0.0;
-    }
-    for (var t in _filteredTransactions) {
-      DateTime date;
-      String type;
-      double amount;
-      if (t is Transaction) {
-        date = t.date;
-        type = t.type;
-        amount = t.amount;
-      } else if (t is CreditCardTransaction) {
-        date = t.transactionDate;
-        type = 'expense';
-        amount = t.amount;
-      } else {
-        continue;
-      }
-
-      final monthKey = DateTime(date.year, date.month, 1);
-      if (incomeMap.containsKey(monthKey) || expenseMap.containsKey(monthKey)) {
-        if (type == 'income') {
-          incomeMap[monthKey] = (incomeMap[monthKey] ?? 0) + amount;
-        } else if (type == 'expense') {
-          expenseMap[monthKey] = (expenseMap[monthKey] ?? 0) + amount;
-        }
-      }
-    }
-
-    final sortedMonths = incomeMap.keys.toList()..sort();
-    if (sortedMonths.isEmpty) {
-      return const Center(child: Text('Veri yok'));
-    }
-    final incomeSpots = <FlSpot>[];
-    final expenseSpots = <FlSpot>[];
-
-    for (int i = 0; i < sortedMonths.length; i++) {
-      final month = sortedMonths[i];
-      incomeSpots.add(FlSpot(i.toDouble(), incomeMap[month] ?? 0));
-      expenseSpots.add(FlSpot(i.toDouble(), expenseMap[month] ?? 0));
-    }
-    double maxY = 0;
-    for (var value in [...incomeMap.values, ...expenseMap.values]) {
-      if (value > maxY) maxY = value;
-    }
-    maxY = maxY * 1.2;
-    if (maxY == 0) maxY = 1000;
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(show: true),
-        titlesData: FlTitlesData(
-          show: true,
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() >= 0 && value.toInt() < sortedMonths.length) {
-                  final month = sortedMonths[value.toInt()];
-                  final monthNames = [
-                    'Oca',
-                    'Şub',
-                    'Mar',
-                    'Nis',
-                    'May',
-                    'Haz',
-                    'Tem',
-                    'Ağu',
-                    'Eyl',
-                    'Eki',
-                    'Kas',
-                    'Ara',
-                  ];
-                  return Text(
-                    monthNames[month.month - 1],
-                    style: const TextStyle(fontSize: 10),
-                  );
-                }
-                return const Text('');
-              },
-              reservedSize: 22,
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  '₺${NumberFormat.compact().format(value)}',
-                  style: const TextStyle(fontSize: 10),
-                );
-              },
-              reservedSize: 40,
-            ),
-          ),
-          topTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          rightTitles: const AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-        ),
-        borderData: FlBorderData(show: true),
-        minX: 0,
-        maxX: (sortedMonths.length - 1).toDouble(),
-        minY: 0,
-        maxY: maxY,
-        lineBarsData: [
-          LineChartBarData(
-            spots: incomeSpots,
-            isCurved: true,
-            color: Colors.green,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(
-              show: true,
-              color: Colors.green.withValues(alpha: 0.2),
-            ),
-          ),
-          LineChartBarData(
-            spots: expenseSpots,
-            isCurved: true,
-            color: Colors.red,
-            barWidth: 3,
-            isStrokeCapRound: true,
-            dotData: FlDotData(show: true),
-            belowBarData: BarAreaData(
-              show: true,
-              color: Colors.red.withValues(alpha: 0.2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Eski nakit akışı grafik/tablo implementasyonu CashFlowTab ile değiştirildi.
 
   Widget _buildSpendingTab() {
-    final now = DateTime.now();
-    DateTime startDate;
-    DateTime endDate;
-
-    switch (_selectedTimeFilter) {
-      case 'Günlük':
-        startDate = DateTime(now.year, now.month, now.day);
-        endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
-        break;
-      case 'Haftalık':
-        startDate = now.subtract(const Duration(days: 7));
-        endDate = now;
-        break;
-      case 'Aylık':
-        startDate = DateTime(now.year, now.month, 1);
-        endDate = now;
-        break;
-      case 'Yıllık':
-        startDate = DateTime(now.year, 1, 1);
-        endDate = now;
-        break;
-      case 'Özel':
-        startDate = _customStartDate ?? DateTime(now.year, now.month, 1);
-        endDate = _customEndDate ?? now;
-        break;
-      default:
-        startDate = DateTime(now.year, now.month, 1);
-        endDate = now;
-    }
+    final period = _getCurrentPeriod();
 
     return SpendingTab(
-      startDate: startDate,
-      endDate: endDate,
+      startDate: period.start,
+      endDate: period.end,
     );
   }
 
@@ -475,81 +255,319 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     final creditWallets = widget.wallets
         .where((w) => w.type == 'credit_card')
         .toList();
-    final totalDebt = creditWallets.fold(0.0, (sum, w) => sum + w.balance);
+    
+    final totalDebt = creditWallets.fold(0.0, (sum, w) => sum + (w.balance < 0 ? w.balance.abs() : 0));
+    final totalLimit = creditWallets.fold(0.0, (sum, w) => sum + w.creditLimit);
+    final totalAvailable = totalLimit - totalDebt;
+    final utilization = totalLimit > 0 ? (totalDebt / totalLimit) * 100 : 0.0;
+
     final installmentTransactions = widget.transactions
         .where((t) => t.installments != null)
         .toList();
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+    return ResponsiveStatisticsLayout(
       children: [
-        _buildCard(
-          title: 'Kredi Kartları',
-          subtitle: 'Toplam Borç',
-          content: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+        // Üst Özet Kartları
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryInfoCard(
+                title: 'Toplam Borç',
+                amount: totalDebt,
+                color: Colors.red,
+                icon: Icons.money_off,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildSummaryInfoCard(
+                title: 'Kullanılabilir',
+                amount: totalAvailable,
+                color: Colors.green,
+                icon: Icons.check_circle_outline,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildUtilizationBar(utilization),
+        
+        const SizedBox(height: 24),
+        
+        // Kartlarım Başlığı ve Kart Listesi
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Kartlarım',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+               Text(
+                '${creditWallets.length} Kart',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: creditWallets.length,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: _buildCreditCardWidget(creditWallets[index]),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // Kredi ve Taksitler
+        _buildLoanTrackingCard(),
+        
+        if (installmentTransactions.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          _buildInstallmentsListCard(installmentTransactions),
+        ],
+        
+        const SizedBox(height: 80), // Bottom padding
+      ],
+    );
+  }
+
+  Widget _buildSummaryInfoCard({
+    required String title,
+    required double amount,
+    required Color color,
+    required IconData icon,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '₺${NumberFormat('#,##0', 'tr_TR').format(amount)}',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUtilizationBar(double percentage) {
+    // 0-30% Green, 30-70% Orange, 70%+ Red
+    Color color = Colors.green;
+    if (percentage > 70) {
+      color = Colors.red;
+    } else if (percentage > 30) {
+      color = Colors.orange;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Limit Doluluk Oranı',
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).textTheme.bodySmall?.color,
+              ),
+            ),
+            Text(
+              '%${percentage.toStringAsFixed(1)}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: percentage / 100,
+            minHeight: 8,
+            backgroundColor: Colors.grey.withValues(alpha: 0.2),
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCreditCardWidget(Wallet wallet) {
+    return SizedBox(
+      width: 300,
+      child: BankCardVisualWidget(
+        bankName: wallet.bankName ?? '',
+        cardName: wallet.name,
+        last4Digits: wallet.id.length >= 4 ? wallet.id.substring(wallet.id.length - 4) : '****',
+        currentDebt: wallet.balance.abs(),
+        limit: wallet.creditLimit,
+        colorHex: wallet.color,
+        cutOffDay: wallet.cutOffDay,
+        paymentDay: wallet.paymentDay,
+      ),
+    );
+  }
+
+  Widget _buildInstallmentsListCard(List<Transaction> installments) {
+    return _buildCard(
+      title: 'Taksitli İşlemler',
+      subtitle: '${installments.length} adet aktif taksit',
+      content: ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: installments.length,
+        separatorBuilder: (context, index) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final t = installments[index];
+          final progress = t.currentInstallment! / t.installments!;
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            child: Row(
               children: [
-                Text(
-                  '₺${NumberFormat('#,##0', 'tr_TR').format(totalDebt)}',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: Icon(Icons.calendar_month, color: Colors.blue),
                   ),
                 ),
-                const SizedBox(height: 16),
-                ...creditWallets.map(
-                  (w) => ListTile(
-                    leading: const Icon(Icons.credit_card, color: Colors.blue),
-                    title: Text(w.name),
-                    trailing: Text(
-                      '₺${NumberFormat('#,##0', 'tr_TR').format(w.balance.abs())}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        t.description,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 4,
+                          backgroundColor: Colors.grey[200],
+                          color: Colors.blue,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${t.currentInstallment}/${t.installments} Taksit ödendi',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '-₺${NumberFormat('#,##0', 'tr_TR').format(t.amount)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                    Text(
+                      'Aylık',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        _buildLoanTrackingCard(),
-        const SizedBox(height: 16),
-        if (installmentTransactions.isNotEmpty)
-          _buildCard(
-            title: 'Taksitli İşlemler',
-            subtitle: 'Devam eden taksitler',
-            content: Column(
-              children: installmentTransactions
-                  .map(
-                    (t) => ListTile(
-                      title: Text(t.description),
-                      subtitle: Text(
-                        '${t.currentInstallment}/${t.installments} Taksit',
-                      ),
-                      trailing: Text(
-                        '₺${NumberFormat('#,##0', 'tr_TR').format(t.amount)}',
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-      ],
+          );
+        },
+      ),
     );
   }
 
   Widget _buildLoanTrackingCard() {
     if (widget.loans.isEmpty) {
       return _buildCard(
-        title: 'Kredi Takibi',
-        subtitle: 'Aktif kredi bulunmamaktadır',
-        content: const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Henüz hiç kredi eklenmemiş. Kredi eklemek için "Krediler" sekmesine gidin.',
-            style: TextStyle(color: Colors.grey),
+        title: 'Krediler',
+        subtitle: 'Aktif kredi bulunmuyor',
+        content: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Icon(Icons.check_circle, size: 48, color: Colors.green.withValues(alpha: 0.5)),
+              const SizedBox(height: 16),
+              const Text(
+                'Harika! Aktif bir kredi borcunuz bulunmuyor.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
           ),
         ),
       );
@@ -560,115 +578,206 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         .toList();
 
     if (activeLoans.isEmpty) {
-      return _buildCard(
-        title: 'Kredi Takibi',
-        subtitle: 'Tüm krediler ödendi',
-        content: const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text(
-            'Tüm kredileriniz ödendi. Tebrikler!',
-            style: TextStyle(color: Colors.green),
+       return _buildCard(
+        title: 'Krediler',
+        subtitle: 'Tümü ödendi',
+        content: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              Icon(Icons.celebration, size: 48, color: Colors.amber.withValues(alpha: 0.5)),
+              const SizedBox(height: 16),
+              const Text(
+                'Tebrikler! Tüm kredilerinizi ödediniz.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
+            ],
           ),
         ),
       );
     }
 
-    return _buildCard(
-      title: 'Kredi Takibi',
-      subtitle: 'Devam eden krediler',
-      content: Column(
-        children: activeLoans.map((loan) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text(
+            'Aktif Krediler',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...activeLoans.map((loan) {
           final progress = loan.totalAmount > 0
               ? (loan.totalAmount - loan.remainingAmount) / loan.totalAmount
               : 0.0;
+          
+          final nextInstallment = loan.installments
+              .where((i) => !i.isPaid)
+              .toList()
+            ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+            
+          final upcoming = nextInstallment.firstOrNull;
 
-          final nextInstallment =
-              loan.installments
-                  .where((installment) => !installment.isPaid)
-                  .toList()
-                ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
-
-          final upcomingInstallment = nextInstallment.isNotEmpty
-              ? nextInstallment.first
-              : null;
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      loan.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '${((progress) * 100).toStringAsFixed(1)}%',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${loan.bankName} - ${loan.totalInstallments} Taksit',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-                const SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: progress.toDouble(),
-                  backgroundColor: Colors.grey[200],
-                  color: progress > 0.7
-                      ? Colors.green
-                      : (progress > 0.4 ? Colors.orange : Colors.red),
-                  minHeight: 8,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Ödenen: ₺${NumberFormat('#,##0', 'tr_TR').format(loan.totalAmount - loan.remainingAmount)}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    Text(
-                      'Kalan: ₺${NumberFormat('#,##0', 'tr_TR').format(loan.remainingAmount)}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                if (upcomingInstallment != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
                     children: [
-                      const Icon(
-                        Icons.calendar_today,
-                        size: 12,
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Sonraki taksit: ${DateFormat('dd.MM.yyyy', 'tr_TR').format(upcomingInstallment.dueDate)}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.blue,
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.indigo.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: const Icon(Icons.account_balance, color: Colors.indigo),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              loan.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              loan.bankName,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'Kalan',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 11,
+                            ),
+                          ),
+                          Text(
+                            '₺${NumberFormat('#,##0', 'tr_TR').format(loan.remainingAmount)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
+                const Divider(height: 1),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Ödeme İlerlemesi',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                          ),
+                          Text(
+                            '%${(progress * 100).toStringAsFixed(1)}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 8,
+                          backgroundColor: Colors.grey[200],
+                          color: progress > 0.8 ? Colors.green : Colors.indigo,
+                        ),
+                      ),
+                      if (upcoming != null) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Colors.orange.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_today_outlined, size: 16, color: Colors.orange),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Sonraki Taksit: ${DateFormat('dd MMM', 'tr_TR').format(upcoming.dueDate)}',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.orange[800],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                '₺${NumberFormat('#,##0', 'tr_TR').format(upcoming.amount)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ],
             ),
           );
-        }).toList(),
-      ),
+        }),
+      ],
     );
   }
+
+
 
   Widget _buildAssetsTab() {
     final assetWallets = widget.wallets
@@ -687,13 +796,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       (sum, w) => sum + w.balance.abs(),
     );
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+    return ResponsiveStatisticsLayout(
       children: [
-        if (kmhWallets.isNotEmpty) ...[
-          _buildKmhUsageChart(kmhWallets),
-          const SizedBox(height: 16),
-        ],
+        if (kmhWallets.isNotEmpty) _buildKmhUsageChart(kmhWallets),
         Container(
           height: 250,
           padding: const EdgeInsets.all(16),
@@ -724,7 +829,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 )
               : const Center(child: Text('Varlık yok')),
         ),
-        const SizedBox(height: 16),
         _buildCard(
           title: 'Varlık Listesi',
           subtitle:
@@ -981,27 +1085,558 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   Widget _buildReportsView() {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+    return ResponsiveStatisticsLayout(
       children: [
+        _buildFinancialHealthScoreCard(),
+        _buildPeriodComparisonCard(),
+        _buildGoalsSummaryCard(),
+        _buildAverageComparisonCard(),
         _buildOverviewSummaryCards(),
-        const SizedBox(height: 16),
         _buildBillTrackingCard(),
-        const SizedBox(height: 16),
         _buildDebtReceivablePanel(),
-        const SizedBox(height: 16),
         _buildPaymentMethodDistributionCard(),
-        const SizedBox(height: 16),
         _buildCashFlowTableCard(),
-        const SizedBox(height: 16),
         _buildIncomeExpenseLedgerCard(),
-        const SizedBox(height: 16),
         _buildIncomeDebtRatioCard(),
-        const SizedBox(height: 16),
         _buildRecurringEventsCard(),
-        const SizedBox(height: 16),
         _buildFinancialAssetsCard(),
       ],
+    );
+  }
+
+  Widget _buildFinancialHealthScoreCard() {
+    return StatisticsFutureBuilder<AssetAnalysis>(
+      future: _statisticsService.analyzeAssets(),
+      builder: (context, analysis) {
+        final score = analysis.healthScore;
+
+        Color scoreColor;
+        if (score.overallScore >= 80) {
+          scoreColor = Colors.green;
+        } else if (score.overallScore >= 60) {
+          scoreColor = Colors.lightGreen;
+        } else if (score.overallScore >= 40) {
+          scoreColor = Colors.orange;
+        } else {
+          scoreColor = Colors.red;
+        }
+
+        final recommendation =
+            score.recommendations.isNotEmpty ? score.recommendations.first : null;
+
+        return _buildCard(
+          title: 'Finansal Sağlık Skoru',
+          subtitle: 'Genel durumunuzun hızlı özeti',
+          content: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Tooltip(
+                      message:
+                          'Varlık, borç, likidite ve borç yönetimi skorlarının birleşimi',
+                      child: const Icon(
+                        Icons.favorite,
+                        color: Colors.pinkAccent,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '0-100 arası skor: 80+ çok iyi, 60-80 iyi, 40-60 geliştirmeye açık',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 72,
+                      height: 72,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: SweepGradient(
+                          colors: [
+                            Colors.red,
+                            Colors.orange,
+                            Colors.yellow,
+                            Colors.lightGreen,
+                            Colors.green,
+                          ],
+                          stops: const [0.0, 0.25, 0.5, 0.75, 1.0],
+                        ),
+                      ),
+                      child: Center(
+                        child: Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              score.overallScore.toStringAsFixed(0),
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: scoreColor,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Toplam Varlık: ₺${NumberFormat('#,##0', 'tr_TR').format(analysis.totalAssets)}',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Toplam Borç: ₺${NumberFormat('#,##0', 'tr_TR').format(analysis.totalLiabilities)}',
+                            style: const TextStyle(fontSize: 13),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Net Varlık: ₺${NumberFormat('#,##0', 'tr_TR').format(analysis.netWorth)}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Likidite Oranı: ${analysis.liquidityRatio.toStringAsFixed(2)}',
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (recommendation != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Öneri',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    recommendation,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPeriodComparisonCard() {
+    final current = _getCurrentPeriod();
+    final duration = current.end.difference(current.start);
+    final previousEnd = current.start.subtract(const Duration(days: 1));
+    final previousStart = previousEnd.subtract(duration);
+
+    return StatisticsFutureBuilder<ComparisonData>(
+      future: _statisticsService.comparePeriods(
+        period1Start: previousStart,
+        period1End: previousEnd,
+        period2Start: current.start,
+        period2End: current.end,
+      ),
+      builder: (context, comparison) {
+        final income = comparison.income;
+        final expense = comparison.expense;
+        final net = comparison.netCashFlow;
+
+        Widget buildMetricRow(String label, ComparisonMetric metric,
+            {bool higherIsBetter = true}) {
+          final change = metric.percentageChange;
+          final isPositive = change >= 0;
+          final isGood = higherIsBetter ? isPositive : !isPositive;
+          final color = isGood ? Colors.green : Colors.red;
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '₺${NumberFormat('#,##0', 'tr_TR').format(metric.period2Value)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${isPositive ? '+' : ''}${change.toStringAsFixed(1)}% önceki döneme göre',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
+
+        return _buildCard(
+          title: 'Dönem Karşılaştırması',
+          subtitle:
+              '${comparison.period1Label} vs ${comparison.period2Label}',
+          content: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.compare_arrows,
+                      size: 20,
+                      color: Colors.blueAccent,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Seçili dönemi bir önceki eş dönemle karşılaştırır.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                buildMetricRow('Gelir', income, higherIsBetter: true),
+                const SizedBox(height: 8),
+                buildMetricRow('Gider', expense, higherIsBetter: false),
+                const SizedBox(height: 8),
+                buildMetricRow('Net Nakit Akışı', net, higherIsBetter: true),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGoalsSummaryCard() {
+    return StatisticsFutureBuilder<GoalComparisonSummary>(
+      future: _statisticsService.compareGoals(),
+      builder: (context, summary) {
+        final achievedRate =
+            summary.overallAchievementRate.toStringAsFixed(1);
+        final insight =
+            summary.insights.isNotEmpty ? summary.insights.first : null;
+
+        return _buildCard(
+          title: 'Hedef Performansı',
+          subtitle: 'Biriken hedeflerinizin genel durumu',
+          headerAction: TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ManageGoalsScreen(),
+                ),
+              ).then((_) {
+                // Clear cache to show updated data
+                CacheManager().invalidateRelated('goal');
+                if (mounted) {
+                  setState(() {});
+                }
+              });
+            },
+            child: const Text('Yönet'),
+          ),
+          content: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.flag,
+                      size: 20,
+                      color: Colors.deepPurple,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Tasarruf / yatırım hedeflerinizin sayısı ve tamamlama oranı.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Toplam Hedef',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            summary.totalGoals.toString(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tamamlanan',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            summary.achievedGoals.toString(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Geciken',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            summary.overdueGoals.toString(),
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Genel Tamamlama Oranı',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    Text(
+                      '%$achievedRate',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: summary.overallAchievementRate / 100,
+                  minHeight: 8,
+                  backgroundColor: Colors.grey[200],
+                  color: summary.overallAchievementRate >= 70
+                      ? Colors.green
+                      : (summary.overallAchievementRate >= 40
+                          ? Colors.orange
+                          : Colors.red),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                if (insight != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    'Özet',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    insight,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAverageComparisonCard() {
+    final current = _getCurrentPeriod();
+
+    return StatisticsFutureBuilder<AverageComparisonData>(
+      future: _statisticsService.compareWithAverages(
+        currentPeriodStart: current.start,
+        currentPeriodEnd: current.end,
+      ),
+      builder: (context, data) {
+        Widget buildRow(String label, AverageBenchmark benchmark) {
+          final deviation = benchmark.netFlowDeviation;
+          final isPositive = deviation >= 0;
+          final Color color;
+          if (benchmark.performanceRating == PerformanceRating.excellent ||
+              benchmark.performanceRating == PerformanceRating.good) {
+            color = Colors.green;
+          } else if (benchmark.performanceRating ==
+                  PerformanceRating.below ||
+              benchmark.performanceRating == PerformanceRating.poor) {
+            color = Colors.red;
+          } else {
+            color = Colors.orange;
+          }
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'Net: ₺${NumberFormat('#,##0', 'tr_TR').format(benchmark.currentNetFlow)}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '${isPositive ? '+' : ''}${deviation.toStringAsFixed(1)}% ortalamaya göre',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
+
+        return _buildCard(
+          title: 'Ortalama Karşılaştırmaları',
+          subtitle: 'Seçili dönem, son 3/6/12 ay ortalamasına göre',
+          content: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.insights,
+                      size: 20,
+                      color: Colors.teal,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Net nakit akışınız, geçmiş ortalamalara göre ne durumda gösterir.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                buildRow(
+                  data.threeMonthBenchmark.periodLabel,
+                  data.threeMonthBenchmark,
+                ),
+                const SizedBox(height: 6),
+                buildRow(
+                  data.sixMonthBenchmark.periodLabel,
+                  data.sixMonthBenchmark,
+                ),
+                const SizedBox(height: 6),
+                buildRow(
+                  data.twelveMonthBenchmark.periodLabel,
+                  data.twelveMonthBenchmark,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -2269,63 +2904,30 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   Widget _buildHeaderTimeFilter() {
-    return SizedBox(
-      height: 40,
-      child: Center(
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildFilterOption('Günlük'),
-              const SizedBox(width: 8),
-              _buildFilterOption('Haftalık'),
-              const SizedBox(width: 8),
-              _buildFilterOption('Aylık'),
-              const SizedBox(width: 8),
-              _buildFilterOption('Yıllık'),
-              const SizedBox(width: 8),
-              _buildFilterOption('Özel'),
-            ],
-          ),
-        ),
-      ),
+    final selectedLabel = _timeFilterLabels[_selectedTimeFilter]!;
+    final filters = _timeFilterLabels.values.toList();
+
+    return TimeFilterBar(
+      selectedFilter: selectedLabel,
+      filters: filters,
+      onFilterChanged: _onTimeFilterChanged,
     );
   }
 
-  Widget _buildFilterOption(String label) {
-    final isSelected = _selectedTimeFilter == label;
-    // Dark mode kontrolü için context'i kullanıyoruz ama renkleri sabit tutabiliriz veya temaya göre ayarlayabiliriz.
-    // Şimdilik mevcut renk şemasını koruyorum: Seçiliyse Teal, değilse stroke.
-    
-    return GestureDetector(
-      onTap: () {
-        if (label == 'Özel') {
-          _selectDateRange();
-        } else {
-          setState(() {
-            _selectedTimeFilter = label;
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF00BFA5) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: isSelected ? null : Border.all(color: Colors.grey.withValues(alpha: 0.3)),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 13,
-          ),
-        ),
-      ),
+  void _onTimeFilterChanged(String label) {
+    if (label == _timeFilterLabels[TimeFilter.custom]) {
+      _selectDateRange();
+      return;
+    }
+
+    final matchedEntry = _timeFilterLabels.entries.firstWhere(
+      (entry) => entry.value == label,
+      orElse: () => const MapEntry(TimeFilter.monthly, 'Aylık'),
     );
+
+    setState(() {
+      _selectedTimeFilter = matchedEntry.key;
+    });
   }
 
   Future<void> _selectDateRange() async {
@@ -2357,7 +2959,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       setState(() {
         _customStartDate = picked.start;
         _customEndDate = picked.end;
-        _selectedTimeFilter = 'Özel';
+        _selectedTimeFilter = TimeFilter.custom;
       });
     }
   }
@@ -2375,18 +2977,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     }
   }
 
-  String _getShortWalletTypeName(String type) {
-    switch (type) {
-      case 'Nakit':
-        return 'Nkt';
-      case 'Kredi Kartı':
-        return 'KK';
-      case 'Banka Hesabı':
-        return 'BH';
-      default:
-        return 'Dğr';
-    }
-  }
+
 
   Color _getWalletTypeColor(String type) {
     switch (type) {
@@ -2444,115 +3035,69 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               padding: EdgeInsets.all(16),
               child: Text('Bu dönemde harcama bulunmamaktadır.'),
             )
-          else
+          else ...[
             SizedBox(
-              height: 200,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY:
-                      sortedMethods
-                          .map((e) => e.value)
-                          .reduce((a, b) => a > b ? a : b) *
-                      1.2,
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (_) => Colors.blueGrey,
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                        final method = sortedMethods[group.x.toInt()].key;
-                        final amount = rod.toY;
-                        final percentage = totalExpense > 0
-                            ? (amount / totalExpense) * 100
-                            : 0;
-                        return BarTooltipItem(
-                          '$method\n${NumberFormat('#,##0', 'tr_TR').format(amount)} ₺\n${percentage.toStringAsFixed(1)}%',
-                          const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      },
+              height: 300,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: InteractivePieChart(
+                  data: Map.fromEntries(sortedMethods),
+                  colors: Map.fromEntries(
+                    sortedMethods.map(
+                      (entry) =>
+                          MapEntry(entry.key, _getWalletTypeColor(entry.key)),
                     ),
                   ),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          if (value.toInt() >= 0 &&
-                              value.toInt() < sortedMethods.length) {
-                            return Text(
-                              _getShortWalletTypeName(
-                                sortedMethods[value.toInt()].key,
-                              ),
-                              style: const TextStyle(fontSize: 10),
-                              textAlign: TextAlign.center,
-                            );
-                          }
-                          return const Text('');
-                        },
-                        reservedSize: 30,
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            '₺${NumberFormat.compact().format(value)}',
-                            style: const TextStyle(fontSize: 10),
-                          );
-                        },
-                        reservedSize: 40,
-                      ),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: true),
-                  barGroups: sortedMethods.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final methodData = entry.value;
-
-                    return BarChartGroupData(
-                      x: index,
-                      barRods: [
-                        BarChartRodData(
-                          toY: methodData.value,
-                          color: _getWalletTypeColor(methodData.key),
-                          width: 20,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                      ],
-                    );
-                  }).toList(),
+                  radius: 70,
+                  centerSpaceRadius: 50,
+                  enableTouch: true,
                 ),
               ),
             ),
-          const SizedBox(height: 16),
-          if (totalExpense > 0)
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
-                children: sortedMethods.map((methodData) {
-                  final percentage = (methodData.value / totalExpense) * 100;
+                children: sortedMethods.map((entry) {
+                  final percentage =
+                      totalExpense > 0 ? (entry.value / totalExpense) * 100 : 0.0;
+                  final color = _getWalletTypeColor(entry.key);
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          methodData.key,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            entry.key,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                         Text(
-                          '${percentage.toStringAsFixed(1)}% (₺${NumberFormat('#,##0', 'tr_TR').format(methodData.value)})',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          '₺${NumberFormat('#,##0', 'tr_TR').format(entry.value)}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${percentage.toStringAsFixed(1)}%',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -2560,6 +3105,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 }).toList(),
               ),
             ),
+            const SizedBox(height: 16),
+          ],
         ],
       ),
     );
@@ -2651,52 +3198,25 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 const Divider(),
                 const SizedBox(height: 16),
                 SizedBox(
-                  height: 250,
+                  height: 300,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 50,
-                        pieTouchData: PieTouchData(
-                          touchCallback:
-                              (FlTouchEvent event, pieTouchResponse) {
-                                if (event is FlTapUpEvent &&
-                                    pieTouchResponse != null) {
-                                  final sectionIndex = pieTouchResponse
-                                      .touchedSection
-                                      ?.touchedSectionIndex;
-                                  if (sectionIndex != null &&
-                                      sectionIndex <
-                                          paymentsByCategory.length) {
-                                    final category = paymentsByCategory.keys
-                                        .elementAt(sectionIndex);
-                                    _showBillCategoryDetails(
-                                      category,
-                                      paymentsByCategory[category]!,
-                                    );
-                                  }
-                                }
-                              },
-                        ),
-                        sections: paymentsByCategory.entries.map((entry) {
-                          final percentage = totalAmount > 0
-                              ? (entry.value / totalAmount) * 100
-                              : 0.0;
-                          final color = _getBillCategoryColor(entry.key);
-                          return PieChartSectionData(
-                            color: color,
-                            value: percentage,
-                            title: '${percentage.toStringAsFixed(0)}%',
-                            radius: 70,
-                            titleStyle: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          );
-                        }).toList(),
+                    child: InteractivePieChart(
+                      data: Map.fromEntries(
+                        paymentsByCategory.entries.toList()
+                          ..sort((a, b) => b.value.compareTo(a.value)),
                       ),
+                      colors: Map.fromEntries(
+                        paymentsByCategory.keys.map(
+                          (cat) => MapEntry(cat, _getBillCategoryColor(cat)),
+                        ),
+                      ),
+                      radius: 70,
+                      centerSpaceRadius: 50,
+                      enableTouch: true,
+                      onSectionTap: (category, value) {
+                        _showBillCategoryDetails(category, value);
+                      },
                     ),
                   ),
                 ),
@@ -2839,20 +3359,20 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       DateTime? endDate;
 
       switch (_selectedTimeFilter) {
-        case 'Günlük':
+        case TimeFilter.daily:
           startDate = DateTime(now.year, now.month, now.day);
           endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
           break;
-        case 'Haftalık':
+        case TimeFilter.weekly:
           startDate = now.subtract(const Duration(days: 7));
           break;
-        case 'Aylık':
+        case TimeFilter.monthly:
           startDate = DateTime(now.year, now.month, 1);
           break;
-        case 'Yıllık':
+        case TimeFilter.yearly:
           startDate = DateTime(now.year, 1, 1);
           break;
-        case 'Özel':
+        case TimeFilter.custom:
           if (_customStartDate != null && _customEndDate != null) {
             startDate = _customStartDate!;
             endDate = _customEndDate;
@@ -2860,8 +3380,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             startDate = DateTime(now.year, now.month, 1);
           }
           break;
-        default:
-          startDate = DateTime(now.year, now.month, 1);
       }
 
       final filteredPayments = allPayments.where((payment) {

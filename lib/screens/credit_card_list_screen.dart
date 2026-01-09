@@ -10,6 +10,7 @@ import 'card_reporting_screen.dart';
 import 'kmh_list_screen.dart';
 import 'kmh_account_detail_screen.dart';
 import 'add_wallet_screen.dart';
+import '../widgets/cards/bank_card_visual_widget.dart';
 
 class CreditCardListScreen extends StatefulWidget {
   const CreditCardListScreen({super.key});
@@ -411,207 +412,50 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     }
 
     final currentDebt = details['currentDebt'] as double;
-    final availableCredit = details['availableCredit'] as double;
-    final utilization = details['utilization'] as double;
     final nextDueDate = details['nextDueDate'] as DateTime;
-    final activeInstallmentCount = details['activeInstallmentCount'] as int;
-    Color statusColor;
-    if (utilization >= 80) {
-      statusColor = Colors.red;
-    } else if (utilization >= 50) {
-      statusColor = Colors.orange;
-    } else {
-      statusColor = Colors.green;
-    }
+    // Note: availableCredit, utilization, and activeInstallmentCount used to be displayed.
+    // The new visual style abstracts some of this. If needed, we can add them back later around the card widget.
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: BankCardVisualWidget(
+        bankName: card.bankName,
+        cardName: card.cardName,
+        last4Digits: card.last4Digits,
+        currentDebt: currentDebt,
+        limit: card.creditLimit,
+        colorHex: card.cardColor.toString(),
+        cutOffDay: card.statementDay,
+        fullPaymentDate: nextDueDate,
         onTap: () => _navigateToCardDetail(card),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: card.color.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
+        action: PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white),
+          onSelected: (value) {
+            if (value == 'delete') {
+              _deleteCard(card);
+            }
+          },
+          itemBuilder: (BuildContext context) {
+            return [
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete,
+                      color: Colors.red,
+                      size: 20,
                     ),
-                    child: Icon(Icons.credit_card, color: card.color, size: 28),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          card.bankName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          '${card.cardName} •••• ${card.last4Digits}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                    SizedBox(width: 8),
+                    Text(
+                      'Sil',
+                      style: TextStyle(color: Colors.red),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            '${utilization.toStringAsFixed(0)}%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: statusColor,
-                            ),
-                          ),
-                        ),
-                        PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert),
-                          onSelected: (value) {
-                            if (value == 'delete') {
-                              _deleteCard(card);
-                            }
-                          },
-                          itemBuilder: (BuildContext context) {
-                            return [
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                      size: 20,
-                                    ),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Sil',
-                                      style: TextStyle(color: Colors.red),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ];
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoColumn(
-                      'Mevcut Borç',
-                      _currencyFormat.format(currentDebt),
-                      Colors.red,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildInfoColumn(
-                      'Kullanılabilir',
-                      _currencyFormat.format(availableCredit),
-                      Colors.green,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: utilization / 100,
-                  backgroundColor: Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(statusColor),
-                  minHeight: 8,
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.calendar_today,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            'Son Ödeme: ${DateFormat('dd MMM', 'tr_TR').format(nextDueDate)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (activeInstallmentCount > 0)
-                    Flexible(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.schedule,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$activeInstallmentCount Taksit',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
+            ];
+          },
         ),
       ),
     );

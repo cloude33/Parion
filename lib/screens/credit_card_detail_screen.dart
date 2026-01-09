@@ -264,6 +264,8 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
                     const SizedBox(height: 16),
                   _buildDatesCard(),
                   const SizedBox(height: 16),
+                  _buildInterestRatesCard(),
+                  const SizedBox(height: 16),
                   _buildActionButtons(),
                   const SizedBox(height: 24),
                   _buildActiveInstallmentsSection(),
@@ -789,6 +791,62 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildInterestRatesCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Faiz ve Oran Bilgileri',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            _buildRateRow('Alışveriş Faizi', widget.card.monthlyInterestRate),
+            _buildRateRow('Gecikme Faizi', widget.card.lateInterestRate),
+            if (widget.card.overLimitInterestRate != null)
+              _buildRateRow(
+                'Limit Aşım Faizi',
+                widget.card.overLimitInterestRate!,
+              ),
+            if (widget.card.cashAdvanceRate != null)
+              _buildRateRow(
+                'Nakit Avans Faizi',
+                widget.card.cashAdvanceRate!,
+              ),
+            if (widget.card.cashAdvanceOverdueInterestRate != null)
+              _buildRateRow(
+                'Nakit Avans Gecikme',
+                widget.card.cashAdvanceOverdueInterestRate!,
+              ),
+            if (widget.card.minimumPaymentRate != null)
+              _buildRateRow(
+                'Minimum Ödeme Oranı',
+                widget.card.minimumPaymentRate!,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRateRow(String label, double rate) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey[600])),
+          Text(
+            '%${rate.toStringAsFixed(2)}',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }

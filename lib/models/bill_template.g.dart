@@ -16,7 +16,7 @@ BillTemplate _$BillTemplateFromJson(Map<String, dynamic> json) => BillTemplate(
       description: json['description'] as String?,
       walletId: json['walletId'] as String?,
       monthlyAmount: (json['monthlyAmount'] as num?)?.toDouble(),
-      paymentDay: json['paymentDay'] as int?,
+      paymentDay: (json['paymentDay'] as num?)?.toInt(),
       isActive: json['isActive'] as bool? ?? true,
       createdDate: DateTime.parse(json['createdDate'] as String),
       updatedDate: DateTime.parse(json['updatedDate'] as String),

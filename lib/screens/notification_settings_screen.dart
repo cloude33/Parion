@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/notification_preferences.dart';
 import '../services/notification_preferences_service.dart';
-import '../services/notification_service.dart';
+import '../services/notification_scheduler_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../widgets/ios_style_time_picker.dart';
 import 'kmh_alert_settings_screen.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
@@ -16,7 +18,6 @@ class _NotificationSettingsScreenState
     extends State<NotificationSettingsScreen> {
   final NotificationPreferencesService _prefsService =
       NotificationPreferencesService();
-  final NotificationService _notificationService = NotificationService();
 
   NotificationPreferences? _preferences;
   bool _isLoading = true;
@@ -268,29 +269,21 @@ class _NotificationSettingsScreenState
     );
   }
 
-  Future<void> _sendTestNotification() async {
-    try {
-      await _notificationService.sendTestNotification();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Test bildirimi gönderildi! 🎉'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
+  Future<void> _showIOSTimePicker({
+    required BuildContext context,
+    required TimeOfDay initialTime,
+    required Function(TimeOfDay) onTimeChanged,
+  }) async {
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return IOSStyleTimePicker(
+          initialTime: initialTime,
+          onTimeChanged: onTimeChanged,
         );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Test bildirimi gönderilemedi: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    }
+      },
+    );
   }
 
   Future<void> _loadPreferences() async {
@@ -304,11 +297,58 @@ class _NotificationSettingsScreenState
   Future<void> _savePreferences() async {
     if (_preferences != null) {
       await _prefsService.savePreferences(_preferences!);
+      
+      // Schedule or cancel notifications based on preferences
+      await _scheduleNotifications();
+      
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('Ayarlar kaydedildi')));
+        ).showSnackBar(const SnackBar(content: Text('Ayarlar kaydedildi ve bildirimler zamanlandı')));
       }
+    }
+  }
+
+  Future<void> _scheduleNotifications() async {
+    final scheduler = NotificationSchedulerService();
+    await scheduler.initialize();
+    
+    // Cancel all existing periodic notifications
+    await scheduler.cancelNotification(1); // Daily summary
+    await scheduler.cancelNotification(2); // Weekly summary
+    await scheduler.cancelNotification(3); // Daily transaction reminder
+    
+    // Schedule daily summary if enabled
+    if (_preferences!.dailySummaryEnabled) {
+      await scheduler.schedulePeriodicNotification(
+        id: 1,
+        title: 'Günlük Özet',
+        body: 'Bugünün finansal özetinizi görüntüleyin',
+        interval: RepeatInterval.daily,
+        timeOfDay: _preferences!.dailySummaryTime,
+      );
+    }
+    
+    // Schedule weekly summary if enabled
+    if (_preferences!.weeklySummaryEnabled) {
+      await scheduler.schedulePeriodicNotification(
+        id: 2,
+        title: 'Haftalık Özet',
+        body: 'Bu haftanın finansal özetinizi görüntüleyin',
+        interval: RepeatInterval.weekly,
+        timeOfDay: _preferences!.weeklySummaryTime,
+      );
+    }
+    
+    // Schedule daily transaction reminder if enabled
+    if (_preferences!.dailyTransactionReminderEnabled) {
+      await scheduler.schedulePeriodicNotification(
+        id: 3,
+        title: 'İşlem Hatırlatıcısı',
+        body: 'Bugünkü işlemlerinizi girdiniz mi?',
+        interval: RepeatInterval.daily,
+        timeOfDay: _preferences!.dailyTransactionReminderTime,
+      );
     }
   }
 
@@ -323,11 +363,6 @@ class _NotificationSettingsScreenState
         title: const Text('Bildirim Ayarları'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_active),
-            tooltip: 'Test Bildirimi Gönder',
-            onPressed: _sendTestNotification,
-          ),
-          IconButton(
             icon: const Icon(Icons.save),
             onPressed: _savePreferences,
           ),
@@ -336,9 +371,9 @@ class _NotificationSettingsScreenState
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildTestSection(),
-          const SizedBox(height: 24),
           _buildDailySummarySection(),
+          const SizedBox(height: 24),
+          _buildDailyTransactionReminderSection(),
           const SizedBox(height: 24),
           _buildWeeklySummarySection(),
           const SizedBox(height: 24),
@@ -356,56 +391,6 @@ class _NotificationSettingsScreenState
           const SizedBox(height: 24),
           _buildKmhNotificationsSection(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildTestSection() {
-    return Card(
-      color: Colors.blue[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.science, color: Colors.blue[700]),
-                const SizedBox(width: 8),
-                Text(
-                  'Bildirim Testi',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[700],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Bildirim sisteminin çalışıp çalışmadığını test edin.',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _sendTestNotification,
-                icon: const Icon(Icons.send),
-                label: const Text('Test Bildirimi Gönder'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[700],
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -442,19 +427,69 @@ class _NotificationSettingsScreenState
                   '${_preferences!.dailySummaryTime.minute.toString().padLeft(2, '0')}',
                 ),
                 trailing: const Icon(Icons.access_time),
-                onTap: () async {
-                  final time = await showTimePicker(
-                    context: context,
-                    initialTime: _preferences!.dailySummaryTime,
-                  );
-                  if (time != null) {
+                onTap: () => _showIOSTimePicker(
+                  context: context,
+                  initialTime: _preferences!.dailySummaryTime,
+                  onTimeChanged: (time) {
                     setState(() {
                       _preferences = _preferences!.copyWith(
                         dailySummaryTime: time,
                       );
                     });
-                  }
-                },
+                  },
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDailyTransactionReminderSection() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Günlük İşlem Hatırlatıcısı',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            SwitchListTile(
+              title: const Text('Günlük işlem hatırlatıcısı'),
+              subtitle: const Text('Bugünkü işlemleri girdiniz mi?'),
+              value: _preferences!.dailyTransactionReminderEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _preferences = _preferences!.copyWith(
+                    dailyTransactionReminderEnabled: value,
+                  );
+                });
+              },
+            ),
+            if (_preferences!.dailyTransactionReminderEnabled) ...[
+              const Divider(),
+              ListTile(
+                title: const Text('Bildirim saati'),
+                subtitle: Text(
+                  '${_preferences!.dailyTransactionReminderTime.hour.toString().padLeft(2, '0')}:'
+                  '${_preferences!.dailyTransactionReminderTime.minute.toString().padLeft(2, '0')}',
+                ),
+                trailing: const Icon(Icons.access_time),
+                onTap: () => _showIOSTimePicker(
+                  context: context,
+                  initialTime: _preferences!.dailyTransactionReminderTime,
+                  onTimeChanged: (time) {
+                    setState(() {
+                      _preferences = _preferences!.copyWith(
+                        dailyTransactionReminderTime: time,
+                      );
+                    });
+                  },
+                ),
               ),
             ],
           ],
@@ -496,19 +531,17 @@ class _NotificationSettingsScreenState
                   '${_preferences!.weeklySummaryTime.minute.toString().padLeft(2, '0')}',
                 ),
                 trailing: const Icon(Icons.access_time),
-                onTap: () async {
-                  final time = await showTimePicker(
-                    context: context,
-                    initialTime: _preferences!.weeklySummaryTime,
-                  );
-                  if (time != null) {
+                onTap: () => _showIOSTimePicker(
+                  context: context,
+                  initialTime: _preferences!.weeklySummaryTime,
+                  onTimeChanged: (time) {
                     setState(() {
                       _preferences = _preferences!.copyWith(
                         weeklySummaryTime: time,
                       );
                     });
-                  }
-                },
+                  },
+                ),
               ),
             ],
           ],

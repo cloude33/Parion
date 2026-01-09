@@ -34,6 +34,9 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
   late TextEditingController _pointsConversionRateController;
   late TextEditingController _cashAdvanceRateController;
   late TextEditingController _cashAdvanceLimitController;
+  late TextEditingController _overLimitInterestRateController;
+  late TextEditingController _cashAdvanceOverdueInterestRateController;
+  late TextEditingController _minimumPaymentRateController;
 
   Color _selectedColor = Colors.blue;
   IconData? _selectedIcon;
@@ -137,6 +140,15 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
           ? _formatNumber(card.cashAdvanceLimit!)
           : '',
     );
+    _overLimitInterestRateController = TextEditingController(
+      text: card?.overLimitInterestRate?.toString() ?? '3.50',
+    );
+    _cashAdvanceOverdueInterestRateController = TextEditingController(
+      text: card?.cashAdvanceOverdueInterestRate?.toString() ?? '4.80',
+    );
+    _minimumPaymentRateController = TextEditingController(
+      text: card?.minimumPaymentRate?.toString() ?? '40',
+    );
 
     if (card != null) {
       _selectedColor = card.color;
@@ -179,6 +191,9 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
     _pointsConversionRateController.dispose();
     _cashAdvanceRateController.dispose();
     _cashAdvanceLimitController.dispose();
+    _overLimitInterestRateController.dispose();
+    _cashAdvanceOverdueInterestRateController.dispose();
+    _minimumPaymentRateController.dispose();
     super.dispose();
   }
 
@@ -226,6 +241,10 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
                   _buildMonthlyInterestRateField(),
                   const SizedBox(height: 16),
                   _buildLateInterestRateField(),
+                  const SizedBox(height: 16),
+                  _buildOverLimitInterestRateField(),
+                  const SizedBox(height: 16),
+                  _buildMinimumPaymentRateField(),
                   const SizedBox(height: 24),
                   const Text(
                     'Nakit Avans Bilgileri (Opsiyonel)',
@@ -233,6 +252,8 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
                   ),
                   const SizedBox(height: 16),
                   _buildCashAdvanceRateField(),
+                  const SizedBox(height: 16),
+                  _buildCashAdvanceOverdueInterestRateField(),
                   const SizedBox(height: 16),
                   _buildCashAdvanceLimitField(),
                   const SizedBox(height: 24),
@@ -874,6 +895,87 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
     );
   }
 
+  Widget _buildOverLimitInterestRateField() {
+    return TextFormField(
+      controller: _overLimitInterestRateController,
+      decoration: const InputDecoration(
+        labelText: 'Limit Aşım Faiz Oranı',
+        hintText: '3.50',
+        helperText: 'Limit aşımı durumunda uygulanan faiz (aylık %)',
+        prefixIcon: Icon(Icons.error_outline),
+        suffixText: '%',
+        border: OutlineInputBorder(),
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+      ],
+      validator: (value) {
+        if (value != null && value.isNotEmpty) {
+          final rate = double.tryParse(value);
+          if (rate == null || rate < 0) {
+            return 'Geçersiz oran';
+          }
+        }
+        return null; // Optional
+      },
+    );
+  }
+
+  Widget _buildCashAdvanceOverdueInterestRateField() {
+    return TextFormField(
+      controller: _cashAdvanceOverdueInterestRateController,
+      decoration: const InputDecoration(
+        labelText: 'Nakit Avans Gecikme Faiz Oranı',
+        hintText: '4.80',
+        helperText: 'Nakit avans gecikmesi durumunda uygulanan faiz (aylık %)',
+        prefixIcon: Icon(Icons.money_off),
+        suffixText: '%',
+        border: OutlineInputBorder(),
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+      ],
+      validator: (value) {
+        if (value != null && value.isNotEmpty) {
+          final rate = double.tryParse(value);
+          if (rate == null || rate < 0) {
+            return 'Geçersiz oran';
+          }
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildMinimumPaymentRateField() {
+    return TextFormField(
+      controller: _minimumPaymentRateController,
+      decoration: const InputDecoration(
+        labelText: 'Minimum Ödeme Oranı',
+        hintText: '40',
+        helperText: 'Dönem borcunun asgari ödeme oranı (%)',
+        prefixIcon: Icon(Icons.pie_chart),
+        suffixText: '%',
+        border: OutlineInputBorder(),
+      ),
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+      ],
+      validator: (value) {
+        if (value != null && value.isNotEmpty) {
+          final rate = double.tryParse(value);
+          if (rate == null || rate < 0 || rate > 100) {
+            return 'Geçersiz oran (0-100)';
+          }
+        }
+        return null;
+      },
+    );
+  }
+
   Widget _buildColorPicker() {
     return Wrap(
       spacing: 12,
@@ -959,6 +1061,18 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
           ? null
           : _parseNumber(_cashAdvanceLimitController.text);
 
+      final overLimitInterestRate = _overLimitInterestRateController.text.isEmpty
+          ? null
+          : _safeParseRate(_overLimitInterestRateController.text);
+
+      final cashAdvanceOverdueInterestRate = _cashAdvanceOverdueInterestRateController.text.isEmpty
+          ? null
+          : _safeParseRate(_cashAdvanceOverdueInterestRateController.text);
+
+      final minimumPaymentRate = _minimumPaymentRateController.text.isEmpty
+          ? null
+          : _safeParseRate(_minimumPaymentRateController.text);
+
       final card = CreditCard(
         id: widget.card?.id ?? const Uuid().v4(),
         bankName: _bankNameController.text.trim(),
@@ -981,6 +1095,9 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
         pointsConversionRate: pointsConversionRate,
         cashAdvanceRate: cashAdvanceRate,
         cashAdvanceLimit: cashAdvanceLimit,
+        overLimitInterestRate: overLimitInterestRate,
+        cashAdvanceOverdueInterestRate: cashAdvanceOverdueInterestRate,
+        minimumPaymentRate: minimumPaymentRate,
       );
 
       if (widget.card == null) {

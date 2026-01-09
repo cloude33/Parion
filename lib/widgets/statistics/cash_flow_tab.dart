@@ -5,6 +5,7 @@ import '../../models/cash_flow_data.dart';
 import '../../services/statistics_service.dart';
 import 'summary_card.dart';
 import 'metric_card.dart';
+import 'responsive_statistics_layout.dart';
 class CashFlowTab extends StatefulWidget {
   final DateTime startDate;
   final DateTime endDate;
@@ -112,13 +113,10 @@ class _CashFlowTabState extends State<CashFlowTab> {
 
     return RefreshIndicator(
       onRefresh: _loadCashFlowData,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+      child: ResponsiveStatisticsLayout(
         children: [
           _buildSummaryCards(),
-          const SizedBox(height: 16),
           _buildLineChartCard(),
-          const SizedBox(height: 16),
           _buildDetailedTable(),
         ],
       ),
