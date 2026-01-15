@@ -307,6 +307,41 @@ class StatisticsService {
         hourOfDaySpending[hour] =
             (hourOfDaySpending[hour] ?? 0) + transaction.amount;
       }
+      
+      // Also include regular expense transactions
+      final regularTransactions = await _dataService.getTransactions();
+      final filteredRegularTransactions = regularTransactions.where((t) {
+        final isExpense = t.type == 'expense';
+        final isInRange = t.date.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
+            t.date.isBefore(endDate.add(const Duration(days: 1)));
+        final matchesCategory = categories == null || categories.contains(t.category);
+        return isExpense && isInRange && matchesCategory;
+      }).toList();
+      
+      for (var transaction in filteredRegularTransactions) {
+        totalSpending += transaction.amount;
+        categoryBreakdown[transaction.category] =
+            (categoryBreakdown[transaction.category] ?? 0) + transaction.amount;
+        
+        // Get wallet type for payment method breakdown
+        final wallets = await _dataService.getWallets();
+        final wallet = wallets.firstWhere(
+          (w) => w.id == transaction.walletId,
+          orElse: () => wallets.isNotEmpty ? wallets.first : throw Exception('No wallet'),
+        );
+        final walletType = wallet.type == 'cash' ? 'Nakit' : 
+                          wallet.type == 'bank' ? 'Banka' : 'Diğer';
+        paymentMethodBreakdown[walletType] =
+            (paymentMethodBreakdown[walletType] ?? 0) + transaction.amount;
+        
+        final dayOfWeek = transaction.date.weekday;
+        dayOfWeekSpending[dayOfWeek] =
+            (dayOfWeekSpending[dayOfWeek] ?? 0) + transaction.amount;
+        final hour = transaction.date.hour;
+        hourOfDaySpending[hour] =
+            (hourOfDaySpending[hour] ?? 0) + transaction.amount;
+      }
+      
       final wallets = await _dataService.getWallets();
       for (var wallet in wallets) {
         if (wallet.isKmhAccount) {
@@ -376,6 +411,8 @@ class StatisticsService {
         topCategoryAmount: topCategoryAmount,
         mostSpendingDay: mostSpendingDay,
         mostSpendingHour: mostSpendingHour,
+        dailySpending: dayOfWeekSpending,
+        hourlySpending: hourOfDaySpending,
       );
       _cache.set(cacheKey, result, duration: _cacheDuration);
 

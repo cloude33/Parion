@@ -9,6 +9,7 @@ import '../models/credit_card.dart';
 import '../models/credit_card_transaction.dart';
 import '../services/credit_card_service.dart';
 import '../utils/image_helper.dart';
+import '../widgets/full_screen_image_viewer.dart';
 
 class EditCreditCardTransactionScreen extends StatefulWidget {
   final CreditCard card;
@@ -790,17 +791,30 @@ class _EditCreditCardTransactionScreenState
                     }
                     return Stack(
                       children: [
-                        Container(
-                          width: 100,
-                          margin: const EdgeInsets.only(right: 8),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            image: DecorationImage(
-                              image: MemoryImage(base64Decode(_images[index])),
-                              fit: BoxFit.cover,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => FullScreenImageViewer(
+                                  images: _images,
+                                  initialIndex: index,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 100,
+                            margin: const EdgeInsets.only(right: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              image: DecorationImage(
+                                image: MemoryImage(base64Decode(_images[index])),
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
-                        ),
+                         ),
                         Positioned(
                           top: 4,
                           right: 12,

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/credit_card.dart';
 import '../models/credit_card_payment.dart';
 import '../repositories/credit_card_payment_repository.dart';
+import 'edit_credit_card_payment_screen.dart';
 
 class PaymentHistoryScreen extends StatefulWidget {
   final CreditCard card;
@@ -108,7 +109,7 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => _showPaymentDetails(payment),
+        onTap: () => _navigateToEditPayment(payment),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -283,121 +284,20 @@ class _PaymentHistoryScreenState extends State<PaymentHistoryScreen> {
     }
   }
 
-  void _showPaymentDetails(CreditCardPayment payment) {
-    final formatter = NumberFormat.currency(locale: 'tr_TR', symbol: '₺');
-    
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Ödeme Detayları',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                _buildDetailRow('Ödeme Tutarı', formatter.format(payment.amount)),
-                _buildDetailRow('Ödeme Tarihi', DateFormat('dd MMMM yyyy', 'tr_TR').format(payment.paymentDate)),
-                _buildDetailRow('Ödeme Türü', payment.paymentTypeText),
-                _buildDetailRow('Ödeme Yöntemi', payment.paymentMethodText),
-                _buildDetailRow('Kalan Borç', formatter.format(payment.remainingDebtAfterPayment)),
-                if (payment.note.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Not',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      payment.note,
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text('Kapat'),
-                  ),
-                ),
-              ],
-            ),
-          ),
+  Future<void> _navigateToEditPayment(CreditCardPayment payment) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditCreditCardPaymentScreen(
+          card: widget.card,
+          payment: payment,
         ),
       ),
     );
-  }
 
-  Widget _buildDetailRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
+    if (result == true) {
+      _loadPayments();
+    }
   }
 }
 

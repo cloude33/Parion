@@ -10,6 +10,7 @@ import '../services/data_service.dart';
 import '../services/theme_service.dart';
 import '../services/notification_service.dart';
 import '../services/auth_service.dart';
+import '../services/auth/biometric_auth_service.dart';
 import '../services/app_lock_service.dart';
 import '../services/language_service.dart';
 import '../services/user_service.dart';
@@ -103,7 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF4F6F8),
       body: SafeArea(
         child: Column(
           children: [
@@ -270,26 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
-          _buildSettingItem(
-            icon: Icons.receipt_long,
-            title: AppLocalizations.of(context)!.myBills,
-            subtitle: AppLocalizations.of(context)!.manageBillsDesc,
-            iconColor: Colors.orange,
-            trailing: const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(0xFF8E8E93),
-            ),
-            onTap: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const BillTemplatesScreen(),
-                ),
-              );
-              _loadUser();
-            },
-          ),
+
           _buildSettingItem(
             icon: Icons.category_outlined,
             title: AppLocalizations.of(context)!.categories,
@@ -307,6 +289,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   builder: (context) => const CategoriesScreen(),
                 ),
               );
+            },
+          ),
+          _buildSettingItem(
+            icon: Icons.subscriptions,
+            title: 'Aboneliklerim',
+            subtitle: 'Düzenli ödemeleriniz ve abonelikleriniz',
+            iconColor: Colors.deepPurple,
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Color(0xFF8E8E93),
+            ),
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BillTemplatesScreen(),
+                ),
+              );
+              _loadUser();
             },
           ),
           _buildSettingItem(
@@ -482,13 +484,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: AppLocalizations.of(context)!.biometricDesc,
               iconColor: Colors.blue,
               trailing: FutureBuilder<bool>(
-                future: AuthService().isBiometricEnabled(),
+                future: BiometricAuthServiceSingleton.instance.isBiometricEnabled(),
                 builder: (context, snapshot) {
                   final isEnabled = snapshot.data ?? false;
                   return Switch(
                     value: isEnabled,
                     onChanged: (value) async {
-                      await AuthService().setBiometricEnabled(value);
+                      final biometricService = BiometricAuthServiceSingleton.instance;
+                      await biometricService.initialize();
+                      if (value) {
+                        await biometricService.enableBiometric();
+                      } else {
+                        await biometricService.disableBiometric();
+                      }
                       setState(() {});
                     },
                   );

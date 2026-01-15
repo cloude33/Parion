@@ -60,7 +60,7 @@ class BankCardVisualWidget extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(20),
@@ -85,7 +85,7 @@ class BankCardVisualWidget extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 14,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -93,7 +93,7 @@ class BankCardVisualWidget extends StatelessWidget {
                 action ?? const Icon(Icons.contactless, color: Colors.white70),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -101,26 +101,26 @@ class BankCardVisualWidget extends StatelessWidget {
                    '**** **** **** ${last4Digits.length >= 4 ? last4Digits : "1234"}',
                    style: const TextStyle(
                      color: Colors.white70,
-                     fontSize: 18,
+                     fontSize: 15,
                      letterSpacing: 2,
                      fontFamily: 'Courier',
                    ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('GÜNCEL BORÇ', style: TextStyle(color: Colors.white60, fontSize: 10)),
-                        const SizedBox(height: 4),
+                        const Text('GÜNCEL BORÇ', style: TextStyle(color: Colors.white60, fontSize: 9)),
+                        const SizedBox(height: 2),
                         Text(
                           '₺${NumberFormat('#,##0', 'tr_TR').format(currentDebt)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -128,14 +128,14 @@ class BankCardVisualWidget extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text('LİMİT', style: TextStyle(color: Colors.white60, fontSize: 10)),
-                        const SizedBox(height: 4),
+                        const Text('LİMİT', style: TextStyle(color: Colors.white60, fontSize: 9)),
+                        const SizedBox(height: 2),
                         Text(
                           '₺${NumberFormat('#,##0', 'tr_TR').format(limit)}',
                           style: const TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                            fontSize: 14,
                           ),
                         ),
                       ],
@@ -146,8 +146,8 @@ class BankCardVisualWidget extends StatelessWidget {
             ),
             if (cutOffDay != null || paymentDay != null || fullPaymentDate != null)
               Container(
-                margin: const EdgeInsets.only(top: 12),
-                padding: const EdgeInsets.only(top: 12),
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: 8),
                 decoration: const BoxDecoration(
                   border: Border(top: BorderSide(color: Colors.white24)),
                 ),
@@ -157,18 +157,18 @@ class BankCardVisualWidget extends StatelessWidget {
                     if (cutOffDay != null && cutOffDay! > 0)
                       Text(
                         'Kesim: $cutOffDay',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        style: const TextStyle(color: Colors.white70, fontSize: 10),
                       ),
                     
                     if (fullPaymentDate != null)
                       Text(
                         'Son Ödeme: ${DateFormat('dd MMM', 'tr_TR').format(fullPaymentDate!)}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        style: const TextStyle(color: Colors.white70, fontSize: 10),
                       )
                     else if (paymentDay != null && paymentDay! > 0)
                       Text(
                         'Son Ödeme: $paymentDay',
-                        style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        style: const TextStyle(color: Colors.white70, fontSize: 10),
                       ),
                   ],
                 ),

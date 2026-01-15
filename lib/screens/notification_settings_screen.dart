@@ -295,11 +295,47 @@ class _NotificationSettingsScreenState
   }
 
   Future<void> _savePreferences() async {
+    debugPrint('NotificationSettings: Saving preferences...');
+    
+    // Check for exact alarm permission on Android
+    final scheduler = NotificationSchedulerService();
+    final hasExactAlarmPermission = await scheduler.checkAndroidScheduleExactAlarmPermission();
+    
+    if (!hasExactAlarmPermission && mounted) {
+      final shouldOpenSettings = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('İzin Gerekli'),
+          content: const Text(
+            'Hatırlatıcıların tam zamanında çalışabilmesi için "Alarmlar ve hatırlatıcılar" iznini vermeniz gerekmektedir. Ayarları açıp bu izni vermek ister misiniz?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Daha Sonra'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Ayarları Aç'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldOpenSettings == true) {
+        await scheduler.requestAndroidScheduleExactAlarmPermission();
+        // Wait a bit for user to return? 
+        // We can continue saving anyway, but notifications might not work perfectly until permission is granted.
+      }
+    }
+
     if (_preferences != null) {
       await _prefsService.savePreferences(_preferences!);
       
       // Schedule or cancel notifications based on preferences
+      debugPrint('NotificationSettings: Scheduling notifications...');
       await _scheduleNotifications();
+      debugPrint('NotificationSettings: Notifications scheduled.');
       
       if (mounted) {
         ScaffoldMessenger.of(

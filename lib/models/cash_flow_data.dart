@@ -141,6 +141,8 @@ class SpendingAnalysis {
   final double topCategoryAmount;
   final DayOfWeek mostSpendingDay;
   final int mostSpendingHour;
+  final Map<int, double> dailySpending;
+  final Map<int, double> hourlySpending;
 
   SpendingAnalysis({
     required this.totalSpending,
@@ -152,6 +154,8 @@ class SpendingAnalysis {
     required this.topCategoryAmount,
     required this.mostSpendingDay,
     required this.mostSpendingHour,
+    this.dailySpending = const {},
+    this.hourlySpending = const {},
   });
 
   Map<String, dynamic> toJson() => {
@@ -166,6 +170,8 @@ class SpendingAnalysis {
     'topCategoryAmount': topCategoryAmount,
     'mostSpendingDay': mostSpendingDay.name,
     'mostSpendingHour': mostSpendingHour,
+    'dailySpending': dailySpending,
+    'hourlySpending': hourlySpending,
   };
 
   factory SpendingAnalysis.fromJson(Map<String, dynamic> json) => SpendingAnalysis(
@@ -185,6 +191,12 @@ class SpendingAnalysis {
       orElse: () => DayOfWeek.monday,
     ),
     mostSpendingHour: json['mostSpendingHour'],
+    dailySpending: json['dailySpending'] != null 
+        ? Map<int, double>.from(json['dailySpending'].map((key, value) => MapEntry(int.parse(key.toString()), value.toDouble())))
+        : {},
+    hourlySpending: json['hourlySpending'] != null
+        ? Map<int, double>.from(json['hourlySpending'].map((key, value) => MapEntry(int.parse(key.toString()), value.toDouble())))
+        : {},
   );
 }
 

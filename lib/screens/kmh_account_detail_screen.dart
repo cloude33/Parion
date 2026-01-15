@@ -9,6 +9,10 @@ import '../services/kmh_service.dart';
 import '../services/sensitive_data_handler.dart';
 import 'kmh_statement_screen.dart';
 import 'edit_kmh_account_screen.dart';
+import 'kmh_withdraw_screen.dart';
+import 'kmh_deposit_screen.dart';
+import 'kmh_payment_planner_screen.dart';
+import 'kmh_transaction_screen.dart';
 
 class KmhAccountDetailScreen extends StatefulWidget {
   final Wallet account;
@@ -847,16 +851,30 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     }
   }
 
-  void _navigateToWithdraw() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Para çekme ekranı yakında eklenecek')),
+  Future<void> _navigateToWithdraw() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KmhWithdrawScreen(account: widget.account),
+      ),
     );
+
+    if (result == true) {
+      _loadAccountDetails();
+    }
   }
 
-  void _navigateToDeposit() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Para yatırma ekranı yakında eklenecek')),
+  Future<void> _navigateToDeposit() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KmhDepositScreen(account: widget.account),
+      ),
     );
+
+    if (result == true) {
+      _loadAccountDetails();
+    }
   }
 
   void _navigateToStatement() {
@@ -868,15 +886,25 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     );
   }
 
-  void _navigateToPaymentPlan() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ödeme planı ekranı yakında eklenecek')),
+  Future<void> _navigateToPaymentPlan() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KmhPaymentPlannerScreen(account: widget.account),
+      ),
     );
+
+    if (result != null) {
+      _loadAccountDetails();
+    }
   }
 
   void _navigateToAllTransactions() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tüm işlemler ekranı yakında eklenecek')),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KmhTransactionScreen(account: widget.account),
+      ),
     );
   }
 }

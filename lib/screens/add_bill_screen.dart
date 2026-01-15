@@ -79,14 +79,16 @@ class _AddBillScreenState extends State<AddBillScreen> {
   }
 
   void _calculatePeriod() {
-    final dueMonth = _dueDate.month;
-    final dueYear = _dueDate.year;
-    final previousMonth = dueMonth == 1 ? 12 : dueMonth - 1;
-    final previousYear = dueMonth == 1 ? dueYear - 1 : dueYear;
+    final day = _selectedTemplate?.paymentDay ?? 1;
+    
+    // Dönem başlangıcı: Seçilen tarihin ayı ve şablondaki ödeme günü
+    final start = DateTime(_dueDate.year, _dueDate.month, day);
+    // Dönem bitişi: Bir sonraki ayın aynı günü
+    final end = DateTime(_dueDate.year, _dueDate.month + 1, day);
 
     setState(() {
-      _periodStart = DateTime(previousYear, previousMonth, 1);
-      _periodEnd = DateTime(dueYear, dueMonth, 0);
+      _periodStart = start;
+      _periodEnd = end;
     });
   }
 
@@ -152,7 +154,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final amount = double.parse(_amountController.text);
+      final amount = double.parse(_amountController.text.replaceAll(',', '.'));
 
       await _paymentService.addPayment(
         templateId: _selectedTemplate!.id,
@@ -230,6 +232,24 @@ class _AddBillScreenState extends State<AddBillScreen> {
                       prefixIcon: const Icon(Icons.receipt_long),
                     ),
                     items: _templates.map((template) {
+                      // Ayırt edici bilgiyi belirle
+                      String subtitle = '';
+                      if (template.phoneNumber != null && template.phoneNumber!.isNotEmpty) {
+                        subtitle = template.phoneNumber!;
+                      } else if (template.accountNumber != null && template.accountNumber!.isNotEmpty) {
+                        subtitle = template.accountNumber!;
+                      } else if (template.description != null && template.description!.isNotEmpty) {
+                        subtitle = template.description!;
+                      }
+                      
+                      // Ana başlık: provider veya name
+                      final title = template.provider ?? template.name;
+                      
+                      // Eğer name, provider'dan farklıysa ve subtitle boşsa, name'i subtitle olarak kullan
+                      if (subtitle.isEmpty && template.name != title) {
+                        subtitle = template.name;
+                      }
+                      
                       return DropdownMenuItem<BillTemplate>(
                         value: template,
                         child: Column(
@@ -237,13 +257,23 @@ class _AddBillScreenState extends State<AddBillScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              template.provider ?? template.name,
+                              title,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
                               style: const TextStyle(
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
+                            if (subtitle.isNotEmpty)
+                              Text(
+                                subtitle,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
                           ],
                         ),
                       );
@@ -276,7 +306,10 @@ class _AddBillScreenState extends State<AddBillScreen> {
                                }
                             }
                          }
-                      });
+                          if (value != null) {
+                             _calculatePeriod();
+                          }
+                       });
                     },
                     validator: (value) {
                       if (value == null) return AppLocalizations.of(context)!.pleaseSelectBill;
@@ -331,7 +364,7 @@ class _AddBillScreenState extends State<AddBillScreen> {
                     ),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(
-                        RegExp(r'^\d+\.?\d{0,2}'),
+                        RegExp(r'^\d*[.,]?\d{0,2}'),
                       ),
                     ],
                     validator: (value) {

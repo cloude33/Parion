@@ -11,6 +11,7 @@ import '../services/smart_category_service.dart';
 import '../utils/image_helper.dart';
 import '../utils/error_handler.dart';
 import '../utils/transaction_form_validator.dart';
+import '../widgets/full_screen_image_viewer.dart';
 
 class EditTransactionScreen extends StatefulWidget {
   final Transaction transaction;
@@ -782,25 +783,38 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       margin: const EdgeInsets.only(right: 12),
       child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.memory(
-              base64Decode(imagePath),
-              width: 120,
-              height: 120,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 120,
-                  height: 120,
-                  color: Colors.grey.shade300,
-                  child: const Icon(
-                    Icons.broken_image,
-                    size: 40,
-                    color: Colors.grey,
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FullScreenImageViewer(
+                    images: _images,
+                    initialIndex: index,
                   ),
-                );
-              },
+                ),
+              );
+            },
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.memory(
+                base64Decode(imagePath),
+                width: 120,
+                height: 120,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 120,
+                    height: 120,
+                    color: Colors.grey.shade300,
+                    child: const Icon(
+                      Icons.broken_image,
+                      size: 40,
+                      color: Colors.grey,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
           Positioned(

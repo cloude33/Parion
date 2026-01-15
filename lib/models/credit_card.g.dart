@@ -39,13 +39,14 @@ class CreditCardAdapter extends TypeAdapter<CreditCard> {
       overLimitInterestRate: fields[19] as double?,
       cashAdvanceOverdueInterestRate: fields[20] as double?,
       minimumPaymentRate: fields[21] as double?,
+      sortOrder: fields[22] as int,
     );
   }
 
   @override
   void write(BinaryWriter writer, CreditCard obj) {
     writer
-      ..writeByte(22)
+      ..writeByte(23)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -89,7 +90,9 @@ class CreditCardAdapter extends TypeAdapter<CreditCard> {
       ..writeByte(20)
       ..write(obj.cashAdvanceOverdueInterestRate)
       ..writeByte(21)
-      ..write(obj.minimumPaymentRate);
+      ..write(obj.minimumPaymentRate)
+      ..writeByte(22)
+      ..write(obj.sortOrder);
   }
 
   @override

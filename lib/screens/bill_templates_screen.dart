@@ -5,6 +5,7 @@ import '../services/bill_template_service.dart';
 import 'add_bill_template_screen.dart';
 import 'bill_template_detail_screen.dart';
 import '../l10n/app_localizations.dart';
+import '../utils/currency_helper.dart';
 import '../utils/bill_helper.dart';
 class BillTemplatesScreen extends StatefulWidget {
   const BillTemplatesScreen({super.key});
@@ -238,6 +239,18 @@ class _BillTemplatesScreenState extends State<BillTemplatesScreen> {
                   fontWeight: FontWeight.w400,
                 ),
               ),
+              if (template.monthlyAmount != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    CurrencyHelper.formatAmount(template.monthlyAmount!),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF00BFA5),
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

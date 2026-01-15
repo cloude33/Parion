@@ -9,6 +9,7 @@ class SmartCategoryService {
   SmartCategoryService._internal();
 
   final DataService _dataService = DataService();
+  
   Future<CategorySuggestion?> suggestCategory(
     String description,
     String type,
@@ -16,6 +17,7 @@ class SmartCategoryService {
     if (description.trim().isEmpty) return null;
 
     final transactions = await _dataService.getTransactions();
+    final wallets = await _dataService.getWallets();
     final categories = (await _dataService.getCategories()).cast<Category>();
     final relevantTransactions = transactions
         .where((t) => t.type == type)
@@ -23,27 +25,44 @@ class SmartCategoryService {
 
     if (relevantTransactions.isEmpty) return null;
     final suggestions = <CategorySuggestion>[];
+    
+    // Tam eşleşme kontrolü
     final exactMatch = _findExactMatch(description, relevantTransactions);
     if (exactMatch != null) {
+      final matchingTransactions = _getMatchingTransactions(
+        description,
+        relevantTransactions,
+        exactMatch,
+      );
+      
+      // Ortalama tutar ve en sık kullanılan cüzdan hesapla
+      final amountWalletInfo = _calculateAmountAndWalletSuggestion(
+        matchingTransactions,
+        wallets,
+      );
+      
       suggestions.add(
         CategorySuggestion(
           category: exactMatch,
           confidence: 1.0,
           reason: 'Tam eşleşme',
-          matchedTransactions: _getMatchingTransactions(
-            description,
-            relevantTransactions,
-            exactMatch,
-          ),
+          matchedTransactions: matchingTransactions,
+          suggestedAmount: amountWalletInfo['amount'],
+          suggestedWalletId: amountWalletInfo['walletId'],
+          suggestedWalletName: amountWalletInfo['walletName'],
+          transactionCount: matchingTransactions.length,
         ),
       );
     }
+    
     final partialMatches = _findPartialMatches(
       description,
       relevantTransactions,
       categories,
+      wallets,
     );
     suggestions.addAll(partialMatches);
+    
     final keywordMatches = _findKeywordMatches(description, type, categories);
     suggestions.addAll(keywordMatches);
 
@@ -51,6 +70,55 @@ class SmartCategoryService {
     suggestions.sort((a, b) => b.confidence.compareTo(a.confidence));
     return suggestions.first;
   }
+  
+  /// Eşleşen işlemlerden ortalama tutar ve en sık kullanılan cüzdanı hesaplar
+  Map<String, dynamic> _calculateAmountAndWalletSuggestion(
+    List<Transaction> transactions,
+    List wallets,
+  ) {
+    if (transactions.isEmpty) {
+      return {'amount': null, 'walletId': null, 'walletName': null};
+    }
+    
+    // Ortalama tutar hesapla
+    final totalAmount = transactions.fold<double>(
+      0,
+      (sum, t) => sum + t.amount,
+    );
+    final averageAmount = totalAmount / transactions.length;
+    
+    // En sık kullanılan cüzdanı bul
+    final walletCounts = <String, int>{};
+    for (var t in transactions) {
+      walletCounts[t.walletId] = (walletCounts[t.walletId] ?? 0) + 1;
+    }
+    
+    String? mostUsedWalletId;
+    int maxCount = 0;
+    walletCounts.forEach((walletId, count) {
+      if (count > maxCount) {
+        maxCount = count;
+        mostUsedWalletId = walletId;
+      }
+    });
+    
+    // Cüzdan adını bul
+    String? walletName;
+    if (mostUsedWalletId != null) {
+      final wallet = wallets.firstWhere(
+        (w) => w.id == mostUsedWalletId,
+        orElse: () => null,
+      );
+      walletName = wallet?.name;
+    }
+    
+    return {
+      'amount': averageAmount,
+      'walletId': mostUsedWalletId,
+      'walletName': walletName,
+    };
+  }
+  
   String? _findExactMatch(String description, List<Transaction> transactions) {
     final normalized = _normalizeText(description);
 
@@ -66,6 +134,7 @@ class SmartCategoryService {
     String description,
     List<Transaction> transactions,
     List<Category> categories,
+    List wallets,
   ) {
     final suggestions = <CategorySuggestion>[];
     final descWords = _extractWords(description);
@@ -98,14 +167,22 @@ class SmartCategoryService {
       final confidence = avgScore * (entry.value.count / transactions.length);
 
       if (confidence > 0.2) {
+        final matchedTrans = entry.value.matchedTransactions.take(5).toList();
+        final amountWalletInfo = _calculateAmountAndWalletSuggestion(
+          matchedTrans,
+          wallets,
+        );
+        
         suggestions.add(
           CategorySuggestion(
             category: entry.key,
             confidence: confidence,
             reason: '${entry.value.count} benzer işlem',
-            matchedTransactions: entry.value.matchedTransactions
-                .take(3)
-                .toList(),
+            matchedTransactions: matchedTrans.take(3).toList(),
+            suggestedAmount: amountWalletInfo['amount'],
+            suggestedWalletId: amountWalletInfo['walletId'],
+            suggestedWalletName: amountWalletInfo['walletName'],
+            transactionCount: entry.value.count,
           ),
         );
       }
@@ -165,6 +242,26 @@ class SmartCategoryService {
           'restoran',
           'cafe',
           'kahve',
+          'starbucks',
+          'mcdonald',
+          'burger king',
+          'kfc',
+          'popeyes',
+          'dominos',
+          'pizza',
+          'döner',
+          'kebap',
+          'lokanta',
+          'kahvaltı',
+          'file',
+          'metro market',
+          'macro',
+          'happy center',
+          'kiler',
+          'onur market',
+          'çağdaş',
+          'özdilek',
+          'gratis',
         ],
         'Ulaşım': [
           'benzin',
@@ -175,6 +272,35 @@ class SmartCategoryService {
           'uber',
           'bitaksi',
           'otopark',
+          'shell',
+          'opet',
+          'bp',
+          'petrol ofisi',
+          'total',
+          'lukoil',
+          'eshot',
+          'izban',
+          'iett',
+          'ego',
+          'kent kart',
+          'istanbulkart',
+          'bilet',
+          'köprü',
+          'geçiş',
+          'hgs',
+          'ogs',
+          'vapur',
+          'feribot',
+          'tren',
+          'tcdd',
+          'thy',
+          'pegasus',
+          'anadolujet',
+          'sunexpress',
+          'uçak',
+          'havaalanı',
+          'otogar',
+          'servis',
         ],
         'Faturalar': [
           'elektrik',
@@ -184,8 +310,48 @@ class SmartCategoryService {
           'telefon',
           'fatura',
           'aidat',
+          'turkcell',
+          'vodafone',
+          'türk telekom',
+          'superonline',
+          'ttnet',
+          'gediz',
+          'izsu',
+          'izmirgaz',
+          'igdaş',
+          'iski',
+          'enerjisa',
+          'clk',
+          'toroslar',
+          'başkent',
+          'aydem',
+          'dicle',
+          'boğaziçi',
+          'gediz edaş',
+          'abonelik',
+          'kontör',
         ],
-        'Sağlık': ['eczane', 'hastane', 'doktor', 'ilaç', 'sağlık', 'diş'],
+        'Sağlık': [
+          'eczane',
+          'hastane',
+          'doktor',
+          'ilaç',
+          'sağlık',
+          'diş',
+          'muayene',
+          'klinik',
+          'laboratuvar',
+          'tahlil',
+          'röntgen',
+          'mr',
+          'tomografi',
+          'aşı',
+          'vitamin',
+          'dermokozmetik',
+          'optik',
+          'gözlük',
+          'lens',
+        ],
         'Eğlence': [
           'sinema',
           'konser',
@@ -193,6 +359,19 @@ class SmartCategoryService {
           'netflix',
           'spotify',
           'eğlence',
+          'youtube premium',
+          'disney',
+          'amazon prime',
+          'exxen',
+          'blu tv',
+          'gain',
+          'oyun',
+          'playstation',
+          'xbox',
+          'steam',
+          'apple music',
+          'deezer',
+          'fizy',
         ],
         'Giyim': [
           'giyim',
@@ -202,23 +381,149 @@ class SmartCategoryService {
           'h&m',
           'mango',
           'lcwaikiki',
+          'defacto',
+          'koton',
+          'mavi',
+          'boyner',
+          'vakko',
+          'beymen',
+          'network',
+          'marks spencer',
+          'ipekyol',
+          'machka',
+          'adl',
+          'skechers',
+          'nike',
+          'adidas',
+          'puma',
+          'flo',
+          'deichmann',
+          'kiğılı',
+          'altınyıldız',
+          'damat tween',
+          'pierre cardin',
         ],
-        'Eğitim': ['okul', 'kurs', 'kitap', 'eğitim', 'üniversite'],
+        'Eğitim': [
+          'okul',
+          'kurs',
+          'kitap',
+          'eğitim',
+          'üniversite',
+          'dershane',
+          'özel ders',
+          'yds',
+          'toefl',
+          'ielts',
+          'udemy',
+          'coursera',
+          'kırtasiye',
+          'bosphorus kitap',
+          'd&r',
+          'idefix',
+          'kitapyurdu',
+        ],
         'Alışveriş': [
           'amazon',
           'trendyol',
           'hepsiburada',
           'n11',
           'gittigidiyor',
+          'çiçeksepeti',
+          'teknosa',
+          'mediamarkt',
+          'vatan',
+          'ikea',
+          'koçtaş',
+          'bauhaus',
+          'bricomarche',
+          'ev depo',
+          'english home',
+          'madame coco',
+          'yataş',
         ],
-        'Fitness': ['spor', 'fitness', 'gym', 'yoga', 'pilates'],
+        'Fitness': [
+          'spor',
+          'fitness',
+          'gym',
+          'yoga',
+          'pilates',
+          'marsgym',
+          'macfit',
+          'spor salonu',
+          'fitness merkezi',
+          'havuz',
+          'yüzme',
+        ],
+        'Kişisel Bakım': [
+          'kuaför',
+          'berber',
+          'güzellik',
+          'spa',
+          'masaj',
+          'manikür',
+          'pedikür',
+          'waxing',
+          'epilasyon',
+          'saç',
+          'cilt bakımı',
+        ],
+        'Ev & Yaşam': [
+          'temizlik',
+          'deterjan',
+          'ev gereçleri',
+          'mobilya',
+          'beyaz eşya',
+          'küçük ev aletleri',
+          'tamirat',
+          'tesisatçı',
+          'elektrikçi',
+        ],
+        'Evcil Hayvan': [
+          'veteriner',
+          'petshop',
+          'mama',
+          'kedi',
+          'köpek',
+          'kuş',
+          'akvaryum',
+        ],
+        'Hediye': [
+          'hediye',
+          'doğum günü',
+          'kutlama',
+          'çiçek',
+          'pasta',
+        ],
+        'Sigorta': [
+          'sigorta',
+          'kasko',
+          'trafik',
+          'sağlık sigortası',
+          'hayat sigortası',
+        ],
       };
     } else {
       return {
-        'Maaş': ['maaş', 'ücret', 'salary', 'gelir'],
-        'Yatırım': ['yatırım', 'hisse', 'borsa', 'kripto', 'bitcoin'],
-        'Hediye': ['hediye', 'gift'],
-        'Ödül': ['ödül', 'bonus', 'prim'],
+        'Maaş': ['maaş', 'ücret', 'salary', 'gelir', 'bordro'],
+        'Yatırım': [
+          'yatırım',
+          'hisse',
+          'borsa',
+          'kripto',
+          'bitcoin',
+          'ethereum',
+          'altın',
+          'döviz',
+          'faiz',
+          'temettü',
+          'kar payı',
+        ],
+        'Hediye': ['hediye', 'gift', 'bayram', 'doğum günü'],
+        'Ödül': ['ödül', 'bonus', 'prim', 'ikramiye'],
+        'Kira': ['kira geliri', 'kira', 'kiracı'],
+        'Freelance': ['freelance', 'serbest', 'danışmanlık', 'proje'],
+        'İade': ['iade', 'geri ödeme', 'refund', 'cashback'],
+        'Satış': ['satış', 'ikinci el', 'sahibinden', 'letgo'],
       };
     }
   }
@@ -325,12 +630,20 @@ class CategorySuggestion {
   final double confidence;
   final String reason;
   final List<Transaction> matchedTransactions;
+  final double? suggestedAmount;  // Ortalama tutar önerisi
+  final String? suggestedWalletId;  // En sık kullanılan cüzdan
+  final String? suggestedWalletName; // Cüzdan adı
+  final int transactionCount;  // Bu açıklama ile kaç işlem yapılmış
 
   CategorySuggestion({
     required this.category,
     required this.confidence,
     required this.reason,
     required this.matchedTransactions,
+    this.suggestedAmount,
+    this.suggestedWalletId,
+    this.suggestedWalletName,
+    this.transactionCount = 0,
   });
 }
 

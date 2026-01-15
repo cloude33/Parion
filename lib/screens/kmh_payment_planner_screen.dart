@@ -65,10 +65,16 @@ class _KmhPaymentPlannerScreenState extends State<KmhPaymentPlannerScreen> {
       _scenarios = _plannerService.generatePaymentScenarios(
         account: widget.account,
       );
-      _selectedScenario = _scenarios.firstWhere(
-        (s) => s.isRecommended,
-        orElse: () => _scenarios.isNotEmpty ? _scenarios[0] : _scenarios.first,
-      );
+      
+      // Senaryolar boşsa null bırak, doluysa recommended veya ilkini seç
+      if (_scenarios.isNotEmpty) {
+        _selectedScenario = _scenarios.firstWhere(
+          (s) => s.isRecommended,
+          orElse: () => _scenarios[0],
+        );
+      } else {
+        _selectedScenario = null;
+      }
 
       setState(() => _isLoading = false);
     } catch (e) {

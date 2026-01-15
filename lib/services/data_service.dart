@@ -498,6 +498,9 @@ class DataService {
       // Clear main preferences
       await _prefs?.clear();
       _cache.clear();
+      
+      // Reinitialize SharedPreferences after clear
+      _prefs = await SharedPreferences.getInstance();
 
       // Clear other services
       try {

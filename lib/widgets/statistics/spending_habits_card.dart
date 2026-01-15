@@ -90,9 +90,39 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
       'Pazar',
     ];
 
-    final dayName = dayNames[widget.spendingData.mostSpendingDay.index];
+    // Calculate actual most spending day from real data
+    int actualMostSpendingDayNum = 1;
+    double maxDaySpending = 0;
+    
+    widget.spendingData.dailySpending.forEach((day, amount) {
+      if (amount > maxDaySpending) {
+        maxDaySpending = amount;
+        actualMostSpendingDayNum = day;
+      }
+    });
+
+    // Calculate actual most spending hour from real data
+    int actualMostSpendingHour = 12;
+    double maxHourSpending = 0;
+    
+    widget.spendingData.hourlySpending.forEach((hour, amount) {
+      if (amount > maxHourSpending) {
+        maxHourSpending = amount;
+        actualMostSpendingHour = hour;
+      }
+    });
+
+    // Day index is 1-7 (Monday=1), convert to 0-6 for array
+    final dayIndex = (actualMostSpendingDayNum - 1).clamp(0, 6);
+    final dayName = maxDaySpending > 0 ? dayNames[dayIndex] : '-';
+    
     final daysDiff = widget.endDate.difference(widget.startDate).inDays + 1;
     final avgDaily = widget.spendingData.totalSpending / daysDiff;
+
+    // Format hour display
+    final hourDisplay = maxHourSpending > 0 
+        ? '${actualMostSpendingHour.toString().padLeft(2, '0')}:00'
+        : '-';
 
     return Row(
       children: [
@@ -109,7 +139,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
           child: _buildInsightBox(
             icon: Icons.access_time,
             label: 'Yoğun Saat',
-            value: '${widget.spendingData.mostSpendingHour}:00',
+            value: hourDisplay,
             color: Colors.orange,
           ),
         ),
@@ -174,27 +204,45 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
   Widget _buildDayOfWeekChart(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     const dayNames = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+    
+    // Calculate max spenging for normalization
+    double maxSpending = 0;
+    for (int i = 1; i <= 7; i++) {
+      final amount = widget.spendingData.dailySpending[i] ?? 0.0;
+      if (amount > maxSpending) maxSpending = amount;
+    }
+
     final barGroups = List.generate(7, (index) {
-      final isHighest = index == widget.spendingData.mostSpendingDay.index;
-      final value = isHighest ? 100.0 : (50 + (index * 7) % 40).toDouble();
+      final weekday = index + 1;
+      final amount = widget.spendingData.dailySpending[weekday] ?? 0.0;
+      // Normalize to 0-100 range
+      final percentage = maxSpending > 0 ? (amount / maxSpending) * 100 : 0.0;
+      
+      final isHighest = amount == maxSpending && maxSpending > 0;
 
       return BarChartGroupData(
         x: index,
         barRods: [
           BarChartRodData(
-            toY: value,
+            toY: percentage,
             color: isHighest ? Colors.red : Colors.blue,
             width: 20,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: 100,
+              color: isDark ? Colors.white10 : Colors.black12,
+            ),
           ),
         ],
+        showingTooltipIndicators: [0],
       );
     });
 
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 120,
+        maxY: 105,
         barGroups: barGroups,
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
@@ -202,6 +250,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (value, meta) {
+                if (value % 25 != 0) return const SizedBox.shrink();
                 return Text(
                   '${value.toInt()}%',
                   style: TextStyle(
@@ -227,7 +276,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                     style: TextStyle(
                       fontSize: 10,
                       color: theme.textTheme.bodySmall?.color,
-                      fontWeight: index == widget.spendingData.mostSpendingDay.index
+                      fontWeight: index + 1 == widget.spendingData.mostSpendingDay.index + 1 // Fix index comparison if needed, but simple comparison should work if enum matches 0-based index or logic
                           ? FontWeight.bold
                           : FontWeight.normal,
                     ),
@@ -246,7 +295,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 20,
+          horizontalInterval: 25,
           getDrawingHorizontalLine: (value) {
             return FlLine(
               color: isDark ? Colors.white12 : Colors.black12,
@@ -267,6 +316,26 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             ),
           ),
         ),
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => isDark ? Colors.grey[800]! : Colors.white,
+            tooltipPadding: const EdgeInsets.all(8),
+            tooltipMargin: 8,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final weekday = group.x.toInt() + 1;
+              final amount = widget.spendingData.dailySpending[weekday] ?? 0.0;
+              return BarTooltipItem(
+                _formatCurrency(amount),
+                TextStyle(
+                  color: isDark ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -274,28 +343,50 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
   Widget _buildHourOfDayChart(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     final hourLabels = ['00', '03', '06', '09', '12', '15', '18', '21'];
+    
+    // Aggregate data into 3-hour buckets
+    final bucketSpending = List.generate(8, (index) => 0.0);
+    double maxBucketSpending = 0;
+    
+    for (int i = 0; i < 8; i++) {
+       final startHour = i * 3;
+       double sum = 0;
+       for (int h = 0; h < 3; h++) {
+         sum += widget.spendingData.hourlySpending[startHour + h] ?? 0.0;
+       }
+       bucketSpending[i] = sum;
+       if (sum > maxBucketSpending) maxBucketSpending = sum;
+    }
+
     final barGroups = List.generate(8, (index) {
-      final hour = index * 3;
-      final isHighest = (hour - widget.spendingData.mostSpendingHour).abs() <= 1;
-      final value = isHighest ? 100.0 : (30 + (index * 10) % 50).toDouble();
+      final amount = bucketSpending[index];
+      // Normalize to 0-100 range
+      final percentage = maxBucketSpending > 0 ? (amount / maxBucketSpending) * 100 : 0.0;
+      final isHighest = amount == maxBucketSpending && maxBucketSpending > 0;
 
       return BarChartGroupData(
         x: index,
         barRods: [
           BarChartRodData(
-            toY: value,
+            toY: percentage,
             color: isHighest ? Colors.red : Colors.orange,
             width: 16,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+            backDrawRodData: BackgroundBarChartRodData(
+              show: true,
+              toY: 100,
+              color: isDark ? Colors.white10 : Colors.black12,
+            ),
           ),
         ],
+        showingTooltipIndicators: [0],
       );
     });
 
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 120,
+        maxY: 105,
         barGroups: barGroups,
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
@@ -303,6 +394,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
               showTitles: true,
               reservedSize: 40,
               getTitlesWidget: (value, meta) {
+                if (value % 25 != 0) return const SizedBox.shrink();
                 return Text(
                   '${value.toInt()}%',
                   style: TextStyle(
@@ -344,7 +436,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          horizontalInterval: 20,
+          horizontalInterval: 25,
           getDrawingHorizontalLine: (value) {
             return FlLine(
               color: isDark ? Colors.white12 : Colors.black12,
@@ -365,25 +457,102 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             ),
           ),
         ),
+        barTouchData: BarTouchData(
+          enabled: true,
+          touchTooltipData: BarTouchTooltipData(
+            getTooltipColor: (_) => isDark ? Colors.grey[800]! : Colors.white,
+            tooltipPadding: const EdgeInsets.all(8),
+            tooltipMargin: 8,
+            getTooltipItem: (group, groupIndex, rod, rodIndex) {
+              final bucketAmount = bucketSpending[group.x.toInt()];
+              return BarTooltipItem(
+                _formatCurrency(bucketAmount),
+                TextStyle(
+                  color: isDark ? Colors.white : Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildAdditionalInsights(ThemeData theme) {
-    final mostSpendingHour = widget.spendingData.mostSpendingHour;
+    // Calculate actual most spending hour from real data
+    int actualMostSpendingHour = 12;
+    double maxHourSpending = 0;
+    
+    widget.spendingData.hourlySpending.forEach((hour, amount) {
+      if (amount > maxHourSpending) {
+        maxHourSpending = amount;
+        actualMostSpendingHour = hour;
+      }
+    });
+
+    // Calculate actual most spending day from real data
+    int actualMostSpendingDayNum = 1;
+    double maxDaySpending = 0;
+    
+    widget.spendingData.dailySpending.forEach((day, amount) {
+      if (amount > maxDaySpending) {
+        maxDaySpending = amount;
+        actualMostSpendingDayNum = day;
+      }
+    });
+
+    // Check if there's any spending data
+    final hasHourlyData = maxHourSpending > 0;
+    final hasDailyData = maxDaySpending > 0;
+    
+    if (!hasHourlyData && !hasDailyData) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.info_outline,
+              size: 20,
+              color: Colors.grey[600],
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Yeterli harcama verisi bulunmamaktadır. Daha fazla işlem ekledikçe alışkanlık analizi görüntülenecektir.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     String timePattern;
     IconData timeIcon;
     Color timeColor;
 
-    if (mostSpendingHour >= 6 && mostSpendingHour < 12) {
+    if (actualMostSpendingHour >= 6 && actualMostSpendingHour < 12) {
       timePattern = 'Sabah saatlerinde daha çok harcama yapıyorsunuz';
       timeIcon = Icons.wb_sunny;
       timeColor = Colors.orange;
-    } else if (mostSpendingHour >= 12 && mostSpendingHour < 18) {
+    } else if (actualMostSpendingHour >= 12 && actualMostSpendingHour < 18) {
       timePattern = 'Öğleden sonra harcamalarınız artıyor';
       timeIcon = Icons.wb_sunny_outlined;
       timeColor = Colors.amber;
-    } else if (mostSpendingHour >= 18 && mostSpendingHour < 22) {
+    } else if (actualMostSpendingHour >= 18 && actualMostSpendingHour < 22) {
       timePattern = 'Akşam saatlerinde daha çok harcama yapıyorsunuz';
       timeIcon = Icons.nights_stay;
       timeColor = Colors.indigo;
@@ -392,9 +561,9 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
       timeIcon = Icons.bedtime;
       timeColor = Colors.deepPurple;
     }
-    final mostSpendingDay = widget.spendingData.mostSpendingDay;
+    
     String dayPattern;
-    if (mostSpendingDay.index < 5) {
+    if (actualMostSpendingDayNum <= 5) {
       dayPattern = 'Hafta içi harcamalarınız daha yüksek';
     } else {
       dayPattern = 'Hafta sonu daha çok harcama yapıyorsunuz';
@@ -432,45 +601,48 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              Icon(
-                timeIcon,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  timePattern,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
+          if (hasHourlyData)
+            Row(
+              children: [
+                Icon(
+                  timeIcon,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    timePattern,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  dayPattern,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
+              ],
+            ),
+          if (hasHourlyData && hasDailyData)
+            const SizedBox(height: 6),
+          if (hasDailyData)
+            Row(
+              children: [
+                Icon(
+                  Icons.calendar_today,
+                  size: 16,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    dayPattern,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[700],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );

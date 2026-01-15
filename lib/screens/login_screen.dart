@@ -29,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen>
   bool _rememberMe = false;
   String? _userName;
   String? _currentError;
+  bool _isProcessingLogin = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -75,7 +76,9 @@ class _LoginScreenState extends State<LoginScreen>
 
   void _listenToAuthState() {
     _authOrchestrator.authStateStream.listen((authState) {
-      if (mounted && authState.isAuthenticated) {
+      // Don't navigate if we're processing login manually
+      // This ensures "remember me" preference is saved before navigation
+      if (mounted && authState.isAuthenticated && !_isProcessingLogin) {
         context.toHome();
       }
     });
@@ -232,6 +235,7 @@ class _LoginScreenState extends State<LoginScreen>
     setState(() {
       _isLoading = true;
       _currentError = null;
+      _isProcessingLogin = true; // Prevent auth listener from navigating
     });
 
     try {
@@ -244,9 +248,12 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (mounted) {
         if (result.isSuccess) {
-          // Save remember me preference
+          // Save remember me preference BEFORE navigation
           await _saveRememberMePreference();
-          // Navigation will be handled by auth state listener
+          // Navigate manually after saving preferences
+          if (mounted) {
+            context.toHome();
+          }
         } else {
           _showError(result.errorMessage ?? 'Giriş başarısız');
         }
@@ -257,7 +264,10 @@ class _LoginScreenState extends State<LoginScreen>
       }
     } finally {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isProcessingLogin = false;
+        });
       }
     }
   }

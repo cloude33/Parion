@@ -59,7 +59,15 @@ class CreditCardService {
     return await _cardRepo.findAll();
   }
   Future<List<CreditCard>> getActiveCards() async {
-    return await _cardRepo.findActive();
+    final cards = await _cardRepo.findActive();
+    cards.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    return cards;
+  }
+  Future<void> reorderCards(List<CreditCard> cards) async {
+    for (int i = 0; i < cards.length; i++) {
+      final updatedCard = cards[i].copyWith(sortOrder: i);
+      await _cardRepo.update(updatedCard);
+    }
   }
   Future<CreditCardTransaction> addTransaction(
     CreditCardTransaction transaction,
@@ -168,16 +176,65 @@ class CreditCardService {
     if (card == null) {
       throw Exception('Kart bulunamadı');
     }
-    final statement = await _statementRepo.findById(payment.statementId);
-    if (statement == null) {
-      throw Exception('Ekstre bulunamadı');
+    
+    // Check if this is a manual payment (without statement)
+    final isManualPayment = payment.statementId == 'manual';
+    double overpayment = 0;
+    
+    if (!isManualPayment) {
+      // Normal payment with statement
+      final statement = await _statementRepo.findById(payment.statementId);
+      if (statement == null) {
+        throw Exception('Ekstre bulunamadı');
+      }
+      await _paymentRepo.save(payment);
+      final statementGenerator = StatementGeneratorService();
+      overpayment = await statementGenerator.applyPaymentToStatement(
+        payment.statementId,
+        payment.amount,
+      );
+    } else {
+      // Manual payment - reduce initial debt directly
+      await _paymentRepo.save(payment);
+      
+      // Update card's initial debt
+      final currentDebt = await getCurrentDebt(payment.cardId);
+      final newInitialDebt = (card.initialDebt - payment.amount).clamp(0.0, double.infinity);
+      
+      // Update the card with reduced initial debt
+      final updatedCard = CreditCard(
+        id: card.id,
+        bankName: card.bankName,
+        cardName: card.cardName,
+        last4Digits: card.last4Digits,
+        creditLimit: card.creditLimit,
+        statementDay: card.statementDay,
+        dueDateOffset: card.dueDateOffset,
+        monthlyInterestRate: card.monthlyInterestRate,
+        lateInterestRate: card.lateInterestRate,
+        cardColor: card.cardColor,
+        createdAt: card.createdAt,
+        isActive: card.isActive,
+        initialDebt: newInitialDebt,
+        cardImagePath: card.cardImagePath,
+        iconName: card.iconName,
+        rewardType: card.rewardType,
+        pointsConversionRate: card.pointsConversionRate,
+        cashAdvanceRate: card.cashAdvanceRate,
+        cashAdvanceLimit: card.cashAdvanceLimit,
+        overLimitInterestRate: card.overLimitInterestRate,
+        cashAdvanceOverdueInterestRate: card.cashAdvanceOverdueInterestRate,
+        minimumPaymentRate: card.minimumPaymentRate,
+      );
+      
+      await _cardRepo.update(updatedCard);
+      
+      // Check if there's overpayment
+      if (payment.amount > currentDebt) {
+        overpayment = payment.amount - currentDebt;
+      }
     }
-    await _paymentRepo.save(payment);
-    final statementGenerator = StatementGeneratorService();
-    final overpayment = await statementGenerator.applyPaymentToStatement(
-      payment.statementId,
-      payment.amount,
-    );
+    
     try {
       final limitAlertService = LimitAlertService();
       await limitAlertService.resetAlertsAfterPayment(payment.cardId);

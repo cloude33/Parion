@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/bill_template.dart';
 import '../services/bill_template_service.dart';
 import '../services/data_service.dart';
@@ -138,7 +139,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
       text: template?.description ?? '',
     );
     _monthlyAmountController = TextEditingController(
-      text: template?.monthlyAmount?.toString() ?? '',
+      text: template?.monthlyAmount?.toString().replaceAll('.', ',') ?? '',
     );
     _paymentDayController = TextEditingController(
       text: template?.paymentDay?.toString() ?? '',
@@ -292,7 +293,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
           description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
-          monthlyAmount: double.tryParse(_monthlyAmountController.text.trim()),
+          monthlyAmount: double.tryParse(_monthlyAmountController.text.trim().replaceAll(',', '.')),
           paymentDay: int.tryParse(_paymentDayController.text.trim()),
         );
       } else {
@@ -310,7 +311,7 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
           description: _descriptionController.text.trim().isEmpty
               ? null
               : _descriptionController.text.trim(),
-          monthlyAmount: double.tryParse(_monthlyAmountController.text.trim()),
+          monthlyAmount: double.tryParse(_monthlyAmountController.text.trim().replaceAll(',', '.')),
           paymentDay: int.tryParse(_paymentDayController.text.trim()),
           isActive: _isActive,
         );
@@ -567,6 +568,18 @@ class _AddBillTemplateScreenState extends State<AddBillTemplateScreen> {
                       border: const OutlineInputBorder(),
                     ),
                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*[.,]?\d{0,2}')),
+                    ],
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final parsed = double.tryParse(value.replaceAll(',', '.'));
+                        if (parsed == null) {
+                          return 'Geçerli bir tutar girin';
+                        }
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

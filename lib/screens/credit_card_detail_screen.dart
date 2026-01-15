@@ -14,6 +14,7 @@ import 'payment_planner_screen.dart';
 import 'payment_history_screen.dart';
 import 'reward_points_screen.dart';
 import 'installment_detail_screen.dart';
+import 'all_transactions_screen.dart';
 import '../models/bill_payment.dart';
 import '../models/bill_template.dart';
 import '../services/bill_payment_service.dart';
@@ -809,26 +810,18 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
             const SizedBox(height: 16),
             _buildRateRow('Alışveriş Faizi', widget.card.monthlyInterestRate),
             _buildRateRow('Gecikme Faizi', widget.card.lateInterestRate),
-            if (widget.card.overLimitInterestRate != null)
-              _buildRateRow(
-                'Limit Aşım Faizi',
-                widget.card.overLimitInterestRate!,
-              ),
-            if (widget.card.cashAdvanceRate != null)
-              _buildRateRow(
-                'Nakit Avans Faizi',
-                widget.card.cashAdvanceRate!,
-              ),
-            if (widget.card.cashAdvanceOverdueInterestRate != null)
-              _buildRateRow(
-                'Nakit Avans Gecikme',
-                widget.card.cashAdvanceOverdueInterestRate!,
-              ),
-            if (widget.card.minimumPaymentRate != null)
-              _buildRateRow(
-                'Minimum Ödeme Oranı',
-                widget.card.minimumPaymentRate!,
-              ),
+            _buildRateRow(
+              'Limit Aşım Faizi',
+              widget.card.overLimitInterestRate ?? 0.0,
+            ),
+            _buildRateRow(
+              'Nakit Avans Gecikme',
+              widget.card.cashAdvanceOverdueInterestRate ?? 0.0,
+            ),
+            _buildRateRow(
+              'Minimum Ödeme Oranı',
+              widget.card.minimumPaymentRate ?? 0.0,
+            ),
           ],
         ),
       ),
@@ -1332,12 +1325,18 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
     );
   }
 
-  void _navigateToInstallments() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Taksit detayını görmek için taksitlere tıklayın'),
+  Future<void> _navigateToInstallments() async {
+    // Navigate to all transactions screen with installment filter
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AllTransactionsScreen(card: widget.card),
       ),
     );
+
+    if (result == true) {
+      _loadCardDetails();
+    }
   }
 
   Future<void> _navigateToInstallmentDetail(
@@ -1358,10 +1357,17 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
     }
   }
 
-  void _navigateToAllTransactions() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tüm işlemler ekranı yakında eklenecek')),
+  Future<void> _navigateToAllTransactions() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AllTransactionsScreen(card: widget.card),
+      ),
     );
+
+    if (result == true) {
+      _loadCardDetails();
+    }
   }
 
   Future<void> _navigateToEditTransaction(

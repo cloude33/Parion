@@ -36,12 +36,8 @@ import 'kmh_list_screen.dart';
 
 import '../services/kmh_alert_service.dart';
 import '../models/kmh_alert.dart';
+import '../services/statement_generator_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../services/bill_template_service.dart';
-import '../models/bill_template.dart';
-import 'bill_templates_screen.dart';
-import 'add_bill_template_screen.dart';
-
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/inactivity_monitor_widget.dart';
 import '../widgets/simple_auth_debug_widget.dart';
@@ -59,7 +55,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final NotificationService _notificationService = NotificationService();
   final CreditCardService _creditCardService = CreditCardService();
   final KmhAlertService _kmhAlertService = KmhAlertService();
-  final BillTemplateService _billService = BillTemplateService();
 
   User? _currentUser;
   List<Wallet> wallets = [];
@@ -77,8 +72,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final List<String> _selectedCardIds = [];
   bool _isFilterActive = false;
   double _totalCreditCardDebt = 0.0;
-  List<BillTemplate> _recurringTemplates = [];
-  double _totalRecurringAmount = 0.0;
 
   late PageController _pageController;
   int _currentPage = 0;
@@ -187,20 +180,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         debugPrint('WARN _loadData: kmh alerts $e');
       }
       try {
+        final statementGenerator = StatementGeneratorService();
+        await statementGenerator.checkAndGenerateStatements();
+      } catch (e) {
+        debugPrint('WARN _loadData: statement generation $e');
+      }
+
+      try {
         cards = await _creditCardService.getAllCards();
       } catch (e) {
         debugPrint('WARN _loadData: cards $e');
       }
 
-      List<BillTemplate> recurringTemplates = [];
-      double totalRecurringAmount = 0.0;
-      try {
-        final templates = await _billService.getTemplates();
-        recurringTemplates = templates.where((t) => t.monthlyAmount != null && t.isActive).toList();
-        totalRecurringAmount = recurringTemplates.fold(0.0, (sum, t) => sum + (t.monthlyAmount ?? 0.0));
-      } catch (e) {
-        debugPrint('WARN _loadData: recurring templates $e');
-      }
       debugPrint('Found ${cards.length} credit cards');
 
       final Map<String, CreditCard> cardMap = {};
@@ -245,8 +236,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           _creditCards = cardMap;
           _kmhAlerts = kmhAlerts;
           _totalCreditCardDebt = totalCCDebt;
-          _recurringTemplates = recurringTemplates;
-          _totalRecurringAmount = totalRecurringAmount;
           _loading = false;
         });
       }
@@ -278,7 +267,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           }
         },
         child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          backgroundColor: const Color(0xFFF4F6F8),
           appBar: _selectedIndex == 0
               ? AppBar(
                   automaticallyImplyLeading: false,
@@ -1091,7 +1080,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   kmhDebts: kmhDebts,
                   loanDebts: loanDebts,
                 ),
-                _buildRecurringPaymentsCard(),
               ],
             ),
           ),
@@ -1099,7 +1087,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
-              3,
+              2,
               (index) => Container(
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 width: _currentPage == index ? 24 : 8,
@@ -1325,116 +1313,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildRecurringPaymentsCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
-                color: Color(0xFF673AB7), // Deep Purple
-              ),
-              child: Row(
-                children: [
-                  const FaIcon(FontAwesomeIcons.repeat, color: Colors.white, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Düzenli Ödemeler',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          CurrencyHelper.formatAmount(_totalRecurringAmount, _currentUser),
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BillTemplatesScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildRecurringStat('Aktif', _recurringTemplates.length.toDouble(), Icons.check_circle_outline),
-                Container(width: 1, height: 40, color: const Color(0xFFE5E5EA)),
-                _buildRecurringStat('Kira/Ab.', _recurringTemplates.where((t) => t.category == BillTemplateCategory.rent || t.category == BillTemplateCategory.subscription).length.toDouble(), Icons.category_outlined),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecurringStat(String label, double value, IconData icon) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 14, color: Colors.grey[600]),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: TextStyle(fontSize: 11, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value.toInt().toString(),
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1C1C1E),
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildDebtStat(String label, double amount, IconData icon) {
     return Expanded(
@@ -1914,22 +1792,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               if (result == true) _loadData();
             },
           ),
-          const SizedBox(height: 12),
-          _buildFabMenuItem(
-            label: 'Abonelik Ekle',
-            icon: FontAwesomeIcons.repeat,
-            color: const Color(0xFF673AB7),
-            onTap: () async {
-              setState(() => _showFabMenu = false);
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const AddBillTemplateScreen(),
-                ),
-              );
-              if (result == true) _loadData();
-            },
-          ),
+
           const SizedBox(height: 12),
           _buildFabMenuItem(
             label: AppLocalizations.of(context)!.addWallet,

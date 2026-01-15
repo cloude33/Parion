@@ -333,8 +333,10 @@ class BillPaymentService {
         if (!hasPayment) {
           // Bu ay için henüz ödeme oluşturulmamış
           final dueDate = DateTime(now.year, now.month, template.paymentDay!);
-          final periodStart = DateTime(now.year, now.month, 1);
-          final periodEnd = DateTime(now.year, now.month + 1, 0); // Ayın son günü
+          // Dönem başlangıcı: Şablondaki ödeme günü
+          final periodStart = DateTime(now.year, now.month, template.paymentDay!);
+          // Dönem bitişi: Bir sonraki ayın aynı günü
+          final periodEnd = DateTime(now.year, now.month + 1, template.paymentDay!);
           
           await addPayment(
             templateId: template.id,

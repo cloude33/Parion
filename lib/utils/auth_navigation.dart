@@ -11,7 +11,7 @@ class AuthNavigation {
   static void toWelcome(BuildContext context) {
     Navigator.pushAndRemoveUntil(
       context,
-      _createSlideRoute(const WelcomeScreen()),
+      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
       (route) => false,
     );
   }
@@ -20,7 +20,7 @@ class AuthNavigation {
   static void toLogin(BuildContext context) {
     Navigator.push(
       context,
-      _createSlideRoute(const LoginScreen()),
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
   }
 
@@ -28,7 +28,7 @@ class AuthNavigation {
   static void toRegister(BuildContext context) {
     Navigator.push(
       context,
-      _createSlideRoute(const RegisterScreen()),
+      MaterialPageRoute(builder: (context) => const RegisterScreen()),
     );
   }
 
@@ -36,7 +36,7 @@ class AuthNavigation {
   static void toHome(BuildContext context) {
     Navigator.pushAndRemoveUntil(
       context,
-      _createFadeRoute(const HomeScreen()),
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
       (route) => false,
     );
   }
@@ -45,7 +45,7 @@ class AuthNavigation {
   static Future<bool?> toBiometricSetup(BuildContext context) {
     return Navigator.push<bool>(
       context,
-      _createSlideRoute(const BiometricSetupScreen()),
+      MaterialPageRoute(builder: (context) => const BiometricSetupScreen()),
     );
   }
 
@@ -65,43 +65,7 @@ class AuthNavigation {
   static void replace(BuildContext context, Widget screen) {
     Navigator.pushReplacement(
       context,
-      _createSlideRoute(screen),
-    );
-  }
-
-  /// Create slide transition route
-  static PageRouteBuilder<T> _createSlideRoute<T>(Widget screen) {
-    return PageRouteBuilder<T>(
-      pageBuilder: (context, animation, secondaryAnimation) => screen,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        const begin = Offset(1.0, 0.0);
-        const end = Offset.zero;
-        const curve = Curves.easeInOutCubic;
-
-        var tween = Tween(begin: begin, end: end).chain(
-          CurveTween(curve: curve),
-        );
-
-        return SlideTransition(
-          position: animation.drive(tween),
-          child: child,
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 400),
-    );
-  }
-
-  /// Create fade transition route
-  static PageRouteBuilder<T> _createFadeRoute<T>(Widget screen) {
-    return PageRouteBuilder<T>(
-      pageBuilder: (context, animation, secondaryAnimation) => screen,
-      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
-      },
-      transitionDuration: const Duration(milliseconds: 600),
+      MaterialPageRoute(builder: (context) => screen),
     );
   }
 }

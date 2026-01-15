@@ -103,31 +103,7 @@ class _MakeCreditCardPaymentScreenState
           ? const Center(child: CircularProgressIndicator())
           : _currentStatement == null
           ? _buildNoStatementView()
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildCardInfo(),
-                  const SizedBox(height: 16),
-                  _buildStatementInfo(),
-                  const SizedBox(height: 24),
-                  _buildAmountField(),
-                  const SizedBox(height: 16),
-                  _buildQuickAmountButtons(),
-                  const SizedBox(height: 16),
-                  _buildDateField(),
-                  const SizedBox(height: 16),
-                  _buildPaymentMethodField(),
-                  const SizedBox(height: 16),
-                  _buildNoteField(),
-                  const SizedBox(height: 24),
-                  _buildPaymentSummary(),
-                  const SizedBox(height: 16),
-                  _buildSaveButton(),
-                ],
-              ),
-            ),
+          : _buildPaymentForm(),
     );
   }
 
@@ -158,8 +134,73 @@ class _MakeCreditCardPaymentScreenState
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _navigateToManualPayment,
+              icon: const Icon(Icons.payment),
+              label: const Text('Ekstre Dışı Ödeme Yap'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Bankadan öğrendiğiniz borcu buradan girebilirsiniz',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _navigateToManualPayment() {
+    // Enable manual payment mode by creating a temporary state
+    setState(() {
+      _currentStatement = null; // Keep it null to indicate manual mode
+    });
+    
+    // Show the payment form in a dialog or navigate to manual payment
+    showDialog(
+      context: context,
+      builder: (context) => _ManualPaymentDialog(
+        card: widget.card,
+        onPaymentSaved: () {
+          Navigator.pop(context);
+          Navigator.pop(context, true);
+        },
+      ),
+    );
+  }
+
+  Widget _buildPaymentForm() {
+    return Form(
+      key: _formKey,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _buildCardInfo(),
+          const SizedBox(height: 16),
+          _buildStatementInfo(),
+          const SizedBox(height: 24),
+          _buildAmountField(),
+          const SizedBox(height: 16),
+          _buildQuickAmountButtons(),
+          const SizedBox(height: 16),
+          _buildDateField(),
+          const SizedBox(height: 16),
+          _buildPaymentMethodField(),
+          const SizedBox(height: 16),
+          _buildNoteField(),
+          const SizedBox(height: 24),
+          _buildPaymentSummary(),
+          const SizedBox(height: 16),
+          _buildSaveButton(),
+        ],
       ),
     );
   }
@@ -553,6 +594,240 @@ class _MakeCreditCardPaymentScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+}
+
+// Manual Payment Dialog for payments without a statement
+class _ManualPaymentDialog extends StatefulWidget {
+  final CreditCard card;
+  final VoidCallback onPaymentSaved;
+
+  const _ManualPaymentDialog({
+    required this.card,
+    required this.onPaymentSaved,
+  });
+
+  @override
+  State<_ManualPaymentDialog> createState() => _ManualPaymentDialogState();
+}
+
+class _ManualPaymentDialogState extends State<_ManualPaymentDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final CreditCardService _cardService = CreditCardService();
+  final NumberFormat _currencyFormat = NumberFormat.currency(
+    locale: 'tr_TR',
+    symbol: '₺',
+    decimalDigits: 2,
+  );
+
+  late TextEditingController _amountController;
+  late TextEditingController _noteController;
+
+  DateTime _selectedDate = DateTime.now();
+  String _selectedPaymentMethod = 'bank_transfer';
+  bool _isLoading = false;
+
+  final Map<String, String> _paymentMethods = {
+    'bank_transfer': 'Banka Havalesi',
+    'atm': 'ATM',
+    'auto_payment': 'Otomatik Ödeme',
+    'other': 'Diğer',
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _amountController = TextEditingController();
+    _noteController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Ekstre Dışı Ödeme'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Bankadan öğrendiğiniz borç tutarını girebilirsiniz',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _amountController,
+                decoration: const InputDecoration(
+                  labelText: 'Ödeme Tutarı',
+                  hintText: '0.00',
+                  prefixIcon: Icon(Icons.attach_money),
+                  suffixText: '₺',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+                ],
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Ödeme tutarı gerekli';
+                  }
+                  final amount = double.tryParse(value);
+                  if (amount == null || amount <= 0) {
+                    return 'Geçerli bir tutar giriniz';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              InkWell(
+                onTap: _selectDate,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Ödeme Tarihi',
+                    prefixIcon: Icon(Icons.calendar_today),
+                    border: OutlineInputBorder(),
+                  ),
+                  child: Text(
+                    DateFormat('dd MMMM yyyy', 'tr_TR').format(_selectedDate),
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedPaymentMethod,
+                decoration: const InputDecoration(
+                  labelText: 'Ödeme Yöntemi',
+                  prefixIcon: Icon(Icons.payment),
+                  border: OutlineInputBorder(),
+                ),
+                items: _paymentMethods.entries.map((entry) {
+                  return DropdownMenuItem(
+                    value: entry.key,
+                    child: Text(entry.value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedPaymentMethod = value;
+                    });
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _noteController,
+                decoration: const InputDecoration(
+                  labelText: 'Not (Opsiyonel)',
+                  hintText: 'Ödeme ile ilgili not',
+                  prefixIcon: Icon(Icons.note),
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('İptal'),
+        ),
+        ElevatedButton(
+          onPressed: _isLoading ? null : _saveManualPayment,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Kaydet'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      locale: const Locale('tr', 'TR'),
+    );
+
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  Future<void> _saveManualPayment() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final paymentAmount = double.parse(_amountController.text);
+      
+      // Create a manual payment record
+      final payment = CreditCardPayment(
+        id: const Uuid().v4(),
+        cardId: widget.card.id,
+        statementId: 'manual', // Special ID for manual payments
+        amount: paymentAmount,
+        paymentDate: _selectedDate,
+        paymentMethod: _selectedPaymentMethod,
+        note: _noteController.text.trim().isEmpty 
+            ? 'Ekstre dışı manuel ödeme'
+            : _noteController.text.trim(),
+        paymentType: 'manual',
+        remainingDebtAfterPayment: 0, // We don't know the remaining debt
+        createdAt: DateTime.now(),
+      );
+
+      // Save the payment - this will reduce the current debt
+      await _cardService.recordPayment(payment);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ödeme başarıyla kaydedildi'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        widget.onPaymentSaved();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } finally {

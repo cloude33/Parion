@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/credit_card.dart';
@@ -10,6 +11,7 @@ import 'card_reporting_screen.dart';
 import 'kmh_list_screen.dart';
 import 'kmh_account_detail_screen.dart';
 import 'add_wallet_screen.dart';
+import 'installment_tracking_screen.dart';
 import '../widgets/cards/bank_card_visual_widget.dart';
 
 class CreditCardListScreen extends StatefulWidget {
@@ -32,7 +34,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
   Map<String, Map<String, dynamic>> _cardDetails = {};
   List<Wallet> _kmhAccounts = [];
   bool _isLoading = true;
-  int _selectedTab = 0; // 0: Credit Cards, 1: KMH Accounts
+  int _selectedTab = 0; // 0: Credit Cards, 1: KMH Accounts, 2: Installments
 
   double _totalDebt = 0;
   double _totalAvailableCredit = 0;
@@ -141,9 +143,10 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F6F8),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(_selectedTab == 0 ? 'Kredi Kartlarım' : 'KMH Hesaplarım'),
+        title: Text(_selectedTab == 0 ? 'Kredi Kartlarım' : _selectedTab == 1 ? 'KMH Hesaplarım' : 'Taksit Takibi'),
         actions: [
           if (_selectedTab == 0)
             IconButton(
@@ -179,25 +182,28 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
           : Column(
               children: [
                 _buildTabSelector(),
-                _selectedTab == 0
-                    ? _buildSummaryCard()
-                    : _buildKmhSummaryCard(),
+                if (_selectedTab == 0) _buildSummaryCard(),
+                if (_selectedTab == 1) _buildKmhSummaryCard(),
                 Expanded(
                   child: _selectedTab == 0
                       ? (_cards.isEmpty ? _buildEmptyState() : _buildCardList())
-                      : (_kmhAccounts.isEmpty
-                            ? _buildKmhEmptyState()
-                            : _buildKmhAccountList()),
+                      : _selectedTab == 1
+                          ? (_kmhAccounts.isEmpty
+                              ? _buildKmhEmptyState()
+                              : _buildKmhAccountList())
+                          : const InstallmentTrackingScreen(),
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _selectedTab == 0
-            ? _navigateToAddCard
-            : _navigateToAddKmhAccount,
-        tooltip: _selectedTab == 0 ? 'Kart Ekle' : 'KMH Hesabı Ekle',
-        child: Icon(_selectedTab == 0 ? Icons.add_card : Icons.add),
-      ),
+      floatingActionButton: _selectedTab != 2
+          ? FloatingActionButton(
+              onPressed: _selectedTab == 0
+                  ? _navigateToAddCard
+                  : _navigateToAddKmhAccount,
+              tooltip: _selectedTab == 0 ? 'Kart Ekle' : 'KMH Hesabı Ekle',
+              child: Icon(_selectedTab == 0 ? Icons.add_card : Icons.add),
+            )
+          : null,
     );
   }
 
@@ -214,7 +220,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _selectedTab = 0),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _selectedTab == 0
                       ? const Color(0xFF00BFA5)
@@ -229,11 +235,11 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                       color: _selectedTab == 0
                           ? Colors.white
                           : Colors.grey[600],
-                      size: 20,
+                      size: 18,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     Text(
-                      'Kredi Kartları',
+                      'Kartlar',
                       style: TextStyle(
                         color: _selectedTab == 0
                             ? Colors.white
@@ -241,7 +247,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                         fontWeight: _selectedTab == 0
                             ? FontWeight.bold
                             : FontWeight.normal,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -253,7 +259,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
             child: GestureDetector(
               onTap: () => setState(() => _selectedTab = 1),
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
                   color: _selectedTab == 1
                       ? const Color(0xFF00BFA5)
@@ -268,11 +274,11 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                       color: _selectedTab == 1
                           ? Colors.white
                           : Colors.grey[600],
-                      size: 20,
+                      size: 18,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     Text(
-                      'KMH Hesapları',
+                      'KMH',
                       style: TextStyle(
                         color: _selectedTab == 1
                             ? Colors.white
@@ -280,7 +286,46 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                         fontWeight: _selectedTab == 1
                             ? FontWeight.bold
                             : FontWeight.normal,
-                        fontSize: 14,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () => setState(() => _selectedTab = 2),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: _selectedTab == 2
+                      ? const Color(0xFF00BFA5)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.format_list_numbered,
+                      color: _selectedTab == 2
+                          ? Colors.white
+                          : Colors.grey[600],
+                      size: 18,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Taksitler',
+                      style: TextStyle(
+                        color: _selectedTab == 2
+                            ? Colors.white
+                            : Colors.grey[600],
+                        fontWeight: _selectedTab == 2
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        fontSize: 13,
                       ),
                     ),
                   ],
@@ -395,71 +440,108 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
   }
 
   Widget _buildCardList() {
-    return ListView.builder(
+    return ReorderableListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _cards.length,
+      onReorder: (oldIndex, newIndex) async {
+        setState(() {
+          if (newIndex > oldIndex) {
+            newIndex -= 1;
+          }
+          final item = _cards.removeAt(oldIndex);
+          _cards.insert(newIndex, item);
+        });
+        
+        // Save the new order
+        await _cardService.reorderCards(_cards);
+      },
+      proxyDecorator: (child, index, animation) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (BuildContext context, Widget? child) {
+            final double animValue = Curves.easeInOut.transform(animation.value);
+            final double elevation = lerpDouble(0, 6, animValue)!;
+            return Material(
+              elevation: elevation,
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              child: child,
+            );
+          },
+          child: child,
+        );
+      },
       itemBuilder: (context, index) {
         final card = _cards[index];
         final details = _cardDetails[card.id];
-        return _buildCardItem(card, details);
+        return Padding(
+          key: ValueKey(card.id),
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _buildCardItemContent(card, details),
+        );
       },
     );
   }
 
-  Widget _buildCardItem(CreditCard card, Map<String, dynamic>? details) {
+  Widget _buildCardItemContent(CreditCard card, Map<String, dynamic>? details) {
     if (details == null) {
       return const Card(child: ListTile(title: Text('Yükleniyor...')));
     }
 
     final currentDebt = details['currentDebt'] as double;
     final nextDueDate = details['nextDueDate'] as DateTime;
-    // Note: availableCredit, utilization, and activeInstallmentCount used to be displayed.
-    // The new visual style abstracts some of this. If needed, we can add them back later around the card widget.
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: BankCardVisualWidget(
-        bankName: card.bankName,
-        cardName: card.cardName,
-        last4Digits: card.last4Digits,
-        currentDebt: currentDebt,
-        limit: card.creditLimit,
-        colorHex: card.cardColor.toString(),
-        cutOffDay: card.statementDay,
-        fullPaymentDate: nextDueDate,
-        onTap: () => _navigateToCardDetail(card),
-        action: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert, color: Colors.white),
-          onSelected: (value) {
-            if (value == 'delete') {
-              _deleteCard(card);
-            }
-          },
-          itemBuilder: (BuildContext context) {
-            return [
-              const PopupMenuItem(
-                value: 'delete',
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.delete,
-                      color: Colors.red,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Sil',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ],
+    return BankCardVisualWidget(
+      bankName: card.bankName,
+      cardName: card.cardName,
+      last4Digits: card.last4Digits,
+      currentDebt: currentDebt,
+      limit: card.creditLimit,
+      colorHex: card.cardColor.toString(),
+      cutOffDay: card.statementDay,
+      fullPaymentDate: nextDueDate,
+      onTap: () => _navigateToCardDetail(card),
+      action: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ReorderableDragStartListener(
+            index: _cards.indexOf(card),
+            child: const Icon(Icons.drag_handle, color: Colors.white70, size: 24),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) {
+              if (value == 'delete') {
+                _deleteCard(card);
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.delete,
+                        color: Colors.red,
+                        size: 20,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Sil',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ];
-          },
-        ),
+              ];
+            },
+          ),
+        ],
       ),
     );
   }
+
 
   Widget _buildInfoColumn(String label, String value, Color color) {
     return Column(

@@ -134,6 +134,7 @@ class _KmhListScreenState extends State<KmhListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F6F8),
       appBar: AppBar(
         title: const Text('KMH Hesaplarım'),
         actions: [

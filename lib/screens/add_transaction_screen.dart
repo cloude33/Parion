@@ -577,45 +577,144 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.amber, width: 1.5),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        AppLocalizations.of(context)!.suggested(_suggestion!.category),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                Row(
+                  children: [
+                    FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            AppLocalizations.of(context)!.suggested(_suggestion!.category),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          Text(
+                            '${_suggestion!.reason} • ${AppLocalizations.of(context)!.confidence((_suggestion!.confidence * 100).toInt().toString())}',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                          ),
+                        ],
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _applySuggestion,
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.amber[800],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
                       ),
-                      Text(
-                        '${_suggestion!.reason} • ${AppLocalizations.of(context)!.confidence((_suggestion!.confidence * 100).toInt().toString())}',
-                        style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                      ),
+                      child: const Text('Uygula'),
+                    ),
+                  ],
+                ),
+                // Ek öneriler: tutar ve cüzdan
+                if (_suggestion!.suggestedAmount != null || 
+                    _suggestion!.suggestedWalletName != null ||
+                    _suggestion!.transactionCount > 0) ...[
+                  const SizedBox(height: 8),
+                  const Divider(height: 1),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
+                    children: [
+                      if (_suggestion!.transactionCount > 0)
+                        _buildSuggestionChip(
+                          icon: FontAwesomeIcons.clockRotateLeft,
+                          label: '${_suggestion!.transactionCount} kez',
+                          tooltip: 'Bu işlem daha önce ${_suggestion!.transactionCount} kez girilmiş',
+                        ),
+                      if (_suggestion!.suggestedAmount != null)
+                        _buildSuggestionChip(
+                          icon: FontAwesomeIcons.coins,
+                          label: '₺${NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount)}',
+                          tooltip: 'Ortalama tutar',
+                          onTap: () {
+                            _amountController.text = NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount);
+                          },
+                        ),
+                      if (_suggestion!.suggestedWalletName != null)
+                        _buildSuggestionChip(
+                          icon: FontAwesomeIcons.wallet,
+                          label: _cleanWalletName(_suggestion!.suggestedWalletName!),
+                          tooltip: 'Sık kullanılan cüzdan',
+                          onTap: () {
+                            if (_suggestion!.suggestedWalletId != null) {
+                              setState(() {
+                                _selectedWalletId = _suggestion!.suggestedWalletId!;
+                              });
+                            }
+                          },
+                        ),
                     ],
                   ),
-                ),
-                TextButton(
-                  onPressed: _applySuggestion,
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.amber[800],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                  child: const Text('Uygula'),
-                ),
+                ],
               ],
             ),
           ),
         ],
       ],
     );
+  }
+
+  Widget _buildSuggestionChip({
+    required IconData icon,
+    required String label,
+    String? tooltip,
+    VoidCallback? onTap,
+  }) {
+    final chip = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FaIcon(icon, size: 12, color: Colors.amber[800]),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.amber[900],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if (onTap != null) ...[
+            const SizedBox(width: 4),
+            Icon(Icons.add_circle_outline, size: 14, color: Colors.amber[800]),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap != null) {
+      return Tooltip(
+        message: tooltip ?? label,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: chip,
+        ),
+      );
+    }
+
+    if (tooltip != null) {
+      return Tooltip(message: tooltip, child: chip);
+    }
+
+    return chip;
   }
 
   Widget _buildCategoryField() {

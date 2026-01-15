@@ -71,6 +71,9 @@ class CreditCard extends HiveObject {
   @HiveField(21)
   double? minimumPaymentRate;
 
+  @HiveField(22)
+  int sortOrder;
+
   CreditCard({
     required this.id,
     required this.bankName,
@@ -94,6 +97,7 @@ class CreditCard extends HiveObject {
     this.overLimitInterestRate,
     this.cashAdvanceOverdueInterestRate,
     this.minimumPaymentRate,
+    this.sortOrder = 0,
   });
   Color get color => Color(cardColor);
   String? validate() {
@@ -147,6 +151,7 @@ class CreditCard extends HiveObject {
     double? overLimitInterestRate,
     double? cashAdvanceOverdueInterestRate,
     double? minimumPaymentRate,
+    int? sortOrder,
   }) {
     return CreditCard(
       id: id ?? this.id,
@@ -171,6 +176,7 @@ class CreditCard extends HiveObject {
       overLimitInterestRate: overLimitInterestRate ?? this.overLimitInterestRate,
       cashAdvanceOverdueInterestRate: cashAdvanceOverdueInterestRate ?? this.cashAdvanceOverdueInterestRate,
       minimumPaymentRate: minimumPaymentRate ?? this.minimumPaymentRate,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 
@@ -198,6 +204,7 @@ class CreditCard extends HiveObject {
       'overLimitInterestRate': overLimitInterestRate,
       'cashAdvanceOverdueInterestRate': cashAdvanceOverdueInterestRate,
       'minimumPaymentRate': minimumPaymentRate,
+      'sortOrder': sortOrder,
     };
   }
 
@@ -225,6 +232,7 @@ class CreditCard extends HiveObject {
       overLimitInterestRate: (json['overLimitInterestRate'] as num?)?.toDouble(),
       cashAdvanceOverdueInterestRate: (json['cashAdvanceOverdueInterestRate'] as num?)?.toDouble(),
       minimumPaymentRate: (json['minimumPaymentRate'] as num?)?.toDouble(),
+      sortOrder: json['sortOrder'] as int? ?? 0,
     );
   }
 
