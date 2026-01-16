@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/backup_optimization/backup_config.dart';
 import 'package:parion/models/backup_optimization/backup_enums.dart';
+import '../../test_setup.dart';
 
 /// Simple backup settings widget for testing
 class TestBackupSettingsWidget extends StatefulWidget {
@@ -298,6 +299,14 @@ class _TestBackupSettingsWidgetState extends State<TestBackupSettingsWidget> {
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('BackupSettingsWidget Tests', () {
     testWidgets('should display backup strategy selection interface', (
       WidgetTester tester,

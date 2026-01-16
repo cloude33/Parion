@@ -7,8 +7,17 @@ import 'package:parion/models/security/sensitive_operation_models.dart';
 import 'package:parion/services/auth/auth_service.dart';
 import 'package:parion/services/auth/sensitive_operation_service.dart';
 import 'package:parion/models/security/auth_state.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   late SecurityMiddleware middleware;
   late AuthService authService;
   late SensitiveOperationService sensitiveOperationService;

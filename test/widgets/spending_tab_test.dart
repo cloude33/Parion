@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/widgets/statistics/spending_tab.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SpendingTab Widget Tests', () {
     testWidgets('should display loading indicator initially', (WidgetTester tester) async {
       // Arrange

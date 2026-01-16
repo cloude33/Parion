@@ -9,8 +9,17 @@ import 'package:parion/models/backup_optimization/backup_enums.dart';
 import 'package:parion/services/backup_optimization/network_monitor.dart';
 import 'package:parion/services/google_drive_service.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   // Initialize Flutter bindings for testing
   TestWidgetsFlutterBinding.ensureInitialized();
 

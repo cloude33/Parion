@@ -41,6 +41,8 @@
   "myBills": "My Bills",
   "categories": "Categories",
   "debts": "Debts/Credits",
+  "loans": "My Loans",
+  "manageLoansDesc": "Track your bank loans",
   "recurringTransactions": "Recurring Transactions",
   "notifications": "Notifications",
   "currency": "Currency",

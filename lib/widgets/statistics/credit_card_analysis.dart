@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '../../models/credit_analysis.dart';
 import '../../services/statistics_service.dart';
 import '../../utils/currency_helper.dart';
@@ -10,7 +11,7 @@ class CreditCardAnalysis extends StatefulWidget {
 }
 
 class _CreditCardAnalysisState extends State<CreditCardAnalysis> {
-  final StatisticsService _statisticsService = StatisticsService();
+  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
   bool _isLoading = true;
   String? _error;
   CreditAnalysis? _creditAnalysis;

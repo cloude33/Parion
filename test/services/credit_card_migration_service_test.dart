@@ -14,7 +14,8 @@ void main() {
 
   setUpAll(() async {
     // Initialize Hive for testing with a unique directory
-    final testDir = './test_hive_migration_${DateTime.now().millisecondsSinceEpoch}';
+    final testDir =
+        './test_hive_migration_${DateTime.now().millisecondsSinceEpoch}';
     Hive.init(testDir);
 
     // Register adapters
@@ -67,7 +68,7 @@ void main() {
     test('should skip migration if already completed', () async {
       await migrationService.markMigrationCompleted();
       final result = await migrationService.migrateCreditCards();
-      
+
       expect(result.success, true);
       expect(result.cardsUpdated, 0);
       expect(result.message, contains('zaten tamamlanmış'));
@@ -75,7 +76,7 @@ void main() {
 
     test('should handle empty database gracefully', () async {
       final result = await migrationService.migrateCreditCards();
-      
+
       expect(result.success, true);
       expect(result.cardsUpdated, 0);
       expect(result.message, contains('bulunamadı'));
@@ -107,7 +108,9 @@ void main() {
       expect(result.rewardPointsCreated, 1);
 
       // Verify card was updated
-      final updatedCard = await CreditCardBoxService.creditCardsBox.get(card.id);
+      final updatedCard = await CreditCardBoxService.creditCardsBox.get(
+        card.id,
+      );
       expect(updatedCard, isNotNull);
       expect(updatedCard!.rewardType, 'bonus');
       expect(updatedCard.pointsConversionRate, 0.01);
@@ -153,7 +156,9 @@ void main() {
       expect(result.rewardPointsCreated, 1); // But should create reward points
 
       // Verify card was not changed
-      final updatedCard = await CreditCardBoxService.creditCardsBox.get(card.id);
+      final updatedCard = await CreditCardBoxService.creditCardsBox.get(
+        card.id,
+      );
       expect(updatedCard!.rewardType, 'miles');
       expect(updatedCard.pointsConversionRate, 0.02);
       expect(updatedCard.cashAdvanceRate, 5.0);
@@ -202,8 +207,14 @@ void main() {
         createdAt: DateTime.now(),
       );
 
-      await CreditCardBoxService.transactionsBox.put(transaction1.id, transaction1);
-      await CreditCardBoxService.transactionsBox.put(transaction2.id, transaction2);
+      await CreditCardBoxService.transactionsBox.put(
+        transaction1.id,
+        transaction1,
+      );
+      await CreditCardBoxService.transactionsBox.put(
+        transaction2.id,
+        transaction2,
+      );
 
       // Run migration
       final result = await migrationService.migrateCreditCards();
@@ -212,15 +223,19 @@ void main() {
       expect(result.transactionsUpdated, 2);
 
       // Verify transaction1 was updated
-      final updatedTrans1 = await CreditCardBoxService.transactionsBox.get(transaction1.id);
+      final updatedTrans1 = await CreditCardBoxService.transactionsBox.get(
+        transaction1.id,
+      );
       expect(updatedTrans1!.pointsEarned, 500); // Same as amount
       expect(updatedTrans1.installmentStartDate, isNotNull);
 
       // Verify transaction2 was updated with deferred start date
-      final updatedTrans2 = await CreditCardBoxService.transactionsBox.get(transaction2.id);
+      final updatedTrans2 = await CreditCardBoxService.transactionsBox.get(
+        transaction2.id,
+      );
       expect(updatedTrans2!.pointsEarned, 1000);
       expect(updatedTrans2.installmentStartDate, isNotNull);
-      
+
       // Deferred start date should be 2 months after transaction date
       final expectedStartDate = DateTime(
         transaction2.transactionDate.year,
@@ -228,7 +243,10 @@ void main() {
         transaction2.transactionDate.day,
       );
       expect(updatedTrans2.installmentStartDate!.year, expectedStartDate.year);
-      expect(updatedTrans2.installmentStartDate!.month, expectedStartDate.month);
+      expect(
+        updatedTrans2.installmentStartDate!.month,
+        expectedStartDate.month,
+      );
     });
 
     test('should not calculate points for cash advance transactions', () async {
@@ -262,7 +280,10 @@ void main() {
         createdAt: DateTime.now(),
       );
 
-      await CreditCardBoxService.transactionsBox.put(transaction.id, transaction);
+      await CreditCardBoxService.transactionsBox.put(
+        transaction.id,
+        transaction,
+      );
 
       // Run migration
       final result = await migrationService.migrateCreditCards();
@@ -270,7 +291,9 @@ void main() {
       expect(result.success, true);
 
       // Verify no points were calculated for cash advance
-      final updatedTrans = await CreditCardBoxService.transactionsBox.get(transaction.id);
+      final updatedTrans = await CreditCardBoxService.transactionsBox.get(
+        transaction.id,
+      );
       expect(updatedTrans!.pointsEarned, isNull);
     });
 
@@ -309,7 +332,9 @@ void main() {
       expect(await migrationService.isMigrationCompleted(), false);
 
       // Verify card fields were cleared
-      final revertedCard = await CreditCardBoxService.creditCardsBox.get(card.id);
+      final revertedCard = await CreditCardBoxService.creditCardsBox.get(
+        card.id,
+      );
       expect(revertedCard!.rewardType, isNull);
       expect(revertedCard.pointsConversionRate, isNull);
       expect(revertedCard.cashAdvanceRate, isNull);
@@ -412,7 +437,10 @@ void main() {
             createdAt: DateTime.now(),
           );
 
-          await CreditCardBoxService.transactionsBox.put(transaction.id, transaction);
+          await CreditCardBoxService.transactionsBox.put(
+            transaction.id,
+            transaction,
+          );
         }
       }
 
@@ -429,7 +457,7 @@ void main() {
       // This test verifies error handling
       // In a real scenario, we might simulate database errors
       // For now, we just verify the structure works
-      
+
       final result = await migrationService.migrateCreditCards();
       expect(result.success, true);
     });

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '../../services/statistics_service.dart';
 import 'average_comparison_card.dart';
 class AverageComparisonExample extends StatefulWidget {
@@ -9,7 +10,7 @@ class AverageComparisonExample extends StatefulWidget {
 }
 
 class _AverageComparisonExampleState extends State<AverageComparisonExample> {
-  final StatisticsService _statisticsService = StatisticsService();
+  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
   AverageComparisonData? _comparisonData;
   bool _isLoading = false;
   String? _error;

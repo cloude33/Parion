@@ -5,15 +5,39 @@ import 'package:parion/models/wallet.dart';
 import 'package:parion/models/loan.dart';
 import 'package:parion/models/credit_card_transaction.dart';
 import 'package:parion/screens/statistics_screen.dart';
+import 'package:parion/models/cash_flow_data.dart';
+import 'package:parion/models/asset_analysis.dart';
+import 'package:parion/models/credit_analysis.dart';
+import 'package:parion/services/data_service.dart';
+import 'package:parion/services/statistics_service.dart';
+import 'package:get_it/get_it.dart';
+import 'package:parion/models/category.dart';
+import 'package:mockito/mockito.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('StatisticsScreen Widget Tests', () {
     late List<Transaction> testTransactions;
     late List<Wallet> testWallets;
     late List<Loan> testLoans;
     late List<CreditCardTransaction> testCreditCardTransactions;
 
-    setUp(() {
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      // Stub dependencies with Fakes to prevent Hive errors
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+
       // Setup test data
       testTransactions = [
         Transaction(
@@ -59,8 +83,13 @@ void main() {
       testCreditCardTransactions = [];
     });
 
-    testWidgets('should render statistics screen with all tabs',
-        (WidgetTester tester) async {
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should render statistics screen with all tabs', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: StatisticsScreen(
@@ -143,8 +172,9 @@ void main() {
       expect(find.byType(Positioned), findsWidgets);
     });
 
-    testWidgets('should render cash flow tab with chart',
-        (WidgetTester tester) async {
+    testWidgets('should render cash flow tab with chart', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: StatisticsScreen(
@@ -165,8 +195,9 @@ void main() {
       expect(find.text('Gelir vs Gider'), findsOneWidget);
     });
 
-    testWidgets('should render credit tab with credit cards',
-        (WidgetTester tester) async {
+    testWidgets('should render credit tab with credit cards', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: StatisticsScreen(
@@ -188,8 +219,9 @@ void main() {
       expect(find.text('Toplam Borç'), findsOneWidget);
     });
 
-    testWidgets('should render assets tab with wallets',
-        (WidgetTester tester) async {
+    testWidgets('should render assets tab with wallets', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: StatisticsScreen(
@@ -230,7 +262,9 @@ void main() {
       expect(find.text('Genel Bakış'), findsOneWidget);
     });
 
-    testWidgets('should handle empty transactions', (WidgetTester tester) async {
+    testWidgets('should handle empty transactions', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: StatisticsScreen(
@@ -268,8 +302,9 @@ void main() {
       expect(find.text('İstatistikler'), findsOneWidget);
     });
 
-    testWidgets('should display KMH wallets in assets tab',
-        (WidgetTester tester) async {
+    testWidgets('should display KMH wallets in assets tab', (
+      WidgetTester tester,
+    ) async {
       final kmhWallet = Wallet(
         id: 'kmh1',
         name: 'Test KMH',
@@ -300,8 +335,9 @@ void main() {
       expect(find.text('KMH Kullanım Durumu'), findsOneWidget);
     });
 
-    testWidgets('should display loans in credit tab',
-        (WidgetTester tester) async {
+    testWidgets('should display loans in credit tab', (
+      WidgetTester tester,
+    ) async {
       final testLoan = Loan(
         id: 'loan1',
         name: 'Test Loan',
@@ -381,8 +417,21 @@ void main() {
   });
 
   group('StatisticsScreen Chart Rendering Tests', () {
-    testWidgets('should render line chart in cash flow tab',
-        (WidgetTester tester) async {
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+    });
+
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should render line chart in cash flow tab', (
+      WidgetTester tester,
+    ) async {
       final transactions = List.generate(
         12,
         (index) => Transaction(
@@ -424,8 +473,9 @@ void main() {
       expect(find.text('Gelir vs Gider'), findsOneWidget);
     });
 
-    testWidgets('should render pie chart in assets tab',
-        (WidgetTester tester) async {
+    testWidgets('should render pie chart in assets tab', (
+      WidgetTester tester,
+    ) async {
       final wallets = <Wallet>[
         Wallet(
           id: 'w1',
@@ -466,8 +516,21 @@ void main() {
   });
 
   group('StatisticsScreen Filter Interaction Tests', () {
-    testWidgets('should have filter positioned at bottom',
-        (WidgetTester tester) async {
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+    });
+
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should have filter positioned at bottom', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: StatisticsScreen(
@@ -489,8 +552,21 @@ void main() {
   });
 
   group('StatisticsScreen Export Button Tests', () {
-    testWidgets('should display share icon in reports tab',
-        (WidgetTester tester) async {
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+    });
+
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should display share icon in reports tab', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: StatisticsScreen(
@@ -520,4 +596,93 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   });
+}
+
+class FakeDataService extends Fake implements DataService {
+  @override
+  Future<List<Category>> getCategories() async => [];
+
+  @override
+  Future<List<Wallet>> getWallets() async => [];
+
+  @override
+  Future<List<Transaction>> getTransactions() async => [];
+}
+
+class FakeStatisticsService extends Fake implements StatisticsService {
+  @override
+  Future<AssetAnalysis> analyzeAssets() async => AssetAnalysis(
+    totalAssets: 0,
+    totalLiabilities: 0,
+    netWorth: 0,
+    liquidityRatio: 0,
+    assetBreakdown: {},
+    netWorthTrend: [],
+    cashAndEquivalents: 0,
+    bankAccounts: 0,
+    positiveKmhBalances: 0,
+    investments: 0,
+    healthScore: FinancialHealthScore(
+      liquidityScore: 0,
+      debtManagementScore: 0,
+      savingsScore: 0,
+      investmentScore: 0,
+      overallScore: 0,
+      recommendations: [],
+    ),
+  );
+
+  @override
+  Future<CreditAnalysis> analyzeCreditAndKmh() async => CreditAnalysis(
+    totalCreditCardDebt: 0,
+    totalCreditLimit: 0,
+    creditUtilization: 0,
+    creditCards: [],
+    totalKmhDebt: 0,
+    totalKmhLimit: 0,
+    kmhUtilization: 0,
+    kmhAccounts: [],
+    dailyInterest: 0,
+    monthlyInterest: 0,
+    annualInterest: 0,
+    totalDebt: 0,
+    debtTrend: [],
+  );
+
+  @override
+  Future<SpendingAnalysis> analyzeSpending({
+    required DateTime startDate,
+    required DateTime endDate,
+    List<String>? categories,
+    Map<String, double>? budgets,
+  }) async => SpendingAnalysis(
+    totalSpending: 0,
+    categoryBreakdown: {},
+    paymentMethodBreakdown: {},
+    categoryTrends: [],
+    budgetComparisons: {},
+    topCategory: '',
+    topCategoryAmount: 0,
+    mostSpendingDay: DayOfWeek.monday,
+    mostSpendingHour: 0,
+    dailySpending: {},
+    hourlySpending: {},
+  );
+
+  @override
+  Future<CashFlowData> calculateCashFlow({
+    required DateTime startDate,
+    required DateTime endDate,
+    String? walletId,
+    String? category,
+    bool includePreviousPeriod = false,
+  }) async => CashFlowData(
+    totalIncome: 0,
+    totalExpense: 0,
+    netCashFlow: 0,
+    averageDaily: 0,
+    averageMonthly: 0,
+    monthlyData: [],
+    trend: TrendDirection.stable,
+  );
 }

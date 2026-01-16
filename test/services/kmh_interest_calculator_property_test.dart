@@ -1,11 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/kmh_interest_calculator.dart';
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 /// Property-based tests for KmhInterestCalculator
 /// 
 /// These tests verify the correctness properties defined in the design document.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KmhInterestCalculator Property Tests', () {
     late KmhInterestCalculator calculator;
 

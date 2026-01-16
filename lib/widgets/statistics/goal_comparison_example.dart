@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import '../../services/statistics_service.dart';
 import 'goal_comparison_card.dart';
 class GoalComparisonExample extends StatefulWidget {
@@ -9,7 +10,7 @@ class GoalComparisonExample extends StatefulWidget {
 }
 
 class _GoalComparisonExampleState extends State<GoalComparisonExample> {
-  final StatisticsService _statisticsService = StatisticsService();
+  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
   GoalComparisonSummary? _summary;
   bool _isLoading = true;
   String? _error;

@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/report_data.dart';
 import 'package:parion/models/cash_flow_data.dart';
 import 'package:parion/widgets/statistics/expense_report_widget.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('ExpenseReportWidget Tests', () {
     late ExpenseReport testReport;
 

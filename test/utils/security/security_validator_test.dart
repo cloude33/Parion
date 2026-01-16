@@ -2,8 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/security/security_config.dart';
 import 'package:parion/models/security/biometric_type.dart';
 import 'package:parion/utils/security/security_validator.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   // PIN Strength Tests removed
   // PIN Config Tests removed
   // PIN Strength Enum Tests removed

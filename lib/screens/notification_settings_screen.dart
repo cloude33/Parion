@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/notification_preferences.dart';
 import '../services/notification_preferences_service.dart';
 import '../services/notification_scheduler_service.dart';
+import '../services/daily_summary_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../widgets/ios_style_time_picker.dart';
 import 'kmh_alert_settings_screen.dart';
@@ -356,10 +357,28 @@ class _NotificationSettingsScreenState
     
     // Schedule daily summary if enabled
     if (_preferences!.dailySummaryEnabled) {
+      // Calculate initial summary for the notification
+      final dailySummaryService = DailySummaryService();
+      final summary = await dailySummaryService.calculateTodaySummary();
+      final monthContext = await dailySummaryService.calculateMonthContext();
+      
+      // Build notification body with real data
+      String notificationBody;
+      if (summary.totalExpense > 0) {
+        final formattedExpense = '₺${summary.totalExpense.toStringAsFixed(0)}';
+        final formattedMonthly = '₺${monthContext.totalExpense.toStringAsFixed(0)}';
+        notificationBody = 'Bugün: $formattedExpense harcama. Bu ay toplam: $formattedMonthly';
+        if (summary.topCategory != null) {
+          notificationBody += ' (En çok: ${summary.topCategory})';
+        }
+      } else {
+        notificationBody = 'Bugün harcama yok. Bu ay toplam: ₺${monthContext.totalExpense.toStringAsFixed(0)}';
+      }
+      
       await scheduler.schedulePeriodicNotification(
         id: 1,
-        title: 'Günlük Özet',
-        body: 'Bugünün finansal özetinizi görüntüleyin',
+        title: 'Günlük Finansal Özet',
+        body: notificationBody,
         interval: RepeatInterval.daily,
         timeOfDay: _preferences!.dailySummaryTime,
       );

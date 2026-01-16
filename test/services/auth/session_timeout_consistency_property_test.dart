@@ -4,8 +4,17 @@ import 'package:parion/models/security/session_data.dart';
 import 'package:parion/models/security/auth_state.dart';
 import 'package:parion/models/security/security_models.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
   
   group('Session Manager Timeout Consistency Property-Based Tests', () {

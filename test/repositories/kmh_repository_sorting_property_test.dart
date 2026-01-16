@@ -10,8 +10,8 @@ import 'package:uuid/uuid.dart';
 
 /// **Feature: kmh-account-management, Property 17: İşlem Sıralama**
 /// **Validates: Requirements 5.1**
-/// 
-/// Property: For any transaction list, transactions should be sorted by date 
+///
+/// Property: For any transaction list, transactions should be sorted by date
 /// field in descending order (newest first).
 void main() {
   group('KMH Repository Transaction Sorting Property Tests', () {
@@ -21,10 +21,10 @@ void main() {
     setUpAll(() async {
       // Create a temporary directory for testing
       testDir = await Directory.systemTemp.createTemp('kmh_sorting_test_');
-      
+
       // Initialize Hive with the test directory
       Hive.init(testDir.path);
-      
+
       // Register adapters if not already registered
       if (!Hive.isAdapterRegistered(31)) {
         Hive.registerAdapter(KmhTransactionTypeAdapter());
@@ -32,7 +32,7 @@ void main() {
       if (!Hive.isAdapterRegistered(30)) {
         Hive.registerAdapter(KmhTransactionAdapter());
       }
-      
+
       // Initialize KMH box service
       await KmhBoxService.init();
     });
@@ -53,7 +53,8 @@ void main() {
     });
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 17: Transactions sorted by date descending (newest first)',
+      description:
+          'Property 17: Transactions sorted by date descending (newest first)',
       generator: () {
         final walletId = const Uuid().v4();
         final transactionCount = PropertyTest.randomInt(min: 2, max: 20);
@@ -64,27 +65,32 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         final transactions = List.generate(transactionCount, (index) {
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
-        
-        return {
-          'walletId': walletId,
-          'transactions': transactions,
-        };
+
+        return {'walletId': walletId, 'transactions': transactions};
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        final transactionsData = data['transactions'] as List<Map<String, dynamic>>;
+        final transactionsData =
+            data['transactions'] as List<Map<String, dynamic>>;
 
         // Save all transactions in random order
         for (var txData in transactionsData) {
@@ -110,12 +116,14 @@ void main() {
         for (int i = 0; i < retrieved.length - 1; i++) {
           final current = retrieved[i];
           final next = retrieved[i + 1];
-          
+
           // Current transaction date should be >= next transaction date
           expect(
-            current.date.isAfter(next.date) || current.date.isAtSameMomentAs(next.date),
+            current.date.isAfter(next.date) ||
+                current.date.isAtSameMomentAs(next.date),
             isTrue,
-            reason: 'Transaction at index $i (date: ${current.date}) should be >= '
+            reason:
+                'Transaction at index $i (date: ${current.date}) should be >= '
                 'transaction at index ${i + 1} (date: ${next.date})',
           );
         }
@@ -126,7 +134,8 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 17: Date range transactions sorted by date descending',
+      description:
+          'Property 17: Date range transactions sorted by date descending',
       generator: () {
         final walletId = const Uuid().v4();
         final transactionCount = PropertyTest.randomInt(min: 5, max: 25);
@@ -137,11 +146,13 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         // Generate a date range
         final startDate = PropertyTest.randomDateTime();
-        final endDate = startDate.add(Duration(days: PropertyTest.randomInt(min: 30, max: 365)));
-        
+        final endDate = startDate.add(
+          Duration(days: PropertyTest.randomInt(min: 30, max: 365)),
+        );
+
         final transactions = List.generate(transactionCount, (index) {
           // Generate dates within and outside the range
           final inRange = PropertyTest.randomBool();
@@ -149,24 +160,43 @@ void main() {
               ? DateTime(
                   startDate.year,
                   startDate.month,
-                  startDate.day + PropertyTest.randomInt(min: 0, max: (endDate.difference(startDate).inDays)),
+                  startDate.day +
+                      PropertyTest.randomInt(
+                        min: 0,
+                        max: (endDate.difference(startDate).inDays),
+                      ),
                 )
               : (PropertyTest.randomBool()
-                  ? startDate.subtract(Duration(days: PropertyTest.randomInt(min: 1, max: 365)))
-                  : endDate.add(Duration(days: PropertyTest.randomInt(min: 1, max: 365))));
-          
+                    ? startDate.subtract(
+                        Duration(
+                          days: PropertyTest.randomInt(min: 1, max: 365),
+                        ),
+                      )
+                    : endDate.add(
+                        Duration(
+                          days: PropertyTest.randomInt(min: 1, max: 365),
+                        ),
+                      ));
+
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': date,
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
             'inRange': inRange,
           };
         });
-        
+
         return {
           'walletId': walletId,
           'transactions': transactions,
@@ -176,7 +206,8 @@ void main() {
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        final transactionsData = data['transactions'] as List<Map<String, dynamic>>;
+        final transactionsData =
+            data['transactions'] as List<Map<String, dynamic>>;
         final startDate = data['startDate'] as DateTime;
         final endDate = data['endDate'] as DateTime;
 
@@ -205,9 +236,10 @@ void main() {
         for (var tx in retrieved) {
           expect(
             tx.date.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
-            tx.date.isBefore(endDate.add(const Duration(seconds: 1))),
+                tx.date.isBefore(endDate.add(const Duration(seconds: 1))),
             isTrue,
-            reason: 'Transaction date ${tx.date} should be within range [$startDate, $endDate]',
+            reason:
+                'Transaction date ${tx.date} should be within range [$startDate, $endDate]',
           );
         }
 
@@ -215,11 +247,13 @@ void main() {
         for (int i = 0; i < retrieved.length - 1; i++) {
           final current = retrieved[i];
           final next = retrieved[i + 1];
-          
+
           expect(
-            current.date.isAfter(next.date) || current.date.isAtSameMomentAs(next.date),
+            current.date.isAfter(next.date) ||
+                current.date.isAtSameMomentAs(next.date),
             isTrue,
-            reason: 'Transaction at index $i (date: ${current.date}) should be >= '
+            reason:
+                'Transaction at index $i (date: ${current.date}) should be >= '
                 'transaction at index ${i + 1} (date: ${next.date})',
           );
         }
@@ -230,7 +264,8 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 17: Interest transactions sorted by date descending',
+      description:
+          'Property 17: Interest transactions sorted by date descending',
       generator: () {
         final walletId = const Uuid().v4();
         final interestCount = PropertyTest.randomInt(min: 2, max: 15);
@@ -241,7 +276,7 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         final interestTransactions = List.generate(interestCount, (index) {
           return {
             'id': const Uuid().v4(),
@@ -250,23 +285,38 @@ void main() {
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 1000),
             'date': PropertyTest.randomDateTime(),
             'description': 'Faiz tahakkuku',
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
-            'interestAmount': PropertyTest.randomPositiveDouble(min: 0.01, max: 1000),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
+            'interestAmount': PropertyTest.randomPositiveDouble(
+              min: 0.01,
+              max: 1000,
+            ),
           };
         });
 
-        final nonInterestTransactions = List.generate(nonInterestCount, (index) {
+        final nonInterestTransactions = List.generate(nonInterestCount, (
+          index,
+        ) {
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
-        
+
         return {
           'walletId': walletId,
           'interestTransactions': interestTransactions,
@@ -275,8 +325,10 @@ void main() {
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        final interestData = data['interestTransactions'] as List<Map<String, dynamic>>;
-        final nonInterestData = data['nonInterestTransactions'] as List<Map<String, dynamic>>;
+        final interestData =
+            data['interestTransactions'] as List<Map<String, dynamic>>;
+        final nonInterestData =
+            data['nonInterestTransactions'] as List<Map<String, dynamic>>;
 
         // Save all transactions
         for (var txData in [...interestData, ...nonInterestData]) {
@@ -306,11 +358,13 @@ void main() {
         for (int i = 0; i < retrieved.length - 1; i++) {
           final current = retrieved[i];
           final next = retrieved[i + 1];
-          
+
           expect(
-            current.date.isAfter(next.date) || current.date.isAtSameMomentAs(next.date),
+            current.date.isAfter(next.date) ||
+                current.date.isAtSameMomentAs(next.date),
             isTrue,
-            reason: 'Interest transaction at index $i (date: ${current.date}) should be >= '
+            reason:
+                'Interest transaction at index $i (date: ${current.date}) should be >= '
                 'transaction at index ${i + 1} (date: ${next.date})',
           );
         }
@@ -321,7 +375,8 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 17: Transactions with same date maintain stable sort',
+      description:
+          'Property 17: Transactions with same date maintain stable sort',
       generator: () {
         final walletId = const Uuid().v4();
         final sameDate = PropertyTest.randomDateTime();
@@ -333,19 +388,26 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         final transactions = List.generate(transactionCount, (index) {
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
-            'date': sameDate,  // All transactions have the same date
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'date': sameDate, // All transactions have the same date
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
-        
+
         return {
           'walletId': walletId,
           'transactions': transactions,
@@ -354,7 +416,8 @@ void main() {
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        final transactionsData = data['transactions'] as List<Map<String, dynamic>>;
+        final transactionsData =
+            data['transactions'] as List<Map<String, dynamic>>;
         final sameDate = data['sameDate'] as DateTime;
 
         // Save all transactions
@@ -387,7 +450,7 @@ void main() {
         for (int i = 0; i < retrieved.length - 1; i++) {
           final current = retrieved[i];
           final next = retrieved[i + 1];
-          
+
           // Dates should be equal
           expect(current.date, equals(next.date));
         }
@@ -398,11 +461,10 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 17: Empty transaction list returns empty sorted list',
+      description:
+          'Property 17: Empty transaction list returns empty sorted list',
       generator: () {
-        return {
-          'walletId': const Uuid().v4(),
-        };
+        return {'walletId': const Uuid().v4()};
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
@@ -432,14 +494,17 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         return {
           'walletId': walletId,
           'id': const Uuid().v4(),
           'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
           'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
           'date': PropertyTest.randomDateTime(),
-          'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
+          'description': PropertyTest.randomString(
+            minLength: 5,
+            maxLength: 100,
+          ),
           'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
         };
       },

@@ -6,8 +6,17 @@ import 'package:parion/models/backup_optimization/backup_results.dart';
 import '../../property_test_utils.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Corruption Detection Property Tests', () {
     late ValidationService validationService;
 

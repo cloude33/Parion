@@ -4,7 +4,7 @@ import 'package:parion/services/statistics_service.dart';
 import 'package:parion/models/asset_analysis.dart';
 
 /// Tests for StatisticsService asset analysis and financial health score
-/// 
+///
 /// Validates:
 /// - Asset calculation
 /// - Liability calculation
@@ -23,10 +23,10 @@ void main() {
   group('StatisticsService - Asset Analysis', () {
     test('analyzeAssets returns valid AssetAnalysis', () async {
       final service = StatisticsService();
-      
+
       try {
         final result = await service.analyzeAssets();
-        
+
         expect(result, isA<AssetAnalysis>());
         expect(result.totalAssets, isA<double>());
         expect(result.totalLiabilities, isA<double>());
@@ -39,14 +39,13 @@ void main() {
       }
     });
 
-
     test('Financial health score has all required components', () async {
       final service = StatisticsService();
-      
+
       try {
         final result = await service.analyzeAssets();
         final healthScore = result.healthScore;
-        
+
         // Verify all score components exist
         expect(healthScore.liquidityScore, isA<double>());
         expect(healthScore.debtManagementScore, isA<double>());
@@ -54,7 +53,7 @@ void main() {
         expect(healthScore.investmentScore, isA<double>());
         expect(healthScore.overallScore, isA<double>());
         expect(healthScore.recommendations, isA<List<String>>());
-        
+
         // Verify scores are in valid range (0-100)
         expect(healthScore.liquidityScore, greaterThanOrEqualTo(0));
         expect(healthScore.liquidityScore, lessThanOrEqualTo(100));
@@ -73,10 +72,10 @@ void main() {
 
     test('Net worth calculation is correct', () async {
       final service = StatisticsService();
-      
+
       try {
         final result = await service.analyzeAssets();
-        
+
         // Net worth should equal assets minus liabilities
         final expectedNetWorth = result.totalAssets - result.totalLiabilities;
         expect(result.netWorth, closeTo(expectedNetWorth, 0.01));

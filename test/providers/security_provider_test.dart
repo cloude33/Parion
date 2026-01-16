@@ -3,8 +3,17 @@ import 'package:parion/providers/security_provider.dart';
 import 'package:parion/models/security/auth_state.dart';
 import 'package:parion/models/security/security_event.dart';
 import 'package:parion/models/security/security_models.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   // Initialize Flutter bindings for tests
   TestWidgetsFlutterBinding.ensureInitialized();
 

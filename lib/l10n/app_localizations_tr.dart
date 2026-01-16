@@ -126,6 +126,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get debts => 'Borç/Alacak Takibi';
 
   @override
+  String get loans => 'Kredilerim';
+
+  @override
+  String get manageLoansDesc => 'Banka kredilerinizi takip edin';
+
+  @override
   String get recurringTransactions => 'Tekrarlayan İşlemler';
 
   @override

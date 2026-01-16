@@ -2,15 +2,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parion/services/auth/security_notification_service.dart';
 import 'package:parion/models/security/security_event.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SecurityNotificationService', () {
     late SecurityNotificationService service;
 
     setUp(() async {
       // Mock SharedPreferences
       SharedPreferences.setMockInitialValues({});
-      
+
       service = SecurityNotificationService();
       await service.initialize();
     });
@@ -47,10 +56,7 @@ void main() {
           reason: 'No match',
         );
 
-        await service.notifyFailedLogin(
-          event: event,
-          remainingAttempts: 2,
-        );
+        await service.notifyFailedLogin(event: event, remainingAttempts: 2);
 
         // Verify notification was created (would need to mock NotificationService)
         // This is a basic test - in real implementation we'd verify the notification
@@ -75,9 +81,8 @@ void main() {
 
       test('should not send notification when disabled', () async {
         // Disable failed login notifications
-        final settings = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableFailedLoginNotifications: false,
-        );
+        final settings = SecurityNotificationSettings.defaultSettings()
+            .copyWith(enableFailedLoginNotifications: false);
         await service.updateSettings(settings);
 
         final event = SecurityEvent.biometricFailed(
@@ -86,10 +91,7 @@ void main() {
           reason: 'No match',
         );
 
-        await service.notifyFailedLogin(
-          event: event,
-          remainingAttempts: 2,
-        );
+        await service.notifyFailedLogin(event: event, remainingAttempts: 2);
 
         expect(true, isTrue); // Placeholder assertion
       });
@@ -121,7 +123,7 @@ void main() {
 
       test('should not send notification for known device', () async {
         final deviceId = service.getCurrentDeviceId()!;
-        
+
         final event = SecurityEvent.sessionStarted(
           userId: 'test_user',
           authMethod: 'biometric',
@@ -142,9 +144,8 @@ void main() {
       });
 
       test('should not send notification when disabled', () async {
-        final settings = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableNewDeviceNotifications: false,
-        );
+        final settings = SecurityNotificationSettings.defaultSettings()
+            .copyWith(enableNewDeviceNotifications: false);
         await service.updateSettings(settings);
 
         final event = SecurityEvent.sessionStarted(
@@ -205,9 +206,8 @@ void main() {
       });
 
       test('should not send notification when disabled', () async {
-        final settings = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableSettingsChangeNotifications: false,
-        );
+        final settings = SecurityNotificationSettings.defaultSettings()
+            .copyWith(enableSettingsChangeNotifications: false);
         await service.updateSettings(settings);
 
         final event = SecurityEvent.securitySettingsChanged(
@@ -238,16 +238,16 @@ void main() {
 
         await service.notifySuspiciousActivity(
           event: event,
-          activityDetails: 'Multiple failed login attempts from different locations',
+          activityDetails:
+              'Multiple failed login attempts from different locations',
         );
 
         expect(true, isTrue); // Placeholder assertion
       });
 
       test('should not send notification when disabled', () async {
-        final settings = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableSuspiciousActivityNotifications: false,
-        );
+        final settings = SecurityNotificationSettings.defaultSettings()
+            .copyWith(enableSuspiciousActivityNotifications: false);
         await service.updateSettings(settings);
 
         final event = SecurityEvent.suspiciousActivity(
@@ -267,10 +267,11 @@ void main() {
 
     group('Settings Management', () {
       test('should update and persist settings', () async {
-        final newSettings = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableFailedLoginNotifications: false,
-          enableNewDeviceNotifications: false,
-        );
+        final newSettings = SecurityNotificationSettings.defaultSettings()
+            .copyWith(
+              enableFailedLoginNotifications: false,
+              enableNewDeviceNotifications: false,
+            );
 
         await service.updateSettings(newSettings);
 
@@ -282,9 +283,8 @@ void main() {
 
       test('should load settings from storage', () async {
         // Set initial settings
-        final initialSettings = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableFailedLoginNotifications: false,
-        );
+        final initialSettings = SecurityNotificationSettings.defaultSettings()
+            .copyWith(enableFailedLoginNotifications: false);
         await service.updateSettings(initialSettings);
 
         // Create new service instance
@@ -293,7 +293,7 @@ void main() {
 
         final loadedSettings = await newService.getSettings();
         expect(loadedSettings.enableFailedLoginNotifications, isFalse);
-        
+
         newService.resetForTesting();
       });
     });
@@ -301,7 +301,7 @@ void main() {
     group('Known Devices Management', () {
       test('should manage known devices', () async {
         final deviceId = 'test_device_123';
-        
+
         // Initially should not be known
         var knownDevices = await service.getKnownDevices();
         expect(knownDevices.contains(deviceId), isFalse);
@@ -357,7 +357,7 @@ void main() {
     group('SecurityNotificationSettings', () {
       test('should create default settings', () {
         final settings = SecurityNotificationSettings.defaultSettings();
-        
+
         expect(settings.enableFailedLoginNotifications, isTrue);
         expect(settings.enableNewDeviceNotifications, isTrue);
         expect(settings.enableSettingsChangeNotifications, isTrue);
@@ -368,20 +368,23 @@ void main() {
       });
 
       test('should serialize to/from JSON', () {
-        final originalSettings = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableFailedLoginNotifications: false,
-          enableEmailNotifications: true,
-        );
+        final originalSettings = SecurityNotificationSettings.defaultSettings()
+            .copyWith(
+              enableFailedLoginNotifications: false,
+              enableEmailNotifications: true,
+            );
 
         final json = originalSettings.toJson();
-        final deserializedSettings = SecurityNotificationSettings.fromJson(json);
+        final deserializedSettings = SecurityNotificationSettings.fromJson(
+          json,
+        );
 
         expect(deserializedSettings, equals(originalSettings));
       });
 
       test('should create copy with changes', () {
         final originalSettings = SecurityNotificationSettings.defaultSettings();
-        
+
         final modifiedSettings = originalSettings.copyWith(
           enableFailedLoginNotifications: false,
           enableNewDeviceNotifications: false,
@@ -389,15 +392,17 @@ void main() {
 
         expect(modifiedSettings.enableFailedLoginNotifications, isFalse);
         expect(modifiedSettings.enableNewDeviceNotifications, isFalse);
-        expect(modifiedSettings.enableSettingsChangeNotifications, isTrue); // Unchanged
+        expect(
+          modifiedSettings.enableSettingsChangeNotifications,
+          isTrue,
+        ); // Unchanged
       });
 
       test('should have proper equality', () {
         final settings1 = SecurityNotificationSettings.defaultSettings();
         final settings2 = SecurityNotificationSettings.defaultSettings();
-        final settings3 = SecurityNotificationSettings.defaultSettings().copyWith(
-          enableFailedLoginNotifications: false,
-        );
+        final settings3 = SecurityNotificationSettings.defaultSettings()
+            .copyWith(enableFailedLoginNotifications: false);
 
         expect(settings1, equals(settings2));
         expect(settings1, isNot(equals(settings3)));
@@ -406,7 +411,7 @@ void main() {
       test('should have proper toString', () {
         final settings = SecurityNotificationSettings.defaultSettings();
         final stringRepresentation = settings.toString();
-        
+
         expect(stringRepresentation, contains('SecurityNotificationSettings'));
         expect(stringRepresentation, contains('failedLogin: true'));
         expect(stringRepresentation, contains('newDevice: true'));

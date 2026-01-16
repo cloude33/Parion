@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/wallet.dart';
 import '../property_test_utils.dart';
 import 'package:uuid/uuid.dart';
+import '../test_setup.dart';
 
 /// **Feature: kmh-account-management, Property 1: KMH Hesap Tanımlama**
 /// **Validates: Requirements 1.1**
@@ -9,6 +10,14 @@ import 'package:uuid/uuid.dart';
 /// Property: For any bank account, if creditLimit > 0, the system should 
 /// identify this account as a KMH account.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KMH Account Identification Property Tests', () {
     PropertyTest.forAll<Map<String, dynamic>>(
       description: 'Property 1: Bank accounts with creditLimit > 0 should be identified as KMH accounts',

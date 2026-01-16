@@ -3,12 +3,21 @@ import 'package:parion/models/user.dart';
 import 'package:parion/models/auth/user_preferences.dart';
 import 'package:parion/services/auth/interfaces/data_sync_interface.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property-based tests for offline functionality and sync
 /// 
 /// **Feature: modern-auth-system, Property 13: Offline Functionality and Sync**
 /// **Validates: Requirements 9.3**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Offline Sync Property Tests', () {
     /// **Property 13: Offline Functionality and Sync**
     /// *For any* offline scenario, the system should use local storage appropriately 

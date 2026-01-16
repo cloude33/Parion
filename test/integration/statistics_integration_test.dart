@@ -5,6 +5,7 @@ import 'package:parion/models/wallet.dart';
 import 'package:parion/models/loan.dart';
 import 'package:parion/models/credit_card_transaction.dart';
 import 'package:parion/screens/statistics_screen.dart';
+import '../test_setup.dart';
 
 /// Integration tests for Statistics Screen
 /// Tests complete user flows including:
@@ -13,6 +14,14 @@ import 'package:parion/screens/statistics_screen.dart';
 /// - Export operations
 /// - Critical user workflows
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Statistics Screen Integration Tests', () {
     late List<Transaction> testTransactions;
     late List<Wallet> testWallets;

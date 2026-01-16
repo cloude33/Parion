@@ -10,10 +10,10 @@ import 'package:uuid/uuid.dart';
 
 /// **Feature: kmh-account-management, Property 23: Toplam Borç Dahil Etme**
 /// **Validates: Requirements 6.4**
-/// 
-/// Property: For any debt calculation, total debt should equal 
+///
+/// Property: For any debt calculation, total debt should equal
 /// credit card debts + KMH debts + loan debts.
-/// 
+///
 /// Note: In the home screen, credit card debts are calculated from wallets
 /// with type='credit_card', not from the CreditCard model.
 void main() {
@@ -24,7 +24,7 @@ void main() {
     setUpAll(() async {
       // Create a temporary directory for testing
       testDir = await Directory.systemTemp.createTemp('kmh_inclusion_test_');
-      
+
       // Initialize Hive with the test directory
       Hive.init(testDir.path);
     });
@@ -32,11 +32,11 @@ void main() {
     setUp(() async {
       // Clear SharedPreferences before each test
       SharedPreferences.setMockInitialValues({});
-      
+
       // Initialize services
       dataService = DataService();
       await dataService.init();
-      
+
       // Clear any existing data
       final prefs = await dataService.getPrefs();
       await prefs.setString('wallets', '[]');
@@ -52,7 +52,8 @@ void main() {
     });
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 23: Total debt includes KMH debts, credit card debts, and loan debts',
+      description:
+          'Property 23: Total debt includes KMH debts, credit card debts, and loan debts',
       generator: () {
         // Generate KMH accounts (some with negative balances)
         final kmhAccountCount = PropertyTest.randomInt(min: 0, max: 5);
@@ -61,19 +62,23 @@ void main() {
           final balance = isNegative
               ? -PropertyTest.randomPositiveDouble(min: 100, max: 50000)
               : PropertyTest.randomPositiveDouble(min: 100, max: 50000);
-          
+
           return {
             'id': const Uuid().v4(),
             'name': 'KMH Account ${index + 1}',
             'balance': balance,
             'type': 'bank',
-            'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+            'color':
+                '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
             'icon': 'account_balance',
-            'creditLimit': PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
+            'creditLimit': PropertyTest.randomPositiveDouble(
+              min: 1000,
+              max: 100000,
+            ),
             'interestRate': PropertyTest.randomPositiveDouble(min: 1, max: 50),
           };
         });
-        
+
         // Generate credit card wallets (type='credit_card')
         // Note: Credit card debts are tracked as wallet balances
         final creditCardCount = PropertyTest.randomInt(min: 0, max: 5);
@@ -83,16 +88,23 @@ void main() {
             'name': 'Credit Card ${index + 1}',
             'balance': PropertyTest.randomPositiveDouble(min: 0, max: 20000),
             'type': 'credit_card',
-            'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+            'color':
+                '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
             'icon': 'credit_card',
-            'creditLimit': PropertyTest.randomPositiveDouble(min: 5000, max: 50000),
+            'creditLimit': PropertyTest.randomPositiveDouble(
+              min: 5000,
+              max: 50000,
+            ),
           };
         });
-        
+
         // Generate loans
         final loanCount = PropertyTest.randomInt(min: 0, max: 3);
         final loans = List.generate(loanCount, (index) {
-          final remainingAmount = PropertyTest.randomPositiveDouble(min: 1000, max: 100000);
+          final remainingAmount = PropertyTest.randomPositiveDouble(
+            min: 1000,
+            max: 100000,
+          );
           return {
             'id': const Uuid().v4(),
             'name': 'Loan ${index + 1}',
@@ -100,7 +112,7 @@ void main() {
             'totalAmount': remainingAmount,
           };
         });
-        
+
         return {
           'kmhAccounts': kmhAccounts,
           'creditCards': creditCards,
@@ -113,11 +125,13 @@ void main() {
         await prefs.setString('wallets', '[]');
         await prefs.setString('loans', '[]');
         await dataService.saveWallets([]);
-        
-        final kmhAccountsData = data['kmhAccounts'] as List<Map<String, dynamic>>;
-        final creditCardsData = data['creditCards'] as List<Map<String, dynamic>>;
+
+        final kmhAccountsData =
+            data['kmhAccounts'] as List<Map<String, dynamic>>;
+        final creditCardsData =
+            data['creditCards'] as List<Map<String, dynamic>>;
         final loansData = data['loans'] as List<Map<String, dynamic>>;
-        
+
         // Create all KMH accounts
         for (var accountData in kmhAccountsData) {
           final wallet = Wallet(
@@ -132,7 +146,7 @@ void main() {
           );
           await dataService.addWallet(wallet);
         }
-        
+
         // Create all credit card wallets
         for (var cardData in creditCardsData) {
           final wallet = Wallet(
@@ -146,7 +160,7 @@ void main() {
           );
           await dataService.addWallet(wallet);
         }
-        
+
         // Create all loans
         for (var loanData in loansData) {
           final loan = Loan(
@@ -166,72 +180,114 @@ void main() {
           );
           await dataService.addLoan(loan);
         }
-        
+
         // Retrieve all data
         final retrievedWallets = await dataService.getWallets();
         final retrievedLoans = await dataService.getLoans();
-        
+
         // Calculate expected debts (same logic as home screen)
         final expectedKmhDebts = kmhAccountsData
             .where((a) => (a['balance'] as double) < 0)
             .fold(0.0, (sum, a) => sum + (a['balance'] as double).abs());
-        
-        final expectedCreditCardDebts = creditCardsData
-            .fold(0.0, (sum, a) => sum + (a['balance'] as double).abs());
-        
-        final expectedLoanDebts = loansData
-            .fold(0.0, (sum, a) => sum + (a['remainingAmount'] as double));
-        
-        final expectedTotalDebt = expectedKmhDebts + expectedCreditCardDebts + expectedLoanDebts;
-        
+
+        final expectedCreditCardDebts = creditCardsData.fold(
+          0.0,
+          (sum, a) => sum + (a['balance'] as double).abs(),
+        );
+
+        final expectedLoanDebts = loansData.fold(
+          0.0,
+          (sum, a) => sum + (a['remainingAmount'] as double),
+        );
+
+        final expectedTotalDebt =
+            expectedKmhDebts + expectedCreditCardDebts + expectedLoanDebts;
+
         // Calculate actual debts (same logic as home screen)
         final actualKmhDebts = retrievedWallets
             .where((w) => w.isKmhAccount && w.balance < 0)
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
+
         final actualCreditCardDebts = retrievedWallets
             .where((w) => w.type == 'credit_card')
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
-        final actualLoanDebts = retrievedLoans
-            .fold(0.0, (sum, loan) => sum + loan.remainingAmount);
-        
-        final actualTotalDebt = actualKmhDebts + actualCreditCardDebts + actualLoanDebts;
-        
+
+        final actualLoanDebts = retrievedLoans.fold(
+          0.0,
+          (sum, loan) => sum + loan.remainingAmount,
+        );
+
+        final actualTotalDebt =
+            actualKmhDebts + actualCreditCardDebts + actualLoanDebts;
+
         // Property 1: Total debt should equal sum of all debt types
-        expect(actualTotalDebt, equals(expectedTotalDebt),
-          reason: 'Total debt should equal credit card debts + KMH debts + loan debts');
-        
+        expect(
+          actualTotalDebt,
+          equals(expectedTotalDebt),
+          reason:
+              'Total debt should equal credit card debts + KMH debts + loan debts',
+        );
+
         // Property 2: KMH debts should be included in total debt
-        expect(actualTotalDebt, greaterThanOrEqualTo(actualKmhDebts),
-          reason: 'Total debt should include KMH debts');
-        
+        expect(
+          actualTotalDebt,
+          greaterThanOrEqualTo(actualKmhDebts),
+          reason: 'Total debt should include KMH debts',
+        );
+
         // Property 3: Credit card debts should be included in total debt
-        expect(actualTotalDebt, greaterThanOrEqualTo(actualCreditCardDebts),
-          reason: 'Total debt should include credit card debts');
-        
+        expect(
+          actualTotalDebt,
+          greaterThanOrEqualTo(actualCreditCardDebts),
+          reason: 'Total debt should include credit card debts',
+        );
+
         // Property 4: Loan debts should be included in total debt
-        expect(actualTotalDebt, greaterThanOrEqualTo(actualLoanDebts),
-          reason: 'Total debt should include loan debts');
-        
+        expect(
+          actualTotalDebt,
+          greaterThanOrEqualTo(actualLoanDebts),
+          reason: 'Total debt should include loan debts',
+        );
+
         // Property 5: Each component should be calculated correctly
-        expect(actualKmhDebts, equals(expectedKmhDebts),
-          reason: 'KMH debts should be calculated correctly');
-        expect(actualCreditCardDebts, equals(expectedCreditCardDebts),
-          reason: 'Credit card debts should be calculated correctly');
-        expect(actualLoanDebts, equals(expectedLoanDebts),
-          reason: 'Loan debts should be calculated correctly');
-        
+        expect(
+          actualKmhDebts,
+          equals(expectedKmhDebts),
+          reason: 'KMH debts should be calculated correctly',
+        );
+        expect(
+          actualCreditCardDebts,
+          equals(expectedCreditCardDebts),
+          reason: 'Credit card debts should be calculated correctly',
+        );
+        expect(
+          actualLoanDebts,
+          equals(expectedLoanDebts),
+          reason: 'Loan debts should be calculated correctly',
+        );
+
         // Property 6: All debt components should be non-negative
-        expect(actualKmhDebts, greaterThanOrEqualTo(0),
-          reason: 'KMH debts should be non-negative');
-        expect(actualCreditCardDebts, greaterThanOrEqualTo(0),
-          reason: 'Credit card debts should be non-negative');
-        expect(actualLoanDebts, greaterThanOrEqualTo(0),
-          reason: 'Loan debts should be non-negative');
-        expect(actualTotalDebt, greaterThanOrEqualTo(0),
-          reason: 'Total debt should be non-negative');
-        
+        expect(
+          actualKmhDebts,
+          greaterThanOrEqualTo(0),
+          reason: 'KMH debts should be non-negative',
+        );
+        expect(
+          actualCreditCardDebts,
+          greaterThanOrEqualTo(0),
+          reason: 'Credit card debts should be non-negative',
+        );
+        expect(
+          actualLoanDebts,
+          greaterThanOrEqualTo(0),
+          reason: 'Loan debts should be non-negative',
+        );
+        expect(
+          actualTotalDebt,
+          greaterThanOrEqualTo(0),
+          reason: 'Total debt should be non-negative',
+        );
+
         return true;
       },
       iterations: 100,
@@ -247,16 +303,18 @@ void main() {
             'name': 'KMH Account ${index + 1}',
             'balance': -PropertyTest.randomPositiveDouble(min: 100, max: 50000),
             'type': 'bank',
-            'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+            'color':
+                '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
             'icon': 'account_balance',
-            'creditLimit': PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
+            'creditLimit': PropertyTest.randomPositiveDouble(
+              min: 1000,
+              max: 100000,
+            ),
             'interestRate': PropertyTest.randomPositiveDouble(min: 1, max: 50),
           };
         });
-        
-        return {
-          'kmhAccounts': kmhAccounts,
-        };
+
+        return {'kmhAccounts': kmhAccounts};
       },
       property: (data) async {
         // Clear data
@@ -264,9 +322,10 @@ void main() {
         await prefs.setString('wallets', '[]');
         await prefs.setString('loans', '[]');
         await dataService.saveWallets([]);
-        
-        final kmhAccountsData = data['kmhAccounts'] as List<Map<String, dynamic>>;
-        
+
+        final kmhAccountsData =
+            data['kmhAccounts'] as List<Map<String, dynamic>>;
+
         // Create KMH accounts
         for (var accountData in kmhAccountsData) {
           final wallet = Wallet(
@@ -281,33 +340,40 @@ void main() {
           );
           await dataService.addWallet(wallet);
         }
-        
+
         // Retrieve data
         final retrievedWallets = await dataService.getWallets();
         final retrievedLoans = await dataService.getLoans();
-        
+
         // Calculate debts
         final kmhDebts = retrievedWallets
             .where((w) => w.isKmhAccount && w.balance < 0)
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
+
         final creditCardDebts = retrievedWallets
             .where((w) => w.type == 'credit_card')
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
-        final loanDebts = retrievedLoans
-            .fold(0.0, (sum, loan) => sum + loan.remainingAmount);
-        
+
+        final loanDebts = retrievedLoans.fold(
+          0.0,
+          (sum, loan) => sum + loan.remainingAmount,
+        );
+
         final totalDebt = kmhDebts + creditCardDebts + loanDebts;
-        
+
         // Property: When only KMH debts exist, total debt should equal KMH debts
-        expect(totalDebt, equals(kmhDebts),
-          reason: 'Total debt should equal KMH debts when no other debts exist');
-        expect(creditCardDebts, equals(0),
-          reason: 'Credit card debts should be zero');
-        expect(loanDebts, equals(0),
-          reason: 'Loan debts should be zero');
-        
+        expect(
+          totalDebt,
+          equals(kmhDebts),
+          reason: 'Total debt should equal KMH debts when no other debts exist',
+        );
+        expect(
+          creditCardDebts,
+          equals(0),
+          reason: 'Credit card debts should be zero',
+        );
+        expect(loanDebts, equals(0), reason: 'Loan debts should be zero');
+
         return true;
       },
       iterations: 100,
@@ -324,16 +390,23 @@ void main() {
             'name': 'Credit Card ${index + 1}',
             'balance': PropertyTest.randomPositiveDouble(min: 100, max: 20000),
             'type': 'credit_card',
-            'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+            'color':
+                '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
             'icon': 'credit_card',
-            'creditLimit': PropertyTest.randomPositiveDouble(min: 5000, max: 50000),
+            'creditLimit': PropertyTest.randomPositiveDouble(
+              min: 5000,
+              max: 50000,
+            ),
           };
         });
-        
+
         // Generate loans
         final loanCount = PropertyTest.randomInt(min: 1, max: 3);
         final loans = List.generate(loanCount, (index) {
-          final remainingAmount = PropertyTest.randomPositiveDouble(min: 1000, max: 100000);
+          final remainingAmount = PropertyTest.randomPositiveDouble(
+            min: 1000,
+            max: 100000,
+          );
           return {
             'id': const Uuid().v4(),
             'name': 'Loan ${index + 1}',
@@ -341,11 +414,8 @@ void main() {
             'totalAmount': remainingAmount,
           };
         });
-        
-        return {
-          'creditCards': creditCards,
-          'loans': loans,
-        };
+
+        return {'creditCards': creditCards, 'loans': loans};
       },
       property: (data) async {
         // Clear data
@@ -353,10 +423,11 @@ void main() {
         await prefs.setString('wallets', '[]');
         await prefs.setString('loans', '[]');
         await dataService.saveWallets([]);
-        
-        final creditCardsData = data['creditCards'] as List<Map<String, dynamic>>;
+
+        final creditCardsData =
+            data['creditCards'] as List<Map<String, dynamic>>;
         final loansData = data['loans'] as List<Map<String, dynamic>>;
-        
+
         // Create credit card wallets
         for (var cardData in creditCardsData) {
           final wallet = Wallet(
@@ -370,7 +441,7 @@ void main() {
           );
           await dataService.addWallet(wallet);
         }
-        
+
         // Create loans
         for (var loanData in loansData) {
           final loan = Loan(
@@ -390,33 +461,38 @@ void main() {
           );
           await dataService.addLoan(loan);
         }
-        
+
         // Retrieve data
         final retrievedWallets = await dataService.getWallets();
         final retrievedLoans = await dataService.getLoans();
-        
+
         // Calculate debts
         final kmhDebts = retrievedWallets
             .where((w) => w.isKmhAccount && w.balance < 0)
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
+
         final creditCardDebts = retrievedWallets
             .where((w) => w.type == 'credit_card')
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
-        final loanDebts = retrievedLoans
-            .fold(0.0, (sum, loan) => sum + loan.remainingAmount);
-        
+
+        final loanDebts = retrievedLoans.fold(
+          0.0,
+          (sum, loan) => sum + loan.remainingAmount,
+        );
+
         final totalDebt = kmhDebts + creditCardDebts + loanDebts;
-        
+
         final expectedTotal = creditCardDebts + loanDebts;
-        
+
         // Property: When no KMH debts exist, total debt should equal credit card + loan debts
-        expect(kmhDebts, equals(0),
-          reason: 'KMH debts should be zero');
-        expect(totalDebt, equals(expectedTotal),
-          reason: 'Total debt should equal credit card debts + loan debts when no KMH debts exist');
-        
+        expect(kmhDebts, equals(0), reason: 'KMH debts should be zero');
+        expect(
+          totalDebt,
+          equals(expectedTotal),
+          reason:
+              'Total debt should equal credit card debts + loan debts when no KMH debts exist',
+        );
+
         return true;
       },
       iterations: 100,
@@ -433,16 +509,18 @@ void main() {
             'name': 'KMH Account ${index + 1}',
             'balance': PropertyTest.randomPositiveDouble(min: 100, max: 50000),
             'type': 'bank',
-            'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+            'color':
+                '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
             'icon': 'account_balance',
-            'creditLimit': PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
+            'creditLimit': PropertyTest.randomPositiveDouble(
+              min: 1000,
+              max: 100000,
+            ),
             'interestRate': PropertyTest.randomPositiveDouble(min: 1, max: 50),
           };
         });
-        
-        return {
-          'kmhAccounts': kmhAccounts,
-        };
+
+        return {'kmhAccounts': kmhAccounts};
       },
       property: (data) async {
         // Clear data
@@ -450,9 +528,10 @@ void main() {
         await prefs.setString('wallets', '[]');
         await prefs.setString('loans', '[]');
         await dataService.saveWallets([]);
-        
-        final kmhAccountsData = data['kmhAccounts'] as List<Map<String, dynamic>>;
-        
+
+        final kmhAccountsData =
+            data['kmhAccounts'] as List<Map<String, dynamic>>;
+
         // Create KMH accounts with positive balances
         for (var accountData in kmhAccountsData) {
           final wallet = Wallet(
@@ -467,35 +546,41 @@ void main() {
           );
           await dataService.addWallet(wallet);
         }
-        
+
         // Retrieve data
         final retrievedWallets = await dataService.getWallets();
         final retrievedLoans = await dataService.getLoans();
-        
+
         // Calculate debts
         final kmhDebts = retrievedWallets
             .where((w) => w.isKmhAccount && w.balance < 0)
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
+
         final creditCardDebts = retrievedWallets
             .where((w) => w.type == 'credit_card')
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
-        final loanDebts = retrievedLoans
-            .fold(0.0, (sum, loan) => sum + loan.remainingAmount);
-        
+
+        final loanDebts = retrievedLoans.fold(
+          0.0,
+          (sum, loan) => sum + loan.remainingAmount,
+        );
+
         final totalDebt = kmhDebts + creditCardDebts + loanDebts;
-        
+
         // Property: When no debts exist, total debt should be zero
-        expect(totalDebt, equals(0),
-          reason: 'Total debt should be zero when no debts exist');
-        expect(kmhDebts, equals(0),
-          reason: 'KMH debts should be zero');
-        expect(creditCardDebts, equals(0),
-          reason: 'Credit card debts should be zero');
-        expect(loanDebts, equals(0),
-          reason: 'Loan debts should be zero');
-        
+        expect(
+          totalDebt,
+          equals(0),
+          reason: 'Total debt should be zero when no debts exist',
+        );
+        expect(kmhDebts, equals(0), reason: 'KMH debts should be zero');
+        expect(
+          creditCardDebts,
+          equals(0),
+          reason: 'Credit card debts should be zero',
+        );
+        expect(loanDebts, equals(0), reason: 'Loan debts should be zero');
+
         return true;
       },
       iterations: 100,
@@ -505,10 +590,19 @@ void main() {
       description: 'Property 23: Total debt calculation is additive',
       generator: () {
         // Generate one of each debt type
-        final kmhBalance = -PropertyTest.randomPositiveDouble(min: 1000, max: 50000);
-        final creditCardBalance = PropertyTest.randomPositiveDouble(min: 1000, max: 20000);
-        final loanBalance = PropertyTest.randomPositiveDouble(min: 5000, max: 100000);
-        
+        final kmhBalance = -PropertyTest.randomPositiveDouble(
+          min: 1000,
+          max: 50000,
+        );
+        final creditCardBalance = PropertyTest.randomPositiveDouble(
+          min: 1000,
+          max: 20000,
+        );
+        final loanBalance = PropertyTest.randomPositiveDouble(
+          min: 5000,
+          max: 100000,
+        );
+
         return {
           'kmhBalance': kmhBalance,
           'creditCardBalance': creditCardBalance,
@@ -521,11 +615,11 @@ void main() {
         await prefs.setString('wallets', '[]');
         await prefs.setString('loans', '[]');
         await dataService.saveWallets([]);
-        
+
         final kmhBalance = data['kmhBalance'] as double;
         final creditCardBalance = data['creditCardBalance'] as double;
         final loanBalance = data['loanBalance'] as double;
-        
+
         // Create one KMH account
         final kmhWallet = Wallet(
           id: const Uuid().v4(),
@@ -538,7 +632,7 @@ void main() {
           interestRate: 24.0,
         );
         await dataService.addWallet(kmhWallet);
-        
+
         // Create one credit card wallet
         final creditCardWallet = Wallet(
           id: const Uuid().v4(),
@@ -550,7 +644,7 @@ void main() {
           creditLimit: 50000.0,
         );
         await dataService.addWallet(creditCardWallet);
-        
+
         // Create one loan
         final loan = Loan(
           id: const Uuid().v4(),
@@ -568,53 +662,78 @@ void main() {
           installments: [],
         );
         await dataService.addLoan(loan);
-        
+
         // Retrieve data
         final retrievedWallets = await dataService.getWallets();
         final retrievedLoans = await dataService.getLoans();
-        
+
         // Calculate debts
         final kmhDebts = retrievedWallets
             .where((w) => w.isKmhAccount && w.balance < 0)
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
+
         final creditCardDebts = retrievedWallets
             .where((w) => w.type == 'credit_card')
             .fold(0.0, (sum, w) => sum + w.balance.abs());
-        
-        final loanDebts = retrievedLoans
-            .fold(0.0, (sum, loan) => sum + loan.remainingAmount);
-        
+
+        final loanDebts = retrievedLoans.fold(
+          0.0,
+          (sum, loan) => sum + loan.remainingAmount,
+        );
+
         final totalDebt = kmhDebts + creditCardDebts + loanDebts;
-        
+
         // Expected values
         final expectedKmhDebt = kmhBalance.abs();
         final expectedCreditCardDebt = creditCardBalance;
         final expectedLoanDebt = loanBalance;
-        final expectedTotalDebt = expectedKmhDebt + expectedCreditCardDebt + expectedLoanDebt;
-        
+        final expectedTotalDebt =
+            expectedKmhDebt + expectedCreditCardDebt + expectedLoanDebt;
+
         // Property: Total debt should be the sum of individual components
-        expect(kmhDebts, equals(expectedKmhDebt),
-          reason: 'KMH debt should match expected value');
-        expect(creditCardDebts, equals(expectedCreditCardDebt),
-          reason: 'Credit card debt should match expected value');
-        expect(loanDebts, equals(expectedLoanDebt),
-          reason: 'Loan debt should match expected value');
-        expect(totalDebt, equals(expectedTotalDebt),
-          reason: 'Total debt should equal sum of all components');
-        
+        expect(
+          kmhDebts,
+          equals(expectedKmhDebt),
+          reason: 'KMH debt should match expected value',
+        );
+        expect(
+          creditCardDebts,
+          equals(expectedCreditCardDebt),
+          reason: 'Credit card debt should match expected value',
+        );
+        expect(
+          loanDebts,
+          equals(expectedLoanDebt),
+          reason: 'Loan debt should match expected value',
+        );
+        expect(
+          totalDebt,
+          equals(expectedTotalDebt),
+          reason: 'Total debt should equal sum of all components',
+        );
+
         // Property: Removing any component should reduce total debt
         final totalWithoutKmh = creditCardDebts + loanDebts;
         final totalWithoutCC = kmhDebts + loanDebts;
         final totalWithoutLoan = kmhDebts + creditCardDebts;
-        
-        expect(totalDebt, greaterThan(totalWithoutKmh),
-          reason: 'Total debt should be greater than total without KMH');
-        expect(totalDebt, greaterThan(totalWithoutCC),
-          reason: 'Total debt should be greater than total without credit cards');
-        expect(totalDebt, greaterThan(totalWithoutLoan),
-          reason: 'Total debt should be greater than total without loans');
-        
+
+        expect(
+          totalDebt,
+          greaterThan(totalWithoutKmh),
+          reason: 'Total debt should be greater than total without KMH',
+        );
+        expect(
+          totalDebt,
+          greaterThan(totalWithoutCC),
+          reason:
+              'Total debt should be greater than total without credit cards',
+        );
+        expect(
+          totalDebt,
+          greaterThan(totalWithoutLoan),
+          reason: 'Total debt should be greater than total without loans',
+        );
+
         return true;
       },
       iterations: 100,

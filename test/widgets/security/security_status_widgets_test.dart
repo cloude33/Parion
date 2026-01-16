@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/security/security_status.dart';
 import 'package:parion/models/security/auth_state.dart';
 import 'package:parion/widgets/security/security_status_widgets.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SecurityLevelIndicator', () {
     testWidgets('displays high security level correctly', (tester) async {
       await tester.pumpWidget(

@@ -1,8 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/utils/security/encryption_helper.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('EncryptionHelper Property Tests', () {
     // **Feature: pin-biometric-auth, Property 4: Şifreleme Geri Dönüşüm**
     PropertyTest.forAll<Map<String, String>>(

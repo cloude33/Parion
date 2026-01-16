@@ -3,10 +3,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/auth/security_controller.dart';
 import 'package:parion/models/security/security_models.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property tests for Privacy Compliance
 /// **Validates: Requirements 8.4, 10.5**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Privacy Compliance Property Tests', () {
     late SecurityController securityController;
 

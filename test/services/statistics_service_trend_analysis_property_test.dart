@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/cash_flow_data.dart';
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 /// Property-Based Tests for Trend Analysis
 ///
@@ -19,6 +20,14 @@ import '../property_test_utils.dart';
 /// 3. Prediction is reasonable based on historical data
 /// 4. Prediction values are non-negative for financial data
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Trend Analysis Properties', () {
     test('Property 1: Upward trend is correctly identified', () {
       // This property tests that when values are consistently increasing,

@@ -6,6 +6,7 @@ import 'package:parion/models/security/auth_result.dart';
 import 'package:parion/models/security/biometric_type.dart' as app_biometric;
 import 'package:parion/models/security/auth_state.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Mock BiometricService for testing fallback behavior
 class MockBiometricService implements BiometricService {
@@ -128,6 +129,14 @@ class MockBiometricService implements BiometricService {
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Biometric Service Fallback Property Tests', () {
     // **Feature: pin-biometric-auth, Property 5: Biyometrik Fallback Tutarlılığı**
     // **Validates: Requirements 4.5**

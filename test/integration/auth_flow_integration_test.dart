@@ -16,6 +16,7 @@ import 'package:parion/screens/login_screen.dart';
 import 'package:parion/screens/register_screen.dart';
 
 import 'auth_flow_integration_test.mocks.dart';
+import '../test_setup.dart';
 
 @GenerateMocks([
   IAuthOrchestrator,
@@ -26,6 +27,14 @@ import 'auth_flow_integration_test.mocks.dart';
   DataSyncInterface,
 ])
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Authentication Flow Integration Tests', () {
     late MockIAuthOrchestrator mockAuthOrchestrator;
     late MockIBiometricAuthService mockBiometricService;

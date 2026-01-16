@@ -1,12 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/security/security_models.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property-based tests for AuthOrchestrator
 /// 
 /// **Feature: modern-auth-system, Property 1: Authentication Method Success**
 /// **Validates: Requirements 2.1, 3.1, 3.2, 4.3**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('AuthOrchestrator Property Tests', () {
     /// **Property 1: Authentication Method Success**
     /// *For any* valid authentication method (email/password, Google, Apple, biometric) 

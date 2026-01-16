@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/widgets/security/biometric_auth_widget.dart';
 import 'package:parion/services/auth/biometric_service.dart';
 import 'package:parion/models/security/security_models.dart';
+import '../../test_setup.dart';
 
 /// Mock biyometrik servis
 class MockBiometricService implements BiometricService {
@@ -68,6 +69,14 @@ class MockBiometricService implements BiometricService {
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('BiometricAuthWidget', () {
     late MockBiometricService mockService;
 

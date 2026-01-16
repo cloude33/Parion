@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/auth/user_preferences.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property-based tests for UserPreferences model
 /// 
@@ -11,6 +12,14 @@ import '../../property_test_utils.dart';
 /// persisted and retrieved across app sessions, maintaining consistency
 /// and user experience.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('UserPreferences Property Tests', () {
     
     // **Property 9: Authentication Preference Persistence**

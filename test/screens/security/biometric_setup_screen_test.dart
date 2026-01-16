@@ -5,6 +5,7 @@ import 'package:parion/services/auth/biometric_auth_service.dart';
 import 'package:parion/models/security/biometric_type.dart' as app_biometric;
 import 'package:parion/models/security/auth_result.dart';
 import 'package:parion/models/security/auth_state.dart';
+import '../../test_setup.dart';
 
 /// Mock biyometrik auth servis
 class MockBiometricAuthService implements BiometricAuthService {
@@ -78,6 +79,14 @@ class MockBiometricAuthService implements BiometricAuthService {
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('BiometricSetupScreen Tests', () {
     late MockBiometricAuthService mockBiometricAuthService;
 

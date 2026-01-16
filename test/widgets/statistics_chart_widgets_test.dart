@@ -6,8 +6,17 @@ import 'package:parion/widgets/statistics/interactive_pie_chart.dart';
 import 'package:parion/widgets/statistics/interactive_bar_chart.dart';
 import 'package:parion/widgets/statistics/custom_tooltip.dart';
 import 'package:parion/widgets/statistics/chart_legend.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('InteractiveLineChart', () {
     testWidgets('renders with basic data', (WidgetTester tester) async {
       await tester.pumpWidget(

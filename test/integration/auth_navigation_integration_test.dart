@@ -14,8 +14,17 @@ import 'package:parion/services/auth/interfaces/biometric_auth_interface.dart';
 import 'package:parion/models/security/security_models.dart';
 
 import 'auth_flow_integration_test.mocks.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Authentication Navigation Integration Tests', () {
     late MockIAuthOrchestrator mockAuthOrchestrator;
     late MockIBiometricAuthService mockBiometricService;

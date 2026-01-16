@@ -4,6 +4,7 @@ import 'package:parion/services/notification_service.dart';
 import 'package:parion/services/data_service.dart';
 import 'package:parion/models/transaction.dart';
 import 'package:parion/models/app_notification.dart';
+import '../test_setup.dart';
 
 // Simple mock for DataService since we can inject it now
 class MockDataService extends DataService {
@@ -18,6 +19,14 @@ class MockDataService extends DataService {
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late NotificationService notificationService;

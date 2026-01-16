@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import '../models/debt.dart';
 import '../services/debt_service.dart';
 
@@ -215,6 +216,11 @@ class _AddDebtScreenState extends State<AddDebtScreen> {
         labelText: 'Kişi Adı *',
         hintText: 'Örn: Ahmet Yılmaz',
         prefixIcon: const Icon(Icons.person),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.contacts, color: Color(0xFF5E5CE6)),
+          tooltip: 'Rehberden Seç',
+          onPressed: _pickContact,
+        ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       textCapitalization: TextCapitalization.words,
@@ -225,6 +231,52 @@ class _AddDebtScreenState extends State<AddDebtScreen> {
         return null;
       },
     );
+  }
+
+  Future<void> _pickContact() async {
+    try {
+      // İzin kontrolü
+      if (!await FlutterContacts.requestPermission(readonly: true)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Rehber erişim izni gerekli'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      // Rehberden kişi seç
+      final contact = await FlutterContacts.openExternalPick();
+      
+      if (contact != null) {
+        // Kişi detaylarını al
+        final fullContact = await FlutterContacts.getContact(contact.id);
+        
+        if (fullContact != null) {
+          setState(() {
+            // İsmi ayarla
+            _personNameController.text = fullContact.displayName;
+            
+            // Telefon numarasını ayarla (varsa)
+            if (fullContact.phones.isNotEmpty) {
+              _phoneController.text = fullContact.phones.first.number;
+            }
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Rehber hatası: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildPhoneField() {

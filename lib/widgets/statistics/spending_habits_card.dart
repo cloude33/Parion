@@ -242,7 +242,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 105,
+        maxY: 120,
         barGroups: barGroups,
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(
@@ -386,7 +386,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
-        maxY: 105,
+        maxY: 120,
         barGroups: barGroups,
         titlesData: FlTitlesData(
           leftTitles: AxisTitles(

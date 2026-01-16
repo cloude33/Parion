@@ -1,8 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/goal.dart';
 import 'package:parion/services/statistics_service.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('StatisticsService - Goal Comparison Tests', () {
     late StatisticsService statisticsService;
 

@@ -4,6 +4,7 @@ import 'package:parion/models/transaction.dart';
 import 'package:parion/models/wallet.dart';
 import 'package:parion/screens/statistics_screen.dart';
 import 'package:parion/utils/cache_manager.dart';
+import '../test_setup.dart';
 
 /// Memory profiling tests for Statistics Screen
 /// Tests memory allocation, garbage collection, and memory leaks
@@ -13,6 +14,14 @@ import 'package:parion/utils/cache_manager.dart';
 /// - Memory growth per operation: < 5MB
 /// - Cache size: < 50MB
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Memory Profiling Tests', () {
     group('Memory Allocation Tests', () {
       testWidgets(

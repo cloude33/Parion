@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/cash_flow_data.dart';
 
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 /// Property-Based Tests for Spending Analysis
 ///
@@ -17,6 +18,14 @@ import '../property_test_utils.dart';
 /// 3. Budget comparison calculations are correct
 /// 4. Category trend percentage change is correct
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Spending Analysis Properties', () {
     test('Property 1: Category breakdown sum equals total spending', () {
       // This property tests that for any spending analysis,

@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/screens/welcome_screen.dart';
 import 'package:parion/core/di/service_locator.dart';
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Welcome Screen UI Consistency Property Tests', () {

@@ -3,6 +3,7 @@ import 'package:parion/models/reward_points.dart';
 import 'package:parion/models/credit_card.dart';
 import '../property_test_utils.dart';
 import 'package:uuid/uuid.dart';
+import '../test_setup.dart';
 
 /// **Feature: enhanced-credit-card-tracking, Property 8: Puan Türü Kaydı**
 /// **Validates: Requirements 4.1**
@@ -10,6 +11,14 @@ import 'package:uuid/uuid.dart';
 /// Property: For any reward type selection, the system should correctly save
 /// the reward type.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Reward Points Property Tests', () {
     PropertyTest.forAll<Map<String, dynamic>>(
       description: 'Property 8: Reward type should be correctly saved in RewardPoints',

@@ -126,6 +126,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get debts => 'Debts/Credits';
 
   @override
+  String get loans => 'My Loans';
+
+  @override
+  String get manageLoansDesc => 'Track your bank loans';
+
+  @override
   String get recurringTransactions => 'Recurring Transactions';
 
   @override

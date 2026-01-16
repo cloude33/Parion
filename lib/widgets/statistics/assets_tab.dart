@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/asset_analysis.dart';
@@ -17,8 +18,8 @@ class AssetsTab extends StatefulWidget {
 }
 
 class _AssetsTabState extends State<AssetsTab> {
-  final StatisticsService _statisticsService = StatisticsService();
-  final DataService _dataService = DataService();
+  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
+  final DataService _dataService = GetIt.I<DataService>();
   AssetAnalysis? _assetAnalysis;
   List<Wallet> _kmhAccounts = [];
   bool _isLoading = true;

@@ -1,7 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/utils/security/totp_helper.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('TOTPHelper', () {
     group('Secret Generation', () {
       test('should generate valid base32 secret', () {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/widgets/statistics/financial_health_score_card.dart';
 import 'package:parion/models/asset_analysis.dart';
+import '../test_setup.dart';
 
 /// Tests for FinancialHealthScoreCard widget
 /// 
@@ -11,6 +12,14 @@ import 'package:parion/models/asset_analysis.dart';
 /// - Shows recommendations
 /// - Requirement 5.5: Financial health score display
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('FinancialHealthScoreCard', () {
     testWidgets('renders with all score components', (WidgetTester tester) async {
       final healthScore = FinancialHealthScore(

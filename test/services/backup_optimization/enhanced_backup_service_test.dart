@@ -2,8 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:parion/services/backup_optimization/enhanced_backup_service.dart';
 import '../../test_helpers.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   setupCommonTestMocks();
   group('EnhancedBackupService', () {
     late EnhancedBackupService service;

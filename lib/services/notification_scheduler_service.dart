@@ -5,6 +5,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'daily_summary_service.dart';
 
 enum NotificationPriority { low, normal, high, urgent }
 
@@ -289,6 +290,12 @@ class NotificationSchedulerService {
 
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint('Notification tapped: ${response.payload}');
+    
+    // Handle daily summary notification tap
+    if (response.payload == 'daily_summary') {
+      // Show updated summary when user taps the notification
+      DailySummaryService().showDailySummaryNotification();
+    }
   }
 
   Importance _getImportance(NotificationPriority priority) {

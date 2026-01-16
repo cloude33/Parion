@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/wallet.dart';
 import '../property_test_utils.dart';
 import 'package:uuid/uuid.dart';
+import '../test_setup.dart';
 
 /// **Feature: kmh-account-management, Property 2: KMH Hesap Veri Bütünlüğü**
 /// **Validates: Requirements 1.2**
@@ -10,6 +11,14 @@ import 'package:uuid/uuid.dart';
 /// accountNumber, creditLimit, interestRate) should be saved and when read 
 /// back should contain the same values.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KMH Account Data Integrity Property Tests', () {
     PropertyTest.forAll<Map<String, dynamic>>(
       description: 'Property 2: KMH account data integrity - all required fields preserved',

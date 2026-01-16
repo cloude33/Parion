@@ -3,12 +3,21 @@ import 'package:parion/models/user.dart';
 import 'package:parion/models/auth/user_preferences.dart';
 import 'package:parion/services/auth/interfaces/data_sync_interface.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property-based tests for DataSyncService
 /// 
 /// **Feature: modern-auth-system, Property 4: Data Synchronization Integrity**
 /// **Validates: Requirements 9.1, 9.2, 9.4**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('DataSyncService Property Tests', () {
     /// **Property 4: Data Synchronization Integrity**
     /// *For any* user data change or authentication event, the data should be 

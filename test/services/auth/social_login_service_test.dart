@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/auth/social_login_service.dart';
 import 'package:parion/models/security/security_models.dart';
+import '../../test_setup.dart';
 
 /// Unit tests for Social Login Service
 /// 
@@ -9,6 +10,14 @@ import 'package:parion/models/security/security_models.dart';
 /// - 3.2: Apple authentication flow  
 /// - 3.5: Account linking scenarios
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SocialLoginService Unit Tests', () {
     late SocialLoginService socialLoginService;
 

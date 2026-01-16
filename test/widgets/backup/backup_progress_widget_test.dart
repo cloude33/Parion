@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/backup_optimization/backup_enums.dart';
+import '../../test_setup.dart';
 
 /// Simple backup progress widget for testing
 class TestBackupProgressWidget extends StatefulWidget {
@@ -342,6 +343,14 @@ class _TestBackupProgressWidgetState extends State<TestBackupProgressWidget> {
 enum BackupProgressState { idle, inProgress, completed, error, cancelled }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('BackupProgressWidget Tests', () {
     testWidgets('should display initial progress widget structure', (
       WidgetTester tester,

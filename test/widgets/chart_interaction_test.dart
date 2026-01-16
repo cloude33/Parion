@@ -4,8 +4,17 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:parion/widgets/statistics/interactive_line_chart.dart';
 import 'package:parion/widgets/statistics/interactive_pie_chart.dart';
 import 'package:parion/widgets/statistics/interactive_bar_chart.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Interactive Chart Widget Tests', () {
     group('InteractiveLineChart', () {
       testWidgets('should render line chart with data', (

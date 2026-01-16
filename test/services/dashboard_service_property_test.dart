@@ -18,11 +18,11 @@ import 'package:flutter/material.dart';
 /// Property-based tests for DashboardService
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   setUpAll(() async {
     // Initialize Hive for testing with a temporary directory
     Hive.init('./test_hive_dashboard');
-    
+
     // Register adapters
     if (!Hive.isAdapterRegistered(10)) {
       Hive.registerAdapter(CreditCardAdapter());
@@ -45,7 +45,7 @@ void main() {
     if (!Hive.isAdapterRegistered(22)) {
       Hive.registerAdapter(LimitAlertAdapter());
     }
-    
+
     // Open boxes
     await CreditCardBoxService.init();
   });
@@ -63,10 +63,10 @@ void main() {
     setUp(() async {
       service = DashboardService();
       cardRepo = CreditCardRepository();
-      
+
       // Clear cache before each test
       service.clearCache();
-      
+
       // Clear data before each test
       await CreditCardBoxService.creditCardsBox.clear();
       await CreditCardBoxService.transactionsBox.clear();
@@ -85,10 +85,15 @@ void main() {
         bankName: PropertyTest.randomString(minLength: 3, maxLength: 15),
         cardName: PropertyTest.randomString(minLength: 3, maxLength: 15),
         last4Digits: PropertyTest.randomInt(min: 1000, max: 9999).toString(),
-        creditLimit: creditLimit ?? PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
+        creditLimit:
+            creditLimit ??
+            PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
         statementDay: PropertyTest.randomInt(min: 1, max: 28),
         dueDateOffset: PropertyTest.randomInt(min: 10, max: 20),
-        monthlyInterestRate: PropertyTest.randomPositiveDouble(min: 1.0, max: 5.0),
+        monthlyInterestRate: PropertyTest.randomPositiveDouble(
+          min: 1.0,
+          max: 5.0,
+        ),
         lateInterestRate: PropertyTest.randomPositiveDouble(min: 2.0, max: 6.0),
         cardColor: Colors.blue.value,
         createdAt: DateTime.now(),
@@ -99,15 +104,22 @@ void main() {
 
     /// **Feature: enhanced-credit-card-tracking, Property 1: Kullanılabilir Limit Invariant'ı**
     /// **Validates: Requirements 2.2**
-    /// 
+    ///
     /// Property: For any credit card, the available limit should always be
     /// calculated by subtracting the total debt from the total limit.
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 1: Available limit = Total limit - Total debt (Invariant)',
+      description:
+          'Property 1: Available limit = Total limit - Total debt (Invariant)',
       generator: () {
-        final creditLimit = PropertyTest.randomPositiveDouble(min: 5000, max: 100000);
-        final initialDebt = PropertyTest.randomPositiveDouble(min: 0, max: creditLimit * 0.8);
-        
+        final creditLimit = PropertyTest.randomPositiveDouble(
+          min: 5000,
+          max: 100000,
+        );
+        final initialDebt = PropertyTest.randomPositiveDouble(
+          min: 0,
+          max: creditLimit * 0.8,
+        );
+
         return {
           'cardId': const Uuid().v4(),
           'creditLimit': creditLimit,
@@ -118,7 +130,7 @@ void main() {
         // Clear data for this iteration
         await CreditCardBoxService.creditCardsBox.clear();
         service.clearCache(); // Clear cache for each iteration
-        
+
         final cardId = data['cardId'] as String;
         final creditLimit = data['creditLimit'] as double;
         final initialDebt = data['initialDebt'] as double;
@@ -132,21 +144,27 @@ void main() {
         await cardRepo.save(card);
 
         // Get total debt and available credit (force refresh to bypass cache)
-        final totalDebt = await service.getTotalDebtAllCards(forceRefresh: true);
+        final totalDebt = await service.getTotalDebtAllCards(
+          forceRefresh: true,
+        );
         final totalLimit = await service.getTotalLimitAllCards();
         final availableCredit = await service.getTotalAvailableCreditAllCards();
 
         // Property 1: Available credit = Total limit - Total debt (Invariant)
         final expectedAvailable = totalLimit - totalDebt;
-        
+
         // Debug output
         if ((availableCredit - expectedAvailable).abs() >= 0.01) {
           print('DEBUG: creditLimit=$creditLimit, initialDebt=$initialDebt');
           print('DEBUG: totalLimit=$totalLimit, totalDebt=$totalDebt');
-          print('DEBUG: availableCredit=$availableCredit, expectedAvailable=$expectedAvailable');
-          print('DEBUG: difference=${(availableCredit - expectedAvailable).abs()}');
+          print(
+            'DEBUG: availableCredit=$availableCredit, expectedAvailable=$expectedAvailable',
+          );
+          print(
+            'DEBUG: difference=${(availableCredit - expectedAvailable).abs()}',
+          );
         }
-        
+
         expect((availableCredit - expectedAvailable).abs(), lessThan(0.01));
 
         // Property 2: Available credit should never be negative
@@ -156,7 +174,10 @@ void main() {
         // Property 3: For a single card, the relationship should hold
         expect((totalLimit - creditLimit).abs(), lessThan(0.01));
         expect((totalDebt - initialDebt).abs(), lessThan(0.01));
-        expect((availableCredit - (creditLimit - initialDebt)).abs(), lessThan(0.01));
+        expect(
+          (availableCredit - (creditLimit - initialDebt)).abs(),
+          lessThan(0.01),
+        );
 
         return true;
       },
@@ -201,7 +222,10 @@ void main() {
     test('Property 1: Available limit invariant with inactive cards', () async {
       // Create active and inactive cards
       final activeCard = createTestCard(creditLimit: 10000, initialDebt: 2000);
-      final inactiveCard = createTestCard(creditLimit: 20000, initialDebt: 5000);
+      final inactiveCard = createTestCard(
+        creditLimit: 20000,
+        initialDebt: 5000,
+      );
       inactiveCard.isActive = false;
 
       await cardRepo.save(activeCard);
@@ -221,39 +245,46 @@ void main() {
 
     /// **Feature: enhanced-credit-card-tracking, Property 50: Dashboard Kullanılabilir Limit**
     /// **Validates: Requirements 14.3**
-    /// 
+    ///
     /// Property: For any dashboard summary calculation, the system should
     /// correctly calculate the total available limit.
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 50: Dashboard should correctly calculate total available limit',
+      description:
+          'Property 50: Dashboard should correctly calculate total available limit',
       generator: () {
         final numCards = PropertyTest.randomInt(min: 1, max: 5);
         final cards = <Map<String, dynamic>>[];
-        
+
         for (int i = 0; i < numCards; i++) {
-          final creditLimit = PropertyTest.randomPositiveDouble(min: 5000, max: 50000);
-          final initialDebt = PropertyTest.randomPositiveDouble(min: 0, max: creditLimit * 0.9);
-          
+          final creditLimit = PropertyTest.randomPositiveDouble(
+            min: 5000,
+            max: 50000,
+          );
+          final initialDebt = PropertyTest.randomPositiveDouble(
+            min: 0,
+            max: creditLimit * 0.9,
+          );
+
           cards.add({
             'cardId': const Uuid().v4(),
             'creditLimit': creditLimit,
             'initialDebt': initialDebt,
           });
         }
-        
+
         return {'cards': cards};
       },
       property: (data) async {
         // Clear data for this iteration
         await CreditCardBoxService.creditCardsBox.clear();
         service.clearCache(); // Clear cache for each iteration
-        
+
         final cards = data['cards'] as List<Map<String, dynamic>>;
 
         // Create and save all cards
         double expectedTotalLimit = 0;
         double expectedTotalDebt = 0;
-        
+
         for (var cardData in cards) {
           final card = createTestCard(
             id: cardData['cardId'] as String,
@@ -261,7 +292,7 @@ void main() {
             initialDebt: cardData['initialDebt'] as double,
           );
           await cardRepo.save(card);
-          
+
           expectedTotalLimit += cardData['creditLimit'] as double;
           expectedTotalDebt += cardData['initialDebt'] as double;
         }
@@ -289,14 +320,18 @@ void main() {
         expect((actualDebt - expectedTotalDebt).abs(), lessThan(0.01));
 
         // Property 5: Dashboard invariant: available = limit - debt
-        expect((actualAvailable - (actualLimit - actualDebt)).abs(), lessThan(0.01));
+        expect(
+          (actualAvailable - (actualLimit - actualDebt)).abs(),
+          lessThan(0.01),
+        );
 
         // Property 6: Dashboard should include utilization percentage
         expect(summary.containsKey('utilizationPercentage'), isTrue);
         final utilization = summary['utilizationPercentage'] as double;
-        
+
         if (expectedTotalLimit > 0) {
-          final expectedUtilization = (expectedTotalDebt / expectedTotalLimit) * 100;
+          final expectedUtilization =
+              (expectedTotalDebt / expectedTotalLimit) * 100;
           expect((utilization - expectedUtilization).abs(), lessThan(0.01));
         } else {
           expect(utilization, equals(0));
@@ -307,88 +342,117 @@ void main() {
       iterations: 100,
     );
 
-    test('Property 50: Dashboard summary should include all required fields', () async {
-      // Create a card
-      final card = createTestCard(creditLimit: 10000, initialDebt: 3000);
-      await cardRepo.save(card);
+    test(
+      'Property 50: Dashboard summary should include all required fields',
+      () async {
+        // Create a card
+        final card = createTestCard(creditLimit: 10000, initialDebt: 3000);
+        await cardRepo.save(card);
 
-      // Get dashboard summary
-      final summary = await service.getDashboardSummary();
+        // Get dashboard summary
+        final summary = await service.getDashboardSummary();
 
-      // Verify all required fields are present
-      expect(summary.containsKey('totalDebt'), isTrue);
-      expect(summary.containsKey('totalLimit'), isTrue);
-      expect(summary.containsKey('totalAvailableCredit'), isTrue);
-      expect(summary.containsKey('utilizationPercentage'), isTrue);
-      expect(summary.containsKey('debtDistribution'), isTrue);
-      expect(summary.containsKey('limitUtilization'), isTrue);
-      expect(summary.containsKey('upcomingPayments'), isTrue);
+        // Verify all required fields are present
+        expect(summary.containsKey('totalDebt'), isTrue);
+        expect(summary.containsKey('totalLimit'), isTrue);
+        expect(summary.containsKey('totalAvailableCredit'), isTrue);
+        expect(summary.containsKey('utilizationPercentage'), isTrue);
+        expect(summary.containsKey('debtDistribution'), isTrue);
+        expect(summary.containsKey('limitUtilization'), isTrue);
+        expect(summary.containsKey('upcomingPayments'), isTrue);
 
-      // Verify values
-      expect(summary['totalDebt'], equals(3000));
-      expect(summary['totalLimit'], equals(10000));
-      expect(summary['totalAvailableCredit'], equals(7000));
-      expect(summary['utilizationPercentage'], equals(30.0));
-    });
+        // Verify values
+        expect(summary['totalDebt'], equals(3000));
+        expect(summary['totalLimit'], equals(10000));
+        expect(summary['totalAvailableCredit'], equals(7000));
+        expect(summary['utilizationPercentage'], equals(30.0));
+      },
+    );
 
-    test('Property 50: Dashboard with zero limit should handle gracefully', () async {
-      // This is an edge case - cards should have positive limits
-      // but we test the calculation handles it
-      final summary = await service.getDashboardSummary();
+    test(
+      'Property 50: Dashboard with zero limit should handle gracefully',
+      () async {
+        // This is an edge case - cards should have positive limits
+        // but we test the calculation handles it
+        final summary = await service.getDashboardSummary();
 
-      // With no cards, all values should be zero
-      expect(summary['totalDebt'], equals(0));
-      expect(summary['totalLimit'], equals(0));
-      expect(summary['totalAvailableCredit'], equals(0));
-      expect(summary['utilizationPercentage'], equals(0));
-    });
+        // With no cards, all values should be zero
+        expect(summary['totalDebt'], equals(0));
+        expect(summary['totalLimit'], equals(0));
+        expect(summary['totalAvailableCredit'], equals(0));
+        expect(summary['utilizationPercentage'], equals(0));
+      },
+    );
 
-    test('Property 50: Dashboard debt distribution should sum to total debt', () async {
-      // Create multiple cards
-      final card1 = createTestCard(creditLimit: 10000, initialDebt: 2000);
-      final card2 = createTestCard(creditLimit: 20000, initialDebt: 5000);
-      final card3 = createTestCard(creditLimit: 15000, initialDebt: 3000);
+    test(
+      'Property 50: Dashboard debt distribution should sum to total debt',
+      () async {
+        // Create multiple cards
+        final card1 = createTestCard(creditLimit: 10000, initialDebt: 2000);
+        final card2 = createTestCard(creditLimit: 20000, initialDebt: 5000);
+        final card3 = createTestCard(creditLimit: 15000, initialDebt: 3000);
 
-      await cardRepo.save(card1);
-      await cardRepo.save(card2);
-      await cardRepo.save(card3);
+        await cardRepo.save(card1);
+        await cardRepo.save(card2);
+        await cardRepo.save(card3);
 
-      // Get dashboard summary
-      final summary = await service.getDashboardSummary();
-      final debtDistribution = summary['debtDistribution'] as Map<String, double>;
+        // Get dashboard summary
+        final summary = await service.getDashboardSummary();
+        final debtDistribution =
+            summary['debtDistribution'] as Map<String, double>;
 
-      // Sum of debt distribution should equal total debt
-      final distributionSum = debtDistribution.values.fold<double>(0, (sum, debt) => sum + debt);
-      final totalDebt = summary['totalDebt'] as double;
+        // Sum of debt distribution should equal total debt
+        final distributionSum = debtDistribution.values.fold<double>(
+          0,
+          (sum, debt) => sum + debt,
+        );
+        final totalDebt = summary['totalDebt'] as double;
 
-      expect((distributionSum - totalDebt).abs(), lessThan(0.01));
-      expect(totalDebt, equals(10000)); // 2000 + 5000 + 3000
-    });
+        expect((distributionSum - totalDebt).abs(), lessThan(0.01));
+        expect(totalDebt, equals(10000)); // 2000 + 5000 + 3000
+      },
+    );
 
-    test('Property 50: Dashboard limit utilization should be percentages', () async {
-      // Create cards with different utilization levels
-      final card1 = createTestCard(creditLimit: 10000, initialDebt: 5000); // 50%
-      final card2 = createTestCard(creditLimit: 20000, initialDebt: 16000); // 80%
-      final card3 = createTestCard(creditLimit: 15000, initialDebt: 0); // 0%
+    test(
+      'Property 50: Dashboard limit utilization should be percentages',
+      () async {
+        // Create cards with different utilization levels
+        final card1 = createTestCard(
+          creditLimit: 10000,
+          initialDebt: 5000,
+        ); // 50%
+        final card2 = createTestCard(
+          creditLimit: 20000,
+          initialDebt: 16000,
+        ); // 80%
+        final card3 = createTestCard(creditLimit: 15000, initialDebt: 0); // 0%
 
-      await cardRepo.save(card1);
-      await cardRepo.save(card2);
-      await cardRepo.save(card3);
+        await cardRepo.save(card1);
+        await cardRepo.save(card2);
+        await cardRepo.save(card3);
 
-      // Get dashboard summary
-      final summary = await service.getDashboardSummary();
-      final limitUtilization = summary['limitUtilization'] as Map<String, double>;
+        // Get dashboard summary
+        final summary = await service.getDashboardSummary();
+        final limitUtilization =
+            summary['limitUtilization'] as Map<String, double>;
 
-      // All utilization values should be between 0 and 100
-      for (var utilization in limitUtilization.values) {
-        expect(utilization, greaterThanOrEqualTo(0));
-        expect(utilization, lessThanOrEqualTo(100));
-      }
+        // All utilization values should be between 0 and 100
+        for (var utilization in limitUtilization.values) {
+          expect(utilization, greaterThanOrEqualTo(0));
+          expect(utilization, lessThanOrEqualTo(100));
+        }
 
-      // Verify specific utilizations
-      expect(limitUtilization.values.any((u) => (u - 50.0).abs() < 0.01), isTrue);
-      expect(limitUtilization.values.any((u) => (u - 80.0).abs() < 0.01), isTrue);
-      expect(limitUtilization.values.any((u) => u == 0), isTrue);
-    });
+        // Verify specific utilizations
+        expect(
+          limitUtilization.values.any((u) => (u - 50.0).abs() < 0.01),
+          isTrue,
+        );
+        expect(
+          limitUtilization.values.any((u) => (u - 80.0).abs() < 0.01),
+          isTrue,
+        );
+        expect(limitUtilization.values.any((u) => u == 0), isTrue);
+      },
+    );
   });
 }

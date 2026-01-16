@@ -2,8 +2,17 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/backup_optimization/performance_service.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('PerformanceService - Performance Metrics Reporting Property Tests', () {
     late PerformanceService performanceService;
 

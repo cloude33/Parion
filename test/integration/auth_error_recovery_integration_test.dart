@@ -12,8 +12,17 @@ import 'package:parion/models/security/security_models.dart';
 import 'package:parion/widgets/auth_error_widget.dart';
 
 import 'auth_flow_integration_test.mocks.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Authentication Error Recovery Integration Tests', () {
     late MockIAuthOrchestrator mockAuthOrchestrator;
     late MockIBiometricAuthService mockBiometricService;

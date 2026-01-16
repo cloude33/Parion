@@ -1,7 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/backup_metadata.dart';
+import 'test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Backup Metadata Tests', () {
     test('BackupMetadata should create correctly', () {
       final metadata = BackupMetadata(
@@ -102,8 +111,8 @@ void main() {
     });
 
     test('BackupMetadata should handle version compatibility', () {
-      final compatibleVersions = ['1.0', '2.0', '2.1', '2.5'];
-      final incompatibleVersions = ['0.9', '0.5', '3.0'];
+      final compatibleVersions = ['1.0', '2.0', '2.1', '2.5', '3.0', '3.1'];
+      final incompatibleVersions = ['0.9', '0.5', '4.0'];
 
       for (final version in compatibleVersions) {
         final metadata = BackupMetadata(

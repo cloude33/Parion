@@ -33,11 +33,7 @@ void main() {
     testWidgets('displays chart with trend data', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: mockTrendData,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: mockTrendData)),
         ),
       );
 
@@ -51,14 +47,12 @@ void main() {
       expect(find.text('Borçlar'), findsOneWidget);
     });
 
-    testWidgets('displays trend indicator with positive change', (WidgetTester tester) async {
+    testWidgets('displays trend indicator with positive change', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: mockTrendData,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: mockTrendData)),
         ),
       );
 
@@ -66,7 +60,9 @@ void main() {
       expect(find.byIcon(Icons.trending_up), findsOneWidget);
     });
 
-    testWidgets('displays trend indicator with negative change', (WidgetTester tester) async {
+    testWidgets('displays trend indicator with negative change', (
+      WidgetTester tester,
+    ) async {
       // Create data with negative trend
       final negativeTrendData = List.generate(12, (index) {
         final date = DateTime(2024, index + 1, 1);
@@ -85,9 +81,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: negativeTrendData,
-            ),
+            body: NetWorthTrendChart(trendData: negativeTrendData),
           ),
         ),
       );
@@ -96,14 +90,12 @@ void main() {
       expect(find.byIcon(Icons.trending_down), findsOneWidget);
     });
 
-    testWidgets('displays empty state when no data', (WidgetTester tester) async {
+    testWidgets('displays empty state when no data', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: [],
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: [])),
         ),
       );
 
@@ -115,11 +107,7 @@ void main() {
     testWidgets('toggles legend items', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: mockTrendData,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: mockTrendData)),
         ),
       );
 
@@ -135,7 +123,9 @@ void main() {
       expect(assetsToggle, findsOneWidget);
     });
 
-    testWidgets('displays target comparison when target is provided', (WidgetTester tester) async {
+    testWidgets('displays target comparison when target is provided', (
+      WidgetTester tester,
+    ) async {
       const targetNetWorth = 150000.0;
 
       await tester.pumpWidget(
@@ -154,7 +144,9 @@ void main() {
       expect(find.byIcon(Icons.flag), findsOneWidget);
     });
 
-    testWidgets('displays achieved target when net worth exceeds target', (WidgetTester tester) async {
+    testWidgets('displays achieved target when net worth exceeds target', (
+      WidgetTester tester,
+    ) async {
       const targetNetWorth = 50000.0; // Lower than current net worth
 
       await tester.pumpWidget(
@@ -174,14 +166,12 @@ void main() {
       expect(find.textContaining('Hedef başarıldı!'), findsOneWidget);
     });
 
-    testWidgets('displays selected point details on tap', (WidgetTester tester) async {
+    testWidgets('displays selected point details on tap', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: mockTrendData,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: mockTrendData)),
         ),
       );
 
@@ -202,11 +192,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: singleDataPoint,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: singleDataPoint)),
         ),
       );
 
@@ -217,11 +203,7 @@ void main() {
     testWidgets('displays correct month labels', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: mockTrendData,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: mockTrendData)),
         ),
       );
 
@@ -242,11 +224,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: zeroData,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: zeroData)),
         ),
       );
 
@@ -254,7 +232,9 @@ void main() {
       expect(find.text('Net Varlık Trendi'), findsOneWidget);
     });
 
-    testWidgets('handles negative net worth correctly', (WidgetTester tester) async {
+    testWidgets('handles negative net worth correctly', (
+      WidgetTester tester,
+    ) async {
       final negativeData = List.generate(12, (index) {
         return NetWorthTrendData(
           date: DateTime(2024, index + 1, 1),
@@ -266,11 +246,7 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: Scaffold(
-            body: NetWorthTrendChart(
-              trendData: negativeData,
-            ),
-          ),
+          home: Scaffold(body: NetWorthTrendChart(trendData: negativeData)),
         ),
       );
 

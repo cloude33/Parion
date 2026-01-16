@@ -13,8 +13,8 @@ import 'package:uuid/uuid.dart';
 
 /// **Feature: kmh-account-management, Property 35: Tam Veri Silme**
 /// **Validates: Requirements 9.5**
-/// 
-/// Property: For any data deletion operation, all KMH accounts and transactions 
+///
+/// Property: For any data deletion operation, all KMH accounts and transactions
 /// must be completely deleted.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,10 +27,10 @@ void main() {
     setUpAll(() async {
       // Create a temporary directory for testing
       tempDir = await Directory.systemTemp.createTemp('kmh_deletion_test_');
-      
+
       // Initialize Hive with the test directory
       Hive.init(tempDir.path);
-      
+
       // Register adapters if not already registered
       if (!Hive.isAdapterRegistered(31)) {
         Hive.registerAdapter(KmhTransactionTypeAdapter());
@@ -38,7 +38,7 @@ void main() {
       if (!Hive.isAdapterRegistered(30)) {
         Hive.registerAdapter(KmhTransactionAdapter());
       }
-      
+
       // Initialize KMH box service
       await KmhBoxService.init();
     });
@@ -46,7 +46,7 @@ void main() {
     setUp(() async {
       // Clear the box before each test
       await KmhBoxService.clearAll();
-      
+
       // Initialize services
       SharedPreferences.setMockInitialValues({});
       dataService = DataService();
@@ -64,24 +64,34 @@ void main() {
     });
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 35: Complete data deletion removes all KMH accounts',
+      description:
+          'Property 35: Complete data deletion removes all KMH accounts',
       generator: () {
         // Generate random KMH accounts
         final numAccounts = PropertyTest.randomInt(min: 1, max: 5);
         final accounts = List.generate(numAccounts, (index) {
           return {
             'id': const Uuid().v4(),
-            'name': 'Bank ${PropertyTest.randomString(minLength: 5, maxLength: 15)}',
+            'name':
+                'Bank ${PropertyTest.randomString(minLength: 5, maxLength: 15)}',
             'balance': PropertyTest.randomDouble(min: -50000, max: 50000),
             'type': 'bank',
-            'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+            'color':
+                '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
             'icon': 'account_balance',
-            'creditLimit': PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
+            'creditLimit': PropertyTest.randomPositiveDouble(
+              min: 1000,
+              max: 100000,
+            ),
             'interestRate': PropertyTest.randomPositiveDouble(min: 1, max: 50),
             'lastInterestDate': PropertyTest.randomDateTime(),
-            'accruedInterest': PropertyTest.randomPositiveDouble(min: 0, max: 10000),
-            'accountNumber': PropertyTest.randomInt(min: 100000, max: 999999).toString() + 
-                             PropertyTest.randomInt(min: 1000, max: 9999).toString(),
+            'accruedInterest': PropertyTest.randomPositiveDouble(
+              min: 0,
+              max: 10000,
+            ),
+            'accountNumber':
+                PropertyTest.randomInt(min: 100000, max: 999999).toString() +
+                PropertyTest.randomInt(min: 1000, max: 9999).toString(),
           };
         });
 
@@ -110,7 +120,9 @@ void main() {
 
         // Verify accounts are saved
         final savedWallets = await dataService.getWallets();
-        final savedKmhAccounts = savedWallets.where((w) => w.isKmhAccount).toList();
+        final savedKmhAccounts = savedWallets
+            .where((w) => w.isKmhAccount)
+            .toList();
         expect(savedKmhAccounts.length, equals(accounts.length));
 
         // Clear all data
@@ -120,11 +132,16 @@ void main() {
 
         // Verify all KMH accounts are deleted
         final walletsAfterDeletion = await dataService.getWallets();
-        final kmhAccountsAfterDeletion = walletsAfterDeletion.where((w) => w.isKmhAccount).toList();
-        
+        final kmhAccountsAfterDeletion = walletsAfterDeletion
+            .where((w) => w.isKmhAccount)
+            .toList();
+
         // Property: All KMH accounts must be completely deleted
-        expect(kmhAccountsAfterDeletion.isEmpty, isTrue,
-            reason: 'All KMH accounts should be deleted after clearAllData');
+        expect(
+          kmhAccountsAfterDeletion.isEmpty,
+          isTrue,
+          reason: 'All KMH accounts should be deleted after clearAllData',
+        );
 
         return true;
       },
@@ -132,11 +149,12 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 35: Complete data deletion removes all KMH transactions',
+      description:
+          'Property 35: Complete data deletion removes all KMH transactions',
       generator: () {
         // Generate a KMH account
         final walletId = const Uuid().v4();
-        
+
         // Generate random transactions for this account
         final numTransactions = PropertyTest.randomInt(min: 1, max: 10);
         final transactions = List.generate(numTransactions, (index) {
@@ -146,32 +164,33 @@ void main() {
             KmhTransactionType.interest,
             KmhTransactionType.fee,
           ];
-          
+
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 1, max: 10000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 30),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 30,
+            ),
             'balanceAfter': PropertyTest.randomDouble(min: -50000, max: 50000),
-            'interestAmount': PropertyTest.randomBool() 
-                ? PropertyTest.randomPositiveDouble(min: 1, max: 1000) 
+            'interestAmount': PropertyTest.randomBool()
+                ? PropertyTest.randomPositiveDouble(min: 1, max: 1000)
                 : null,
-            'linkedTransactionId': PropertyTest.randomBool() 
-                ? const Uuid().v4() 
+            'linkedTransactionId': PropertyTest.randomBool()
+                ? const Uuid().v4()
                 : null,
           };
         });
 
-        return {
-          'walletId': walletId,
-          'transactions': transactions,
-        };
+        return {'walletId': walletId, 'transactions': transactions};
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        
+
         // Create transactions
         final transactions = (data['transactions'] as List).map((txData) {
           return KmhTransaction(
@@ -204,10 +223,13 @@ void main() {
 
         // Verify all KMH transactions are deleted
         final transactionsAfterDeletion = await kmhRepository.findAll();
-        
+
         // Property: All KMH transactions must be completely deleted
-        expect(transactionsAfterDeletion.isEmpty, isTrue,
-            reason: 'All KMH transactions should be deleted after clearAllData');
+        expect(
+          transactionsAfterDeletion.isEmpty,
+          isTrue,
+          reason: 'All KMH transactions should be deleted after clearAllData',
+        );
 
         return true;
       },
@@ -215,24 +237,34 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 35: Complete data deletion removes all KMH data (accounts + transactions)',
+      description:
+          'Property 35: Complete data deletion removes all KMH data (accounts + transactions)',
       generator: () {
         // Generate KMH accounts
         final numAccounts = PropertyTest.randomInt(min: 1, max: 3);
         final accounts = List.generate(numAccounts, (index) {
           return {
             'id': const Uuid().v4(),
-            'name': 'Bank ${PropertyTest.randomString(minLength: 5, maxLength: 15)}',
+            'name':
+                'Bank ${PropertyTest.randomString(minLength: 5, maxLength: 15)}',
             'balance': PropertyTest.randomDouble(min: -50000, max: 50000),
             'type': 'bank',
-            'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+            'color':
+                '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
             'icon': 'account_balance',
-            'creditLimit': PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
+            'creditLimit': PropertyTest.randomPositiveDouble(
+              min: 1000,
+              max: 100000,
+            ),
             'interestRate': PropertyTest.randomPositiveDouble(min: 1, max: 50),
             'lastInterestDate': PropertyTest.randomDateTime(),
-            'accruedInterest': PropertyTest.randomPositiveDouble(min: 0, max: 10000),
-            'accountNumber': PropertyTest.randomInt(min: 100000, max: 999999).toString() + 
-                             PropertyTest.randomInt(min: 1000, max: 9999).toString(),
+            'accruedInterest': PropertyTest.randomPositiveDouble(
+              min: 0,
+              max: 10000,
+            ),
+            'accountNumber':
+                PropertyTest.randomInt(min: 100000, max: 999999).toString() +
+                PropertyTest.randomInt(min: 1000, max: 9999).toString(),
           };
         });
 
@@ -245,26 +277,30 @@ void main() {
             KmhTransactionType.deposit,
             KmhTransactionType.interest,
           ];
-          
+
           for (int i = 0; i < numTransactions; i++) {
             allTransactions.add({
               'id': const Uuid().v4(),
               'walletId': account['id'],
-              'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+              'type':
+                  types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
               'amount': PropertyTest.randomPositiveDouble(min: 1, max: 10000),
               'date': PropertyTest.randomDateTime(),
-              'description': PropertyTest.randomString(minLength: 5, maxLength: 30),
-              'balanceAfter': PropertyTest.randomDouble(min: -50000, max: 50000),
+              'description': PropertyTest.randomString(
+                minLength: 5,
+                maxLength: 30,
+              ),
+              'balanceAfter': PropertyTest.randomDouble(
+                min: -50000,
+                max: 50000,
+              ),
               'interestAmount': null,
               'linkedTransactionId': null,
             });
           }
         }
 
-        return {
-          'accounts': accounts,
-          'transactions': allTransactions,
-        };
+        return {'accounts': accounts, 'transactions': allTransactions};
       },
       property: (data) async {
         // Create KMH accounts
@@ -307,7 +343,9 @@ void main() {
 
         // Verify data is saved
         final savedWallets = await dataService.getWallets();
-        final savedKmhAccounts = savedWallets.where((w) => w.isKmhAccount).toList();
+        final savedKmhAccounts = savedWallets
+            .where((w) => w.isKmhAccount)
+            .toList();
         final savedTransactions = await kmhRepository.findAll();
         expect(savedKmhAccounts.length, equals(accounts.length));
         expect(savedTransactions.length, equals(transactions.length));
@@ -320,22 +358,36 @@ void main() {
 
         // Verify all KMH data is deleted
         final walletsAfterDeletion = await dataService.getWallets();
-        final kmhAccountsAfterDeletion = walletsAfterDeletion.where((w) => w.isKmhAccount).toList();
+        final kmhAccountsAfterDeletion = walletsAfterDeletion
+            .where((w) => w.isKmhAccount)
+            .toList();
         final transactionsAfterDeletion = await kmhRepository.findAll();
-        
+
         // Property 1: All KMH accounts must be completely deleted
-        expect(kmhAccountsAfterDeletion.isEmpty, isTrue,
-            reason: 'All KMH accounts should be deleted after clearAllData');
-        
+        expect(
+          kmhAccountsAfterDeletion.isEmpty,
+          isTrue,
+          reason: 'All KMH accounts should be deleted after clearAllData',
+        );
+
         // Property 2: All KMH transactions must be completely deleted
-        expect(transactionsAfterDeletion.isEmpty, isTrue,
-            reason: 'All KMH transactions should be deleted after clearAllData');
+        expect(
+          transactionsAfterDeletion.isEmpty,
+          isTrue,
+          reason: 'All KMH transactions should be deleted after clearAllData',
+        );
 
         // Property 3: Each account's transactions are deleted
         for (final account in accounts) {
-          final accountTransactions = await kmhRepository.getTransactions(account.id);
-          expect(accountTransactions.isEmpty, isTrue,
-              reason: 'All transactions for account ${account.id} should be deleted');
+          final accountTransactions = await kmhRepository.getTransactions(
+            account.id,
+          );
+          expect(
+            accountTransactions.isEmpty,
+            isTrue,
+            reason:
+                'All transactions for account ${account.id} should be deleted',
+          );
         }
 
         return true;
@@ -349,17 +401,26 @@ void main() {
         // Generate a simple KMH account
         return {
           'id': const Uuid().v4(),
-          'name': 'Bank ${PropertyTest.randomString(minLength: 5, maxLength: 15)}',
+          'name':
+              'Bank ${PropertyTest.randomString(minLength: 5, maxLength: 15)}',
           'balance': PropertyTest.randomDouble(min: -50000, max: 50000),
           'type': 'bank',
-          'color': '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
+          'color':
+              '#${PropertyTest.randomInt(min: 0, max: 0xFFFFFF).toRadixString(16).padLeft(6, '0')}',
           'icon': 'account_balance',
-          'creditLimit': PropertyTest.randomPositiveDouble(min: 1000, max: 100000),
+          'creditLimit': PropertyTest.randomPositiveDouble(
+            min: 1000,
+            max: 100000,
+          ),
           'interestRate': PropertyTest.randomPositiveDouble(min: 1, max: 50),
           'lastInterestDate': PropertyTest.randomDateTime(),
-          'accruedInterest': PropertyTest.randomPositiveDouble(min: 0, max: 10000),
-          'accountNumber': PropertyTest.randomInt(min: 100000, max: 999999).toString() + 
-                           PropertyTest.randomInt(min: 1000, max: 9999).toString(),
+          'accruedInterest': PropertyTest.randomPositiveDouble(
+            min: 0,
+            max: 10000,
+          ),
+          'accountNumber':
+              PropertyTest.randomInt(min: 100000, max: 999999).toString() +
+              PropertyTest.randomInt(min: 1000, max: 9999).toString(),
         };
       },
       property: (data) async {
@@ -387,7 +448,9 @@ void main() {
 
         // Verify data is deleted
         final walletsAfterFirstDeletion = await dataService.getWallets();
-        final kmhAccountsAfterFirstDeletion = walletsAfterFirstDeletion.where((w) => w.isKmhAccount).toList();
+        final kmhAccountsAfterFirstDeletion = walletsAfterFirstDeletion
+            .where((w) => w.isKmhAccount)
+            .toList();
         expect(kmhAccountsAfterFirstDeletion.isEmpty, isTrue);
 
         // Clear all data second time (idempotency test)
@@ -396,11 +459,17 @@ void main() {
 
         // Verify data is still deleted (no errors)
         final walletsAfterSecondDeletion = await dataService.getWallets();
-        final kmhAccountsAfterSecondDeletion = walletsAfterSecondDeletion.where((w) => w.isKmhAccount).toList();
-        
+        final kmhAccountsAfterSecondDeletion = walletsAfterSecondDeletion
+            .where((w) => w.isKmhAccount)
+            .toList();
+
         // Property: Deletion is idempotent - calling it multiple times has the same effect
-        expect(kmhAccountsAfterSecondDeletion.isEmpty, isTrue,
-            reason: 'Deletion should be idempotent - multiple calls should not cause errors');
+        expect(
+          kmhAccountsAfterSecondDeletion.isEmpty,
+          isTrue,
+          reason:
+              'Deletion should be idempotent - multiple calls should not cause errors',
+        );
 
         return true;
       },

@@ -10,6 +10,7 @@ import 'package:parion/models/cash_flow_data.dart';
 import 'package:parion/models/comparison_data.dart';
 import 'package:parion/models/category.dart';
 import 'package:parion/models/wallet.dart';
+import '../test_setup.dart';
 
 // Helper to create ComparisonMetric
 ComparisonMetric createMetric(String label, double v1, double v2) {
@@ -30,6 +31,14 @@ ComparisonMetric createMetric(String label, double v1, double v2) {
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Dark Mode Support Tests', () {
     testWidgets('SummaryCard renders correctly in dark mode',
         (WidgetTester tester) async {

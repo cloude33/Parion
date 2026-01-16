@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/statistics_service.dart';
+import '../test_setup.dart';
 
 /// Unit tests for Average Comparison functionality
 /// 
@@ -8,15 +9,25 @@ import 'package:parion/services/statistics_service.dart';
 /// 
 /// Requirements: 10.4
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('StatisticsService - Average Comparison', () {
     late StatisticsService statisticsService;
 
-    setUp(() {
+    setUp(() async {
+      await TestSetup.setupTest();
       statisticsService = StatisticsService();
     });
 
-    tearDown(() {
+    tearDown(() async {
       statisticsService.clearCache();
+      await TestSetup.tearDownTest();
     });
 
     test('compareWithAverages returns valid data structure', () async {

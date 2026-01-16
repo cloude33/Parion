@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/widgets/statistics/kmh_summary_cards.dart';
 import 'package:parion/widgets/statistics/kmh_utilization_indicator.dart';
 import 'package:parion/widgets/statistics/kmh_interest_card.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KMH Dashboard Components Tests', () {
     testWidgets('KmhSummaryCards displays all summary information', (
       WidgetTester tester,

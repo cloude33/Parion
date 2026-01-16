@@ -1,8 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/auth/secure_storage_service.dart';
 import 'package:parion/models/security/security_config.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
   group('AuthSecureStorageService', () {
     late AuthSecureStorageService service;

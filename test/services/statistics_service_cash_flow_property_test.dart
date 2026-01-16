@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/cash_flow_data.dart';
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 /// Property-Based Tests for StatisticsService.calculateCashFlow
 ///
@@ -16,6 +17,14 @@ import '../property_test_utils.dart';
 /// 3. Trend direction is correctly determined
 /// 4. Comparison percentage is correctly calculated
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Cash Flow Calculation Properties', () {
     test('Property 1: Net cash flow equals income minus expense', () {
       // This property tests that for any cash flow data,

@@ -194,8 +194,14 @@ void main() {
     test('should serialize to and from JSON', () {
       final now = DateTime.now();
       final events = [
-        SecurityEvent.biometricEnrolled(userId: 'user1', biometricType: 'fingerprint'),
-        SecurityEvent.biometricVerified(userId: 'user1', biometricType: 'fingerprint'),
+        SecurityEvent.biometricEnrolled(
+          userId: 'user1',
+          biometricType: 'fingerprint',
+        ),
+        SecurityEvent.biometricVerified(
+          userId: 'user1',
+          biometricType: 'fingerprint',
+        ),
       ];
 
       final report = SecurityReport(

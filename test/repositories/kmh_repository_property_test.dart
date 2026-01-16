@@ -10,9 +10,9 @@ import 'package:uuid/uuid.dart';
 
 /// **Feature: kmh-account-management, Property 9: İşlem Veri Bütünlüğü**
 /// **Validates: Requirements 2.5**
-/// 
-/// Property: For any KMH transaction recorded, the transaction type, amount, 
-/// date, and balanceAfter information should be saved and when read back 
+///
+/// Property: For any KMH transaction recorded, the transaction type, amount,
+/// date, and balanceAfter information should be saved and when read back
 /// should contain the same values.
 void main() {
   group('KMH Repository Transaction Data Integrity Property Tests', () {
@@ -22,10 +22,10 @@ void main() {
     setUpAll(() async {
       // Create a temporary directory for testing
       testDir = await Directory.systemTemp.createTemp('kmh_test_');
-      
+
       // Initialize Hive with the test directory
       Hive.init(testDir.path);
-      
+
       // Register adapters if not already registered
       if (!Hive.isAdapterRegistered(31)) {
         Hive.registerAdapter(KmhTransactionTypeAdapter());
@@ -33,7 +33,7 @@ void main() {
       if (!Hive.isAdapterRegistered(30)) {
         Hive.registerAdapter(KmhTransactionAdapter());
       }
-      
+
       // Initialize KMH box service
       await KmhBoxService.init();
     });
@@ -54,7 +54,8 @@ void main() {
     });
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 9: Transaction data integrity - all fields preserved after save',
+      description:
+          'Property 9: Transaction data integrity - all fields preserved after save',
       generator: () {
         final types = [
           KmhTransactionType.withdrawal,
@@ -63,20 +64,23 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         return {
           'id': const Uuid().v4(),
           'walletId': const Uuid().v4(),
           'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
           'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
           'date': PropertyTest.randomDateTime(),
-          'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
+          'description': PropertyTest.randomString(
+            minLength: 5,
+            maxLength: 100,
+          ),
           'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
-          'interestAmount': PropertyTest.randomBool() 
-              ? PropertyTest.randomPositiveDouble(min: 0.01, max: 1000) 
+          'interestAmount': PropertyTest.randomBool()
+              ? PropertyTest.randomPositiveDouble(min: 0.01, max: 1000)
               : null,
-          'linkedTransactionId': PropertyTest.randomBool() 
-              ? const Uuid().v4() 
+          'linkedTransactionId': PropertyTest.randomBool()
+              ? const Uuid().v4()
               : null,
         };
       },
@@ -113,7 +117,10 @@ void main() {
 
         // Property 3: Optional fields should be preserved
         expect(retrieved.interestAmount, equals(transaction.interestAmount));
-        expect(retrieved.linkedTransactionId, equals(transaction.linkedTransactionId));
+        expect(
+          retrieved.linkedTransactionId,
+          equals(transaction.linkedTransactionId),
+        );
 
         // Property 4: Date should be preserved (within millisecond precision)
         expect(
@@ -127,7 +134,8 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 9: Multiple transactions for same wallet should all be retrievable',
+      description:
+          'Property 9: Multiple transactions for same wallet should all be retrievable',
       generator: () {
         final walletId = const Uuid().v4();
         final transactionCount = PropertyTest.randomInt(min: 1, max: 10);
@@ -138,27 +146,32 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         final transactions = List.generate(transactionCount, (index) {
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
-        
-        return {
-          'walletId': walletId,
-          'transactions': transactions,
-        };
+
+        return {'walletId': walletId, 'transactions': transactions};
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        final transactionsData = data['transactions'] as List<Map<String, dynamic>>;
+        final transactionsData =
+            data['transactions'] as List<Map<String, dynamic>>;
 
         // Save all transactions
         for (var txData in transactionsData) {
@@ -205,17 +218,26 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         return {
           'id': const Uuid().v4(),
           'walletId': const Uuid().v4(),
           'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
           'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
           'date': PropertyTest.randomDateTime(),
-          'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
+          'description': PropertyTest.randomString(
+            minLength: 5,
+            maxLength: 100,
+          ),
           'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
-          'newDescription': PropertyTest.randomString(minLength: 5, maxLength: 100),
-          'newBalanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+          'newDescription': PropertyTest.randomString(
+            minLength: 5,
+            maxLength: 100,
+          ),
+          'newBalanceAfter': PropertyTest.randomDouble(
+            min: -100000,
+            max: 100000,
+          ),
         };
       },
       property: (data) async {
@@ -257,7 +279,8 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 9: Interest transactions should preserve interestAmount',
+      description:
+          'Property 9: Interest transactions should preserve interestAmount',
       generator: () {
         return {
           'id': const Uuid().v4(),
@@ -266,7 +289,10 @@ void main() {
           'date': PropertyTest.randomDateTime(),
           'description': 'Faiz tahakkuku',
           'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
-          'interestAmount': PropertyTest.randomPositiveDouble(min: 0.01, max: 1000),
+          'interestAmount': PropertyTest.randomPositiveDouble(
+            min: 0.01,
+            max: 1000,
+          ),
         };
       },
       property: (data) async {
@@ -301,21 +327,25 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 9: Linked transactions should preserve linkedTransactionId',
+      description:
+          'Property 9: Linked transactions should preserve linkedTransactionId',
       generator: () {
         final types = [
           KmhTransactionType.withdrawal,
           KmhTransactionType.deposit,
           KmhTransactionType.transfer,
         ];
-        
+
         return {
           'id': const Uuid().v4(),
           'walletId': const Uuid().v4(),
           'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
           'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
           'date': PropertyTest.randomDateTime(),
-          'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
+          'description': PropertyTest.randomString(
+            minLength: 5,
+            maxLength: 100,
+          ),
           'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
           'linkedTransactionId': const Uuid().v4(),
         };
@@ -340,7 +370,10 @@ void main() {
         final retrieved = await repository.findById(transaction.id);
 
         // Property 1: Linked transaction ID should be preserved
-        expect(retrieved!.linkedTransactionId, equals(transaction.linkedTransactionId));
+        expect(
+          retrieved!.linkedTransactionId,
+          equals(transaction.linkedTransactionId),
+        );
         expect(retrieved.linkedTransactionId, isNotNull);
 
         return true;
@@ -356,10 +389,10 @@ void main() {
     setUpAll(() async {
       // Create a temporary directory for testing
       testDir = await Directory.systemTemp.createTemp('kmh_cascade_test_');
-      
+
       // Initialize Hive with the test directory
       Hive.init(testDir.path);
-      
+
       // Register adapters if not already registered
       if (!Hive.isAdapterRegistered(31)) {
         Hive.registerAdapter(KmhTransactionTypeAdapter());
@@ -367,7 +400,7 @@ void main() {
       if (!Hive.isAdapterRegistered(30)) {
         Hive.registerAdapter(KmhTransactionAdapter());
       }
-      
+
       // Initialize KMH box service
       await KmhBoxService.init();
     });
@@ -389,11 +422,12 @@ void main() {
 
     /// **Feature: kmh-account-management, Property 5: Cascade Delete**
     /// **Validates: Requirements 1.5**
-    /// 
-    /// Property: For any KMH account deleted, all transactions belonging to 
+    ///
+    /// Property: For any KMH account deleted, all transactions belonging to
     /// that account should also be deleted.
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 5: Cascade delete - all wallet transactions deleted when wallet is deleted',
+      description:
+          'Property 5: Cascade delete - all wallet transactions deleted when wallet is deleted',
       generator: () {
         final walletId = const Uuid().v4();
         final transactionCount = PropertyTest.randomInt(min: 1, max: 20);
@@ -404,27 +438,32 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         final transactions = List.generate(transactionCount, (index) {
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
-        
-        return {
-          'walletId': walletId,
-          'transactions': transactions,
-        };
+
+        return {'walletId': walletId, 'transactions': transactions};
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        final transactionsData = data['transactions'] as List<Map<String, dynamic>>;
+        final transactionsData =
+            data['transactions'] as List<Map<String, dynamic>>;
 
         // Save all transactions for the wallet
         for (var txData in transactionsData) {
@@ -467,7 +506,8 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 5: Cascade delete - only target wallet transactions deleted, others preserved',
+      description:
+          'Property 5: Cascade delete - only target wallet transactions deleted, others preserved',
       generator: () {
         final targetWalletId = const Uuid().v4();
         final otherWalletId = const Uuid().v4();
@@ -480,16 +520,25 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
-        final targetTransactions = List.generate(targetTransactionCount, (index) {
+
+        final targetTransactions = List.generate(targetTransactionCount, (
+          index,
+        ) {
           return {
             'id': const Uuid().v4(),
             'walletId': targetWalletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
 
@@ -497,14 +546,21 @@ void main() {
           return {
             'id': const Uuid().v4(),
             'walletId': otherWalletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
-        
+
         return {
           'targetWalletId': targetWalletId,
           'otherWalletId': otherWalletId,
@@ -515,8 +571,10 @@ void main() {
       property: (data) async {
         final targetWalletId = data['targetWalletId'] as String;
         final otherWalletId = data['otherWalletId'] as String;
-        final targetTransactionsData = data['targetTransactions'] as List<Map<String, dynamic>>;
-        final otherTransactionsData = data['otherTransactions'] as List<Map<String, dynamic>>;
+        final targetTransactionsData =
+            data['targetTransactions'] as List<Map<String, dynamic>>;
+        final otherTransactionsData =
+            data['otherTransactions'] as List<Map<String, dynamic>>;
 
         // Save all transactions for both wallets
         for (var txData in targetTransactionsData) {
@@ -583,11 +641,10 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 5: Cascade delete - deleting empty wallet has no side effects',
+      description:
+          'Property 5: Cascade delete - deleting empty wallet has no side effects',
       generator: () {
-        return {
-          'walletId': const Uuid().v4(),
-        };
+        return {'walletId': const Uuid().v4()};
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
@@ -613,7 +670,8 @@ void main() {
     );
 
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 5: Cascade delete - idempotency (deleting twice has same effect as once)',
+      description:
+          'Property 5: Cascade delete - idempotency (deleting twice has same effect as once)',
       generator: () {
         final walletId = const Uuid().v4();
         final transactionCount = PropertyTest.randomInt(min: 1, max: 15);
@@ -624,27 +682,32 @@ void main() {
           KmhTransactionType.fee,
           KmhTransactionType.transfer,
         ];
-        
+
         final transactions = List.generate(transactionCount, (index) {
           return {
             'id': const Uuid().v4(),
             'walletId': walletId,
-            'type': types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
+            'type':
+                types[PropertyTest.randomInt(min: 0, max: types.length - 1)],
             'amount': PropertyTest.randomPositiveDouble(min: 0.01, max: 100000),
             'date': PropertyTest.randomDateTime(),
-            'description': PropertyTest.randomString(minLength: 5, maxLength: 100),
-            'balanceAfter': PropertyTest.randomDouble(min: -100000, max: 100000),
+            'description': PropertyTest.randomString(
+              minLength: 5,
+              maxLength: 100,
+            ),
+            'balanceAfter': PropertyTest.randomDouble(
+              min: -100000,
+              max: 100000,
+            ),
           };
         });
-        
-        return {
-          'walletId': walletId,
-          'transactions': transactions,
-        };
+
+        return {'walletId': walletId, 'transactions': transactions};
       },
       property: (data) async {
         final walletId = data['walletId'] as String;
-        final transactionsData = data['transactions'] as List<Map<String, dynamic>>;
+        final transactionsData =
+            data['transactions'] as List<Map<String, dynamic>>;
 
         // Save all transactions for the wallet
         for (var txData in transactionsData) {

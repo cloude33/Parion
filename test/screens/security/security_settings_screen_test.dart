@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/screens/security/security_settings_screen.dart';
 import 'package:parion/services/auth/auth_service.dart';
 import 'package:parion/services/auth/two_factor_service.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SecuritySettingsScreen Widget Tests', () {
     late AuthService authService;
     late TwoFactorService twoFactorService;

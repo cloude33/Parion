@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/backup_optimization/compression_service.dart';
 import 'package:parion/services/backup_optimization/optimization_engine.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('JSON Optimization Property Tests', () {
     late CompressionService compressionService;
     late OptimizationEngine optimizationEngine;

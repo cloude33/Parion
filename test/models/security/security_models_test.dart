@@ -1,7 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/security/security_models.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Security Models Tests', () {
     group('BiometricType', () {
       test('should convert to and from JSON correctly', () {
@@ -59,7 +68,7 @@ void main() {
 
       test('should handle invalid JSON gracefully', () {
         final fromJson = AuthMethod.fromJson('invalid_method');
-        expect(fromJson, equals(AuthMethod.biometric)); // default fallback
+        expect(fromJson, equals(AuthMethod.emailPassword)); // default fallback
       });
 
       test('should provide correct display names', () {
@@ -142,7 +151,7 @@ void main() {
         final result = AuthResult.fromJson(json);
         
         expect(result.isSuccess, isFalse); // Default fallback
-        expect(result.method, equals(AuthMethod.biometric)); // Default fallback
+        expect(result.method, equals(AuthMethod.emailPassword)); // Default fallback
         expect(result.lockoutDuration, isNull);
         expect(result.remainingAttempts, isNull);
         expect(result.timestamp, isA<DateTime>());
@@ -590,6 +599,7 @@ void main() {
         final result = AuthResult.fromJson(json);
         
         expect(result.isSuccess, isFalse);
+        // AuthResult.fromJson uses 'biometric' as default when method is null
         expect(result.method, equals(AuthMethod.biometric));
         expect(result.errorMessage, isNull);
         expect(result.lockoutDuration, isNull);

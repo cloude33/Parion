@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/goal_comparison.dart';
 import 'package:parion/widgets/statistics/goal_comparison_card.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('GoalComparisonCard Widget Tests', () {
     testWidgets('displays empty state when no goals', (WidgetTester tester) async {
       final summary = GoalComparisonSummary(

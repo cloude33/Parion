@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/statistics_service.dart';
 import 'package:parion/widgets/statistics/average_comparison_card.dart';
+import '../test_setup.dart';
 
 /// Widget tests for Average Comparison Card
 /// 
@@ -9,6 +10,14 @@ import 'package:parion/widgets/statistics/average_comparison_card.dart';
 /// 
 /// Requirements: 10.4
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('AverageComparisonCard Widget Tests', () {
     late AverageComparisonData testData;
 

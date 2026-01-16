@@ -1,8 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/widgets/statistics/paginated_list_view.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('PaginatedListView', () {
     testWidgets('displays initial page of items', (WidgetTester tester) async {
       final items = List.generate(50, (index) => 'Item $index');

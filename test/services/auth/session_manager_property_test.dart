@@ -4,12 +4,21 @@ import 'package:parion/models/security/session_data.dart';
 import 'package:parion/models/security/auth_state.dart';
 import 'package:parion/models/security/security_models.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property-based tests for SessionManager
 /// 
 /// **Feature: modern-auth-system, Property 3: Session Management Consistency**
 /// **Validates: Requirements 5.1, 5.2, 5.3, 5.4**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SessionManager Property Tests', () {
     late SessionManager sessionManager;
 

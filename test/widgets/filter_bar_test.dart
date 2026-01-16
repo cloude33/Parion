@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/category.dart';
 import 'package:parion/models/wallet.dart';
 import 'package:parion/widgets/statistics/filter_bar.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('FilterBar Widget', () {
     late List<Category> testCategories;
     late List<Wallet> testWallets;

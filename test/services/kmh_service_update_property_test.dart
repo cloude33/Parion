@@ -3,6 +3,7 @@ import 'package:parion/services/kmh_service.dart';
 import 'package:parion/services/data_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 /// **Feature: kmh-account-management, Property 4: Hesap Güncelleme Round-Trip**
 /// **Validates: Requirements 1.4**
@@ -10,6 +11,14 @@ import '../property_test_utils.dart';
 /// Property: For any KMH account, when updated, the new values should be saved
 /// and when read back should contain the updated values.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KMH Account Update Round-Trip Property Tests', () {
     late KmhService kmhService;
     late DataService dataService;

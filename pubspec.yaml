@@ -72,6 +72,7 @@ dependencies:
   cloud_firestore: ^6.1.1
   firebase_storage: ^13.0.5
   firebase_analytics: ^12.1.0
+  flutter_contacts: ^1.1.9+2
 
   get_it: any
   logger: any

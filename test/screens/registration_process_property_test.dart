@@ -1,11 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 /// Property-based tests for Registration Process
 /// 
 /// **Feature: modern-auth-system, Property 8: Registration Process Integrity**
 /// **Validates: Requirements 6.2, 6.3, 6.4, 6.5**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Registration Process Property Tests', () {
     /// **Property 8: Registration Process Integrity**
     /// *For any* user registration attempt, the system should validate all required fields,

@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:parion/services/auth/security_service.dart';
 import 'package:parion/services/auth/secure_storage_service.dart';
 import 'package:parion/models/security/security_models.dart';
+import '../test_setup.dart';
 
 /// Data Leak Prevention Testleri
 /// 
@@ -17,6 +18,14 @@ import 'package:parion/models/security/security_models.dart';
 /// - 9.4: Root/jailbreak tespiti
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Data Leak Prevention Tests', () {

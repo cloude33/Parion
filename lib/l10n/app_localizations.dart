@@ -332,6 +332,18 @@ abstract class AppLocalizations {
   /// **'Borç/Alacak Takibi'**
   String get debts;
 
+  /// No description provided for @loans.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kredilerim'**
+  String get loans;
+
+  /// No description provided for @manageLoansDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Banka kredilerinizi takip edin'**
+  String get manageLoansDesc;
+
   /// No description provided for @recurringTransactions.
   ///
   /// In tr, this message translates to:

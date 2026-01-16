@@ -2,8 +2,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/auth/two_factor_service.dart';
 import 'package:parion/models/security/two_factor_models.dart';
 import 'package:parion/utils/security/totp_helper.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
   group('TwoFactorService', () {
     late TwoFactorService twoFactorService;

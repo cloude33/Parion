@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/credit_card.dart';
 import '../property_test_utils.dart';
 import 'package:uuid/uuid.dart';
+import '../test_setup.dart';
 
 /// **Feature: enhanced-credit-card-tracking, Property 2: Fotoğraf Optimizasyonu**
 /// **Validates: Requirements 1.3**
@@ -9,6 +10,14 @@ import 'package:uuid/uuid.dart';
 /// Property: For any uploaded card photo, the system should optimize the photo
 /// and save it as the card image.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Credit Card Image Property Tests', () {
     PropertyTest.forAll<Map<String, dynamic>>(
       description: 'Property 2: Photo optimization - card image path should be stored',

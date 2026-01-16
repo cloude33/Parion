@@ -36,27 +36,43 @@ class StatisticsAccessibility {
   }
 
   static String metricCardLabel({required String label, required String value, String? change, TrendDirection? trend}) {
-    String trendText = '';
-    if (trend != null) {
-      trendText = _getTrendDescription(trend);
+    String result = '$label: $value';
+    if (change != null) {
+      result += ', değişim: $change';
     }
-    return '$label: $value${change != null ? ', Change: $change' : ''} $trendText';
+    if (trend != null) {
+      result += ', ${trendLabel(trend)}';
+    }
+    return result;
   }
 
   static String chartLabel({required String title, required int dataPointCount, String? description}) {
-    return '$title chart with $dataPointCount data points${description != null ? '. $description' : ''}';
+    String result = '$title grafik, $dataPointCount veri noktası';
+    if (description != null) {
+      result += ', $description';
+    }
+    return result;
   }
   
-  static String currencyLabel(double value, {String? currency}) {
-    return '${value.toStringAsFixed(2)}${currency != null ? " $currency" : ""}';
+  static String currencyLabel(double value, {String currency = 'TL'}) {
+    if (value == 0) {
+      return 'Sıfır $currency';
+    }
+    final absValue = value.abs().toStringAsFixed(2);
+    final suffix = value > 0 ? 'artı' : 'eksi';
+    return '$absValue $currency $suffix';
   }
 
   static String percentageLabel(double value) {
-    return '${(value * 100).toStringAsFixed(1)}%';
+    return 'Yüzde ${value.toStringAsFixed(1)}';
   }
 
   static String dateLabel(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    final months = [
+      'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
+      'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   static String trendLabel(TrendDirection trend) {
@@ -66,11 +82,11 @@ class StatisticsAccessibility {
   static String _getTrendDescription(TrendDirection trend) {
     switch (trend) {
       case TrendDirection.up:
-        return 'increasing';
+        return 'Artış trendi';
       case TrendDirection.down:
-        return 'decreasing';
+        return 'Azalış trendi';
       case TrendDirection.stable:
-        return 'stable';
+        return 'Sabit trend';
     }
   }
 }
@@ -93,16 +109,19 @@ class AccessibleIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      enabled: true,
-      child: IconButton(
-        icon: Icon(icon, color: color),
-        onPressed: onPressed,
-        tooltip: tooltip,
-        style: IconButton.styleFrom(
-          minimumSize: const Size(48, 48),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        enabled: true,
+        child: IconButton(
+          icon: Icon(icon, color: color),
+          onPressed: onPressed,
+          tooltip: tooltip,
+          style: IconButton.styleFrom(
+            minimumSize: const Size(48, 48),
+          ),
         ),
       ),
     );
@@ -125,17 +144,20 @@ class AccessibleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      hint: semanticHint,
-      button: true,
-      enabled: true,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size(48, 48),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minWidth: 48.0, minHeight: 48.0),
+      child: Semantics(
+        label: semanticLabel,
+        hint: semanticHint,
+        button: true,
+        enabled: true,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(48, 48),
+          ),
+          onPressed: onPressed,
+          child: child,
         ),
-        onPressed: onPressed,
-        child: child,
       ),
     );
   }
@@ -157,16 +179,19 @@ class AccessibleFilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: label,
-      selected: selected,
-      button: true,
-      enabled: true,
-      child: FilterChip(
-        label: Text(label),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48.0),
+      child: Semantics(
+        label: label,
         selected: selected,
-        onSelected: (_) => onTap(),
-        avatar: icon != null ? Icon(icon, size: 18) : null,
+        button: true,
+        enabled: true,
+        child: FilterChip(
+          label: Text(label),
+          selected: selected,
+          onSelected: (_) => onTap(),
+          avatar: icon != null ? Icon(icon, size: 18) : null,
+        ),
       ),
     );
   }
@@ -220,20 +245,29 @@ class AccessibleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget cardContent = Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: child,
+        ),
+      ),
+    );
+    
+    if (onTap != null) {
+      cardContent = ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48.0),
+        child: cardContent,
+      );
+    }
+    
     return Semantics(
       label: semanticLabel,
       button: onTap != null,
-      child: Card(
-        margin: EdgeInsets.zero,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: child,
-          ),
-        ),
-      ),
+      child: cardContent,
     );
   }
 }
@@ -258,15 +292,18 @@ class AccessibleListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: semanticLabel,
-      button: true,
-      child: ListTile(
-        leading: leading,
-        title: title,
-        subtitle: subtitle,
-        trailing: trailing,
-        onTap: onTap,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 48.0),
+      child: Semantics(
+        label: semanticLabel,
+        button: true,
+        child: ListTile(
+          leading: leading,
+          title: title,
+          subtitle: subtitle,
+          trailing: trailing,
+          onTap: onTap,
+        ),
       ),
     );
   }

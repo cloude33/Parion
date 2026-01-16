@@ -1,8 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:parion/models/backup_optimization/backup_optimization_models.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Backup Strategies Unit Tests', () {
     late FullBackupStrategy fullStrategy;
     late CustomBackupStrategy customStrategy;

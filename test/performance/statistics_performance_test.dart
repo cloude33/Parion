@@ -5,6 +5,7 @@ import 'package:parion/models/wallet.dart';
 import 'package:parion/models/loan.dart';
 import 'package:parion/models/credit_card_transaction.dart';
 import 'package:parion/screens/statistics_screen.dart';
+import '../test_setup.dart';
 
 /// Performance tests for Statistics Screen
 /// Tests loading times, memory usage, chart rendering, and scroll performance
@@ -15,6 +16,14 @@ import 'package:parion/screens/statistics_screen.dart';
 /// - Memory usage: < 150MB
 /// - Scroll: 60fps (16.67ms per frame)
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Statistics Screen Performance Tests', () {
     late List<Transaction> largeTransactionSet;
     late List<Wallet> testWallets;

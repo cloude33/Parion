@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/wallet.dart';
 import 'package:parion/widgets/statistics/kmh_asset_card.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KmhAssetCard Widget Tests', () {
     testWidgets('displays empty state when no KMH accounts', (tester) async {
       await tester.pumpWidget(

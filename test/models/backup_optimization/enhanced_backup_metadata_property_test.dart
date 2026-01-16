@@ -3,8 +3,17 @@ import 'package:parion/models/backup_optimization/enhanced_backup_metadata.dart'
 import 'package:parion/models/backup_optimization/backup_enums.dart';
 import 'package:parion/models/backup_optimization/incremental_data.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Enhanced Backup Metadata Property Tests', () {
     /// **Feature: backup-optimization, Property 1: Incremental Backup Delta Detection**
     /// **Validates: Requirements 1.1**

@@ -1,12 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/security/security_models.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property-based tests for AuthOrchestrator Error Handling
 /// 
 /// **Feature: modern-auth-system, Property 2: Comprehensive Error Handling**
 /// **Validates: Requirements 1.4, 2.2, 3.4, 4.4, 6.4, 10.1, 10.2, 10.3**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('AuthOrchestrator Error Handling Property Tests', () {
     /// **Property 2: Comprehensive Error Handling**
     /// *For any* authentication error or system failure, the system should provide 

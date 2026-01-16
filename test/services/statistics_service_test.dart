@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/statistics_service.dart';
 import 'package:parion/models/cash_flow_data.dart';
+import '../test_setup.dart';
 
 
 /// Unit Tests for StatisticsService
@@ -8,6 +9,14 @@ import 'package:parion/models/cash_flow_data.dart';
 /// These tests focus on testing calculation logic and data transformations
 /// that don't require database initialization.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late StatisticsService statisticsService;

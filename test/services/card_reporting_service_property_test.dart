@@ -103,10 +103,7 @@ void main() {
           transactionsByCard[card.id] = transactions;
         }
 
-        return {
-          'cards': cards,
-          'transactionsByCard': transactionsByCard,
-        };
+        return {'cards': cards, 'transactionsByCard': transactionsByCard};
       },
       property: (data) async {
         // Clear boxes before each iteration
@@ -115,7 +112,8 @@ void main() {
 
         final cards = data['cards'] as List<CreditCard>;
         final transactionsByCard =
-            data['transactionsByCard'] as Map<String, List<CreditCardTransaction>>;
+            data['transactionsByCard']
+                as Map<String, List<CreditCardTransaction>>;
 
         // Save cards and transactions
         for (var card in cards) {
@@ -175,7 +173,7 @@ void main() {
         final cardCount = PropertyTest.randomInt(min: 2, max: 4);
         final cards = <CreditCard>[];
         final transactionsByCard = <String, List<CreditCardTransaction>>{};
-        
+
         // Pick a random category to test
         final testCategory = 'e${PropertyTest.randomInt(min: 1, max: 10)}';
 
@@ -242,7 +240,8 @@ void main() {
 
         final cards = data['cards'] as List<CreditCard>;
         final transactionsByCard =
-            data['transactionsByCard'] as Map<String, List<CreditCardTransaction>>;
+            data['transactionsByCard']
+                as Map<String, List<CreditCardTransaction>>;
         final testCategory = data['testCategory'] as String;
 
         // Save cards and transactions
@@ -344,9 +343,15 @@ void main() {
           final periodEnd = DateTime(testYear, month, card.statementDay);
           final dueDate = periodEnd.add(Duration(days: card.dueDateOffset));
 
-          final interestCharged = PropertyTest.randomPositiveDouble(min: 0, max: 500);
-          final totalDebt = PropertyTest.randomPositiveDouble(min: 100, max: 5000);
-          
+          final interestCharged = PropertyTest.randomPositiveDouble(
+            min: 0,
+            max: 500,
+          );
+          final totalDebt = PropertyTest.randomPositiveDouble(
+            min: 100,
+            max: 5000,
+          );
+
           final statement = CreditCardStatement(
             id: 'stmt_$i',
             cardId: card.id,
@@ -354,7 +359,10 @@ void main() {
             periodEnd: periodEnd,
             dueDate: dueDate,
             totalDebt: totalDebt,
-            minimumPayment: PropertyTest.randomPositiveDouble(min: 50, max: 500),
+            minimumPayment: PropertyTest.randomPositiveDouble(
+              min: 50,
+              max: 500,
+            ),
             interestCharged: interestCharged,
             remainingDebt: totalDebt,
             createdAt: DateTime.now(),
@@ -362,11 +370,7 @@ void main() {
           statements.add(statement);
         }
 
-        return {
-          'card': card,
-          'statements': statements,
-          'testYear': testYear,
-        };
+        return {'card': card, 'statements': statements, 'testYear': testYear};
       },
       property: (data) async {
         // Clear boxes before each iteration
@@ -381,10 +385,7 @@ void main() {
         await CreditCardBoxService.creditCardsBox.put(card.id, card);
 
         for (var statement in statements) {
-          await CreditCardBoxService.statementsBox.put(
-            statement.id,
-            statement,
-          );
+          await CreditCardBoxService.statementsBox.put(statement.id, statement);
         }
 
         // Calculate expected total interest
@@ -462,10 +463,7 @@ void main() {
           transactionsByCard[card.id] = transactions;
         }
 
-        return {
-          'cards': cards,
-          'transactionsByCard': transactionsByCard,
-        };
+        return {'cards': cards, 'transactionsByCard': transactionsByCard};
       },
       property: (data) async {
         // Clear boxes before each iteration
@@ -474,7 +472,8 @@ void main() {
 
         final cards = data['cards'] as List<CreditCard>;
         final transactionsByCard =
-            data['transactionsByCard'] as Map<String, List<CreditCardTransaction>>;
+            data['transactionsByCard']
+                as Map<String, List<CreditCardTransaction>>;
 
         // Save cards and transactions
         for (var card in cards) {

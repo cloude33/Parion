@@ -4,8 +4,17 @@ import 'package:parion/services/auth/interfaces/session_manager_interface.dart';
 import 'package:parion/models/security/session_data.dart';
 import 'package:parion/models/security/auth_state.dart';
 import 'package:parion/models/security/security_models.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SessionManager', () {
     late SessionManager sessionManager;
 

@@ -5,8 +5,17 @@ import 'package:parion/models/backup_optimization/offline_backup_models.dart';
 import 'package:parion/models/backup_optimization/enhanced_backup_metadata.dart';
 import 'package:parion/models/backup_optimization/backup_enums.dart';
 import '../../test_helpers.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   setupCommonTestMocks();
   group('OfflineBackupQueue', () {
     late OfflineBackupQueue queue;

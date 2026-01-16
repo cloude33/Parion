@@ -2,9 +2,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/backup_optimization/validation_service.dart';
 import 'package:parion/services/backup_optimization/integrity_validator.dart';
 import 'package:parion/models/backup_optimization/enhanced_backup_metadata.dart';
+import '../../test_setup.dart';
 import 'package:parion/models/backup_optimization/backup_enums.dart' as enums;
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('ValidationService', () {
     late ValidationService validationService;
 

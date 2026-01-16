@@ -12,12 +12,13 @@ import 'package:uuid/uuid.dart';
 /// Property-based tests for DeferredInstallmentService
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  
+
   setUpAll(() async {
     // Initialize Hive for testing with a unique temporary directory
-    final testDir = './test_hive_deferred_${DateTime.now().millisecondsSinceEpoch}';
+    final testDir =
+        './test_hive_deferred_${DateTime.now().millisecondsSinceEpoch}';
     Hive.init(testDir);
-    
+
     // Register adapters
     if (!Hive.isAdapterRegistered(11)) {
       Hive.registerAdapter(CreditCardTransactionAdapter());
@@ -31,7 +32,7 @@ void main() {
     if (!Hive.isAdapterRegistered(22)) {
       Hive.registerAdapter(LimitAlertAdapter());
     }
-    
+
     // Open boxes
     await CreditCardBoxService.init();
   });
@@ -53,11 +54,12 @@ void main() {
 
     /// **Feature: enhanced-credit-card-tracking, Property 5: Taksitli İşlem Kaydı**
     /// **Validates: Requirements 3.1**
-    /// 
+    ///
     /// Property: For any installment transaction, the system should correctly
     /// record the installment count, monthly amount, and start date.
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 5: Installment transaction should be correctly recorded',
+      description:
+          'Property 5: Installment transaction should be correctly recorded',
       generator: () {
         return {
           'cardId': const Uuid().v4(),
@@ -91,7 +93,10 @@ void main() {
 
         // Property 2: Monthly amount should be correctly calculated
         final expectedMonthlyAmount = amount / installmentCount;
-        expect((transaction.installmentAmount - expectedMonthlyAmount).abs(), lessThan(0.0001));
+        expect(
+          (transaction.installmentAmount - expectedMonthlyAmount).abs(),
+          lessThan(0.0001),
+        );
 
         // Property 3: Start date should be set
         expect(transaction.installmentStartDate, isNotNull);
@@ -194,11 +199,12 @@ void main() {
 
     /// **Feature: enhanced-credit-card-tracking, Property 6: Ertelenmiş Taksit Tarihi**
     /// **Validates: Requirements 3.2**
-    /// 
+    ///
     /// Property: For any deferred installment, the system should set the
     /// installment start date to the specified number of months in the future.
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 6: Deferred installment start date should be correctly calculated',
+      description:
+          'Property 6: Deferred installment start date should be correctly calculated',
       generator: () {
         return {
           'cardId': const Uuid().v4(),
@@ -231,7 +237,10 @@ void main() {
         final startDate = transaction.installmentStartDate!;
 
         // Property 2: Start date should be in the future
-        expect(startDate.isAfter(now) || startDate.isAtSameMomentAs(now), isTrue);
+        expect(
+          startDate.isAfter(now) || startDate.isAtSameMomentAs(now),
+          isTrue,
+        );
 
         // Property 3: Start date should be approximately deferredMonths in the future
         // Calculate expected start date
@@ -246,8 +255,8 @@ void main() {
         expect(startDate.month, equals(expectedStartDate.month));
 
         // Property 4: The month difference should equal deferredMonths
-        final monthDiff = (startDate.year - now.year) * 12 + 
-                          (startDate.month - now.month);
+        final monthDiff =
+            (startDate.year - now.year) * 12 + (startDate.month - now.month);
         expect(monthDiff, equals(deferredMonths));
 
         // Property 5: Transaction date should be now (when created)
@@ -294,55 +303,62 @@ void main() {
       );
     });
 
-    test('Property 6: Start date should advance correctly for different deferred months', () async {
-      final cardId = const Uuid().v4();
-      final now = DateTime.now();
+    test(
+      'Property 6: Start date should advance correctly for different deferred months',
+      () async {
+        final cardId = const Uuid().v4();
+        final now = DateTime.now();
 
-      // Create installments with different deferred months
-      final transaction3 = await service.createDeferredInstallment(
-        cardId: cardId,
-        amount: 1000,
-        description: 'Test 3 months',
-        installmentCount: 6,
-        deferredMonths: 3,
-      );
+        // Create installments with different deferred months
+        final transaction3 = await service.createDeferredInstallment(
+          cardId: cardId,
+          amount: 1000,
+          description: 'Test 3 months',
+          installmentCount: 6,
+          deferredMonths: 3,
+        );
 
-      final transaction6 = await service.createDeferredInstallment(
-        cardId: cardId,
-        amount: 2000,
-        description: 'Test 6 months',
-        installmentCount: 12,
-        deferredMonths: 6,
-      );
+        final transaction6 = await service.createDeferredInstallment(
+          cardId: cardId,
+          amount: 2000,
+          description: 'Test 6 months',
+          installmentCount: 12,
+          deferredMonths: 6,
+        );
 
-      // Verify the month difference
-      final start3 = transaction3.installmentStartDate!;
-      final start6 = transaction6.installmentStartDate!;
+        // Verify the month difference
+        final start3 = transaction3.installmentStartDate!;
+        final start6 = transaction6.installmentStartDate!;
 
-      final diff3 = (start3.year - now.year) * 12 + (start3.month - now.month);
-      final diff6 = (start6.year - now.year) * 12 + (start6.month - now.month);
+        final diff3 =
+            (start3.year - now.year) * 12 + (start3.month - now.month);
+        final diff6 =
+            (start6.year - now.year) * 12 + (start6.month - now.month);
 
-      expect(diff3, equals(3));
-      expect(diff6, equals(6));
+        expect(diff3, equals(3));
+        expect(diff6, equals(6));
 
-      // The 6-month deferred should start 3 months after the 3-month deferred
-      final diffBetween = (start6.year - start3.year) * 12 + (start6.month - start3.month);
-      expect(diffBetween, equals(3));
-    });
+        // The 6-month deferred should start 3 months after the 3-month deferred
+        final diffBetween =
+            (start6.year - start3.year) * 12 + (start6.month - start3.month);
+        expect(diffBetween, equals(3));
+      },
+    );
 
     /// **Feature: enhanced-credit-card-tracking, Property 7: Taksit Bitişi Bildirimi**
     /// **Validates: Requirements 3.4**
-    /// 
+    ///
     /// Property: For any installment, when it reaches the last payment,
     /// the system should identify it as ending soon.
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 7: Installments ending soon should be correctly identified',
+      description:
+          'Property 7: Installments ending soon should be correctly identified',
       generator: () {
         final installmentCount = PropertyTest.randomInt(min: 2, max: 12);
         // Generate deferred months that will make the installment end within 2 months
         // We want installments that are close to completion
         final deferredMonths = PropertyTest.randomInt(min: 1, max: 2);
-        
+
         return {
           'cardId': const Uuid().v4(),
           'amount': PropertyTest.randomPositiveDouble(min: 100, max: 100000),
@@ -397,7 +413,7 @@ void main() {
         final twoMonthsFromNow = DateTime(now.year, now.month + 2, now.day);
 
         // Property 6: If last payment is within 2 months, should be in ending soon list
-        if (lastPaymentMonth.isBefore(twoMonthsFromNow) || 
+        if (lastPaymentMonth.isBefore(twoMonthsFromNow) ||
             lastPaymentMonth.isAtSameMomentAs(twoMonthsFromNow)) {
           expect(endingSoon.any((t) => t.id == transaction.id), isTrue);
         }
@@ -407,57 +423,63 @@ void main() {
       iterations: 100,
     );
 
-    test('Property 7: Completed installments should not appear in ending soon list', () async {
-      final cardId = const Uuid().v4();
+    test(
+      'Property 7: Completed installments should not appear in ending soon list',
+      () async {
+        final cardId = const Uuid().v4();
 
-      // Create a deferred installment
-      final transaction = await service.createDeferredInstallment(
-        cardId: cardId,
-        amount: 1000,
-        description: 'Test',
-        installmentCount: 6,
-        deferredMonths: 1,
-      );
+        // Create a deferred installment
+        final transaction = await service.createDeferredInstallment(
+          cardId: cardId,
+          amount: 1000,
+          description: 'Test',
+          installmentCount: 6,
+          deferredMonths: 1,
+        );
 
-      // Mark it as completed by setting installmentsPaid = installmentCount
-      // We need to access the repository directly
-      final repo = CreditCardBoxService.transactionsBox;
-      final completed = transaction.copyWith(
-        installmentsPaid: transaction.installmentCount,
-      );
-      await repo.put(completed.id, completed);
+        // Mark it as completed by setting installmentsPaid = installmentCount
+        // We need to access the repository directly
+        final repo = CreditCardBoxService.transactionsBox;
+        final completed = transaction.copyWith(
+          installmentsPaid: transaction.installmentCount,
+        );
+        await repo.put(completed.id, completed);
 
-      // Check ending soon list
-      final endingSoon = await service.getInstallmentsEndingSoon(
-        cardId: cardId,
-        withinMonths: 12,
-      );
+        // Check ending soon list
+        final endingSoon = await service.getInstallmentsEndingSoon(
+          cardId: cardId,
+          withinMonths: 12,
+        );
 
-      // Completed installment should not be in the list
-      expect(endingSoon.any((t) => t.id == transaction.id), isFalse);
-    });
+        // Completed installment should not be in the list
+        expect(endingSoon.any((t) => t.id == transaction.id), isFalse);
+      },
+    );
 
-    test('Property 7: Installments far in the future should not be in ending soon list', () async {
-      final cardId = const Uuid().v4();
+    test(
+      'Property 7: Installments far in the future should not be in ending soon list',
+      () async {
+        final cardId = const Uuid().v4();
 
-      // Create a deferred installment that ends far in the future
-      final transaction = await service.createDeferredInstallment(
-        cardId: cardId,
-        amount: 1000,
-        description: 'Test',
-        installmentCount: 12,
-        deferredMonths: 12,
-      );
+        // Create a deferred installment that ends far in the future
+        final transaction = await service.createDeferredInstallment(
+          cardId: cardId,
+          amount: 1000,
+          description: 'Test',
+          installmentCount: 12,
+          deferredMonths: 12,
+        );
 
-      // Check ending soon list (within 2 months)
-      final endingSoon = await service.getInstallmentsEndingSoon(
-        cardId: cardId,
-        withinMonths: 2,
-      );
+        // Check ending soon list (within 2 months)
+        final endingSoon = await service.getInstallmentsEndingSoon(
+          cardId: cardId,
+          withinMonths: 2,
+        );
 
-      // This installment should not be in the list
-      expect(endingSoon.any((t) => t.id == transaction.id), isFalse);
-    });
+        // This installment should not be in the list
+        expect(endingSoon.any((t) => t.id == transaction.id), isFalse);
+      },
+    );
 
     test('Property 7: Can query ending soon for all cards', () async {
       final cardId1 = const Uuid().v4();
@@ -506,7 +528,9 @@ void main() {
       );
 
       // Get installments starting this month
-      final startingThisMonth = await service.getInstallmentsStartingThisMonth(cardId);
+      final startingThisMonth = await service.getInstallmentsStartingThisMonth(
+        cardId,
+      );
 
       // The installment should be in the list if its start month matches current month
       final startDate = transaction.installmentStartDate!;
@@ -544,7 +568,10 @@ void main() {
       // Each month should have a list of transactions
       for (var entry in schedule.entries) {
         expect(entry.value, isNotEmpty);
-        expect(entry.key.day, equals(1)); // Should be normalized to first day of month
+        expect(
+          entry.key.day,
+          equals(1),
+        ); // Should be normalized to first day of month
       }
     });
 
@@ -609,7 +636,9 @@ void main() {
 
       // Check activation with a future date (when the installment should start)
       final futureDate = DateTime(now.year, now.month + 1, now.day);
-      final activatedIds = await service.activateDeferredInstallments(futureDate);
+      final activatedIds = await service.activateDeferredInstallments(
+        futureDate,
+      );
 
       // The installment should be activated
       expect(activatedIds.contains(transaction.id), isTrue);
@@ -628,12 +657,18 @@ void main() {
       );
 
       // Should not be active now
-      final isActiveNow = await service.isInstallmentActive(transaction.id, now);
+      final isActiveNow = await service.isInstallmentActive(
+        transaction.id,
+        now,
+      );
       expect(isActiveNow, isFalse);
 
       // Should be active in the future
       final futureDate = DateTime(now.year, now.month + 2, now.day);
-      final isActiveFuture = await service.isInstallmentActive(transaction.id, futureDate);
+      final isActiveFuture = await service.isInstallmentActive(
+        transaction.id,
+        futureDate,
+      );
       expect(isActiveFuture, isTrue);
     });
 
@@ -650,12 +685,18 @@ void main() {
       );
 
       // Should be 3 months until start
-      final monthsUntilStart = await service.getMonthsUntilStart(transaction.id, now);
+      final monthsUntilStart = await service.getMonthsUntilStart(
+        transaction.id,
+        now,
+      );
       expect(monthsUntilStart, equals(3));
 
       // Should be 0 months when date arrives
       final futureDate = DateTime(now.year, now.month + 3, now.day);
-      final monthsUntilStartFuture = await service.getMonthsUntilStart(transaction.id, futureDate);
+      final monthsUntilStartFuture = await service.getMonthsUntilStart(
+        transaction.id,
+        futureDate,
+      );
       expect(monthsUntilStartFuture, equals(0));
     });
   });

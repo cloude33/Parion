@@ -6,8 +6,17 @@ import 'package:parion/widgets/statistics/spending_trend_chart.dart';
 import 'package:parion/widgets/statistics/period_comparison_card.dart';
 import 'package:parion/widgets/statistics/budget_tracker_card.dart';
 import 'package:parion/widgets/statistics/spending_habits_card.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Spending Trend and Comparison Widgets Tests', () {
     // Test data
     final testCategoryTrends = [

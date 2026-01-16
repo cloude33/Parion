@@ -3,8 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/transaction.dart';
 import 'package:parion/models/wallet.dart';
 import 'package:parion/screens/statistics_screen.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Statistics Screen Tab Switching Tests', () {
     late List<Transaction> testTransactions;
     late List<Wallet> testWallets;

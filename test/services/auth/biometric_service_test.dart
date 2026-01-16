@@ -2,9 +2,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/auth/biometric_service.dart';
 import 'package:parion/models/security/auth_result.dart';
 import 'package:parion/models/security/auth_state.dart';
+import '../../test_setup.dart';
 import 'package:parion/models/security/biometric_type.dart' as app_biometric;
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('BiometricService', () {
     late BiometricServiceImpl biometricService;
 

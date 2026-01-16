@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/wallet.dart';
 import '../property_test_utils.dart';
 import 'package:uuid/uuid.dart';
+import '../test_setup.dart';
 
 /// **Feature: kmh-account-management, Property 14: Kullanım Metrikleri Hesaplama**
 /// **Validates: Requirements 4.1**
@@ -10,6 +11,14 @@ import 'package:uuid/uuid.dart';
 /// availableCredit = creditLimit + balance,
 /// utilizationRate = (usedCredit / creditLimit) × 100
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KMH Usage Metrics Calculation Property Tests', () {
     PropertyTest.forAll<Map<String, dynamic>>(
       description: 'Property 14: Used credit calculation for negative balance',

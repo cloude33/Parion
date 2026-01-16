@@ -5,8 +5,17 @@ import 'package:parion/widgets/statistics/statistics_skeleton_loader.dart';
 import 'package:parion/widgets/statistics/statistics_error_state.dart';
 import 'package:parion/widgets/statistics/statistics_empty_state.dart';
 import 'package:parion/widgets/statistics/statistics_state_builder.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('StatisticsLoadingState', () {
     testWidgets('displays loading indicator', (tester) async {
       await tester.pumpWidget(

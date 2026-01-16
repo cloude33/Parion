@@ -51,15 +51,13 @@ void main() {
       ];
     });
 
-    testWidgets('should not display when search query is empty',
-        (WidgetTester tester) async {
+    testWidgets('should not display when search query is empty', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: '',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: ''),
           ),
         ),
       );
@@ -68,15 +66,13 @@ void main() {
       expect(find.byType(Container), findsNothing);
     });
 
-    testWidgets('should display empty state when no results found',
-        (WidgetTester tester) async {
+    testWidgets('should display empty state when no results found', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: const [],
-              searchQuery: 'test query',
-            ),
+            body: SearchResults(results: const [], searchQuery: 'test query'),
           ),
         ),
       );
@@ -90,10 +86,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
@@ -101,15 +94,13 @@ void main() {
       expect(find.text('2 sonuç bulundu'), findsOneWidget);
     });
 
-    testWidgets('should display transaction results',
-        (WidgetTester tester) async {
+    testWidgets('should display transaction results', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
@@ -120,8 +111,9 @@ void main() {
       expect(find.text('Gelir'), findsOneWidget);
     });
 
-    testWidgets('should display credit card transaction results',
-        (WidgetTester tester) async {
+    testWidgets('should display credit card transaction results', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -144,10 +136,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: mixed,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: mixed, searchQuery: 'test'),
           ),
         ),
       );
@@ -157,8 +146,9 @@ void main() {
       expect(find.text('Online alışveriş'), findsOneWidget);
     });
 
-    testWidgets('should show income with green color',
-        (WidgetTester tester) async {
+    testWidgets('should show income with green color', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -174,8 +164,9 @@ void main() {
       expect(find.textContaining('+'), findsOneWidget);
     });
 
-    testWidgets('should show expense with red color',
-        (WidgetTester tester) async {
+    testWidgets('should show expense with red color', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -226,8 +217,9 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('should call onResultTap when item is tapped',
-        (WidgetTester tester) async {
+    testWidgets('should call onResultTap when item is tapped', (
+      WidgetTester tester,
+    ) async {
       bool tapped = false;
 
       await tester.pumpWidget(
@@ -254,10 +246,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
@@ -267,14 +256,13 @@ void main() {
       expect(find.textContaining('20'), findsWidgets);
     });
 
-    testWidgets('should display formatted amounts', (WidgetTester tester) async {
+    testWidgets('should display formatted amounts', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
@@ -284,61 +272,51 @@ void main() {
       expect(find.textContaining('200'), findsWidgets);
     });
 
-    testWidgets('should have proper styling in light mode',
-        (WidgetTester tester) async {
+    testWidgets('should have proper styling in light mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.light(),
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
 
-      final container = tester.widget<Container>(
-        find.byType(Container).first,
-      );
+      final container = tester.widget<Container>(find.byType(Container).first);
 
       expect(container.decoration, isA<BoxDecoration>());
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.color, equals(Colors.white));
     });
 
-    testWidgets('should have proper styling in dark mode',
-        (WidgetTester tester) async {
+    testWidgets('should have proper styling in dark mode', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           theme: ThemeData.dark(),
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
 
-      final container = tester.widget<Container>(
-        find.byType(Container).first,
-      );
+      final container = tester.widget<Container>(find.byType(Container).first);
 
       expect(container.decoration, isA<BoxDecoration>());
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.color, equals(const Color(0xFF1C1C1E)));
     });
 
-    testWidgets('should display search icon in header',
-        (WidgetTester tester) async {
+    testWidgets('should display search icon in header', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
@@ -346,21 +324,22 @@ void main() {
       expect(find.byIcon(Icons.search), findsOneWidget);
     });
 
-    testWidgets('should display dividers between results',
-        (WidgetTester tester) async {
+    testWidgets('should display dividers between results', (
+      WidgetTester tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: SearchResults(
-              results: testTransactions,
-              searchQuery: 'test',
-            ),
+            body: SearchResults(results: testTransactions, searchQuery: 'test'),
           ),
         ),
       );
 
       // Should have dividers between items (n-1 dividers for n items)
-      expect(find.byType(Divider), findsNWidgets(2)); // 1 header divider + 1 between items
+      expect(
+        find.byType(Divider),
+        findsNWidgets(2),
+      ); // 1 header divider + 1 between items
     });
   });
 }

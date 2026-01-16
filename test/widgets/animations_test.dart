@@ -11,8 +11,17 @@ import 'package:parion/widgets/statistics/animated_chart_card.dart';
 import 'package:parion/models/cash_flow_data.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:parion/widgets/statistics/interactive_line_chart.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Animation Widgets Tests', () {
     testWidgets('FadeInAnimation renders and animates', (tester) async {
       await tester.pumpWidget(

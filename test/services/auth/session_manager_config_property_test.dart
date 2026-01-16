@@ -4,12 +4,21 @@ import 'package:parion/models/security/session_data.dart';
 import 'package:parion/models/security/auth_state.dart';
 import 'package:parion/models/security/security_models.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property-based tests for SessionManager Configuration Management
 /// 
 /// **Feature: modern-auth-system, Property 12: Configuration and Migration Handling**
 /// **Validates: Requirements 5.5, 9.5**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SessionManager Configuration Property Tests', () {
     late SessionManager sessionManager;
 

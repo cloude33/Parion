@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/utils/kmh_validator.dart';
 import '../property_test_utils.dart';
+import '../test_setup.dart';
 
 /// Property-based tests for KMH account number masking
 /// 
@@ -10,6 +11,14 @@ import '../property_test_utils.dart';
 /// Property: For any account number, when displayed, only the last 4 digits
 /// should be visible, the rest should be masked with asterisks.
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('KMH Account Number Masking Property Tests', () {
     // Property 34: Account Number Masking
     // For any account number, when displayed, only the last 4 digits should be visible

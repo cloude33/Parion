@@ -9,6 +9,7 @@ import 'package:parion/services/export_service.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 // ignore: depend_on_referenced_packages
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import '../test_setup.dart';
 import 'package:path/path.dart' as path;
 
 /// Mock PathProviderPlatform for testing
@@ -22,6 +23,14 @@ class MockPathProviderPlatform extends Fake
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late ExportService exportService;

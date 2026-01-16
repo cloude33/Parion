@@ -23,13 +23,9 @@ void main() {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
-        supportedLocales: const [
-          Locale('tr', 'TR'),
-        ],
+        supportedLocales: const [Locale('tr', 'TR')],
         locale: const Locale('tr', 'TR'),
-        home: Scaffold(
-          body: child,
-        ),
+        home: Scaffold(body: child),
       );
     }
 
@@ -90,8 +86,12 @@ void main() {
       );
     });
 
-    testWidgets('displays summary cards correctly', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+    testWidgets('displays summary cards correctly', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify summary cards are displayed
       expect(find.text('Toplam Gelir'), findsOneWidget);
@@ -100,8 +100,12 @@ void main() {
       expect(find.text('En Yüksek Ay'), findsOneWidget);
     });
 
-    testWidgets('displays period comparison when available', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+    testWidgets('displays period comparison when available', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify period comparison is displayed
       expect(find.text('Dönemsel Karşılaştırma'), findsOneWidget);
@@ -110,8 +114,12 @@ void main() {
       expect(find.text('artış'), findsOneWidget);
     });
 
-    testWidgets('displays income source distribution', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+    testWidgets('displays income source distribution', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify income sources are displayed
       expect(find.text('Gelir Kaynakları Dağılımı'), findsOneWidget);
@@ -120,16 +128,24 @@ void main() {
       expect(find.text('Yatırım'), findsOneWidget);
     });
 
-    testWidgets('displays trend analysis with correct indicator', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+    testWidgets('displays trend analysis with correct indicator', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify trend analysis is displayed
       expect(find.text('Trend Analizi'), findsOneWidget);
       expect(find.text('Yükseliş'), findsOneWidget);
     });
 
-    testWidgets('displays detailed table with monthly data', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+    testWidgets('displays detailed table with monthly data', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify detailed table is displayed
       expect(find.text('Detaylı Tablo'), findsOneWidget);
@@ -152,7 +168,9 @@ void main() {
         averageMonthly: 0.0,
       );
 
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: emptyReport)));
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: emptyReport)),
+      );
 
       // Verify empty state messages
       expect(find.text('Bu dönemde gelir kaynağı bulunamadı'), findsOneWidget);
@@ -160,7 +178,9 @@ void main() {
       expect(find.text('Veri bulunamadı'), findsOneWidget);
     });
 
-    testWidgets('displays correct trend indicator for down trend', (WidgetTester tester) async {
+    testWidgets('displays correct trend indicator for down trend', (
+      WidgetTester tester,
+    ) async {
       final downTrendReport = IncomeReport(
         title: 'Down Trend Report',
         startDate: DateTime(2024, 1, 1),
@@ -201,14 +221,18 @@ void main() {
         changePercentage: -33.33,
       );
 
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: downTrendReport)));
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: downTrendReport)),
+      );
 
       // Verify down trend indicator
       expect(find.text('Düşüş'), findsOneWidget);
       expect(find.text('azalış'), findsOneWidget);
     });
 
-    testWidgets('displays correct trend indicator for stable trend', (WidgetTester tester) async {
+    testWidgets('displays correct trend indicator for stable trend', (
+      WidgetTester tester,
+    ) async {
       final stableTrendReport = IncomeReport(
         title: 'Stable Trend Report',
         startDate: DateTime(2024, 1, 1),
@@ -247,23 +271,34 @@ void main() {
         averageMonthly: 5000.0,
       );
 
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: stableTrendReport)));
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: stableTrendReport)),
+      );
 
       // Verify stable trend indicator
       expect(find.text('Sabit'), findsOneWidget);
     });
 
     testWidgets('formats currency correctly', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify currency formatting (Turkish locale)
       expect(find.textContaining('₺'), findsWidgets);
-      expect(find.textContaining('15.000,00'), findsWidgets); // Can appear in multiple places
+      expect(
+        find.textContaining('15.000,00'),
+        findsWidgets,
+      ); // Can appear in multiple places
       expect(find.textContaining('5.000,00'), findsWidgets);
     });
 
-    testWidgets('displays transaction counts for income sources', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+    testWidgets('displays transaction counts for income sources', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify transaction counts
       expect(find.text('3 işlem'), findsOneWidget);
@@ -271,15 +306,21 @@ void main() {
       expect(find.text('2 işlem'), findsOneWidget);
     });
 
-    testWidgets('displays percentages for income sources', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+    testWidgets('displays percentages for income sources', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify percentages are displayed
       expect(find.textContaining('%'), findsWidgets);
     });
 
     testWidgets('scrolls correctly', (WidgetTester tester) async {
-      await tester.pumpWidget(wrapWidget(IncomeReportWidget(report: testReport)));
+      await tester.pumpWidget(
+        wrapWidget(IncomeReportWidget(report: testReport)),
+      );
 
       // Verify SingleChildScrollView is present
       expect(find.byType(SingleChildScrollView), findsWidgets);

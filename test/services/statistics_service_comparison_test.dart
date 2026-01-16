@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/comparison_data.dart';
 import 'package:parion/models/cash_flow_data.dart';
+import '../test_setup.dart';
 
 /// Unit Tests for Comparison Service
 /// 
@@ -14,6 +15,14 @@ import 'package:parion/models/cash_flow_data.dart';
 /// 3. Trend direction determination
 /// 4. Edge cases (zero values, negative changes)
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('ComparisonMetric Calculations', () {
     test('should calculate absolute change correctly', () {
       // Test case 1: Positive change

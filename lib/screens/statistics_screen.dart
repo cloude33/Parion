@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import 'package:get_it/get_it.dart';
 import '../models/transaction.dart';
 import '../models/category.dart';
 import '../models/wallet.dart';
@@ -59,8 +60,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   final String _selectedCategory = 'all';
   final String _selectedTransactionType = 'all';
 
-  final DataService _dataService = DataService();
-  final StatisticsService _statisticsService = StatisticsService();
+  final DataService _dataService = GetIt.I<DataService>();
+  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
   List<Category> _categories = [];
 
   static const Map<TimeFilter, String> _timeFilterLabels = {

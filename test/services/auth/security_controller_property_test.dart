@@ -4,10 +4,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/services/auth/security_controller.dart';
 import 'package:parion/models/security/security_models.dart';
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 /// Property tests for SecurityController
 /// **Validates: Requirements 7.1, 7.2, 7.3, 7.4**
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('SecurityController Property Tests', () {
     late SecurityController securityController;
 

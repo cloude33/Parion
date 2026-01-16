@@ -19,7 +19,7 @@ void main() {
   setUpAll(() async {
     // Initialize Hive for testing
     Hive.init('./test_hive_notification');
-    
+
     // Register adapters
     if (!Hive.isAdapterRegistered(10)) {
       Hive.registerAdapter(CreditCardAdapter());
@@ -42,7 +42,7 @@ void main() {
     if (!Hive.isAdapterRegistered(22)) {
       Hive.registerAdapter(LimitAlertAdapter());
     }
-    
+
     // Initialize notification service (skip if platform not available)
     try {
       await NotificationSchedulerService().initialize();
@@ -50,7 +50,7 @@ void main() {
       // Notification service not available in test environment
       print('Notification service initialization skipped: $e');
     }
-    
+
     // Open boxes
     await CreditCardBoxService.init();
   });
@@ -79,7 +79,7 @@ void main() {
 
     /// **Feature: enhanced-credit-card-tracking, Property 12: 7 Gün Öncesi Ödeme Hatırlatması**
     /// **Validates: Requirements 5.1**
-    /// 
+    ///
     /// Property: For any card with due date more than 7 days away,
     /// system should send reminder notification 7 days before.
     PropertyTest.forAll<Map<String, dynamic>>(
@@ -89,7 +89,7 @@ void main() {
         final dueDate = DateTime.now().add(Duration(days: daysUntilDue));
         final periodStart = dueDate.subtract(const Duration(days: 30));
         final periodEnd = dueDate.subtract(const Duration(days: 10));
-        
+
         return {
           'cardId': const Uuid().v4(),
           'bankName': PropertyTest.randomString(minLength: 5, maxLength: 15),
@@ -97,7 +97,10 @@ void main() {
           'dueDate': dueDate,
           'periodStart': periodStart,
           'periodEnd': periodEnd,
-          'minimumPayment': PropertyTest.randomPositiveDouble(min: 100, max: 500),
+          'minimumPayment': PropertyTest.randomPositiveDouble(
+            min: 100,
+            max: 500,
+          ),
           'totalDebt': PropertyTest.randomPositiveDouble(min: 500, max: 5000),
         };
       },
@@ -145,7 +148,8 @@ void main() {
         await notificationService.schedulePaymentReminderWithDays(statement, 7);
 
         // Get pending notifications
-        final pending = await NotificationSchedulerService().getPendingNotifications();
+        final pending = await NotificationSchedulerService()
+            .getPendingNotifications();
 
         // Property: A 7-day reminder should be scheduled
         final has7DayReminder = pending.any((n) {
@@ -168,7 +172,7 @@ void main() {
         final dueDate = DateTime.now().add(Duration(days: daysUntilDue));
         final periodStart = dueDate.subtract(const Duration(days: 30));
         final periodEnd = dueDate.subtract(const Duration(days: 10));
-        
+
         return {
           'cardId': const Uuid().v4(),
           'bankName': PropertyTest.randomString(minLength: 5, maxLength: 15),
@@ -176,7 +180,10 @@ void main() {
           'dueDate': dueDate,
           'periodStart': periodStart,
           'periodEnd': periodEnd,
-          'minimumPayment': PropertyTest.randomPositiveDouble(min: 100, max: 500),
+          'minimumPayment': PropertyTest.randomPositiveDouble(
+            min: 100,
+            max: 500,
+          ),
           'totalDebt': PropertyTest.randomPositiveDouble(min: 500, max: 5000),
         };
       },
@@ -220,7 +227,8 @@ void main() {
 
         await notificationService.schedulePaymentReminderWithDays(statement, 3);
 
-        final pending = await NotificationSchedulerService().getPendingNotifications();
+        final pending = await NotificationSchedulerService()
+            .getPendingNotifications();
         final has3DayReminder = pending.any((n) {
           return n.title?.contains('3 Gün Kaldı') ?? false;
         });
@@ -240,7 +248,7 @@ void main() {
         final dueDate = DateTime.now().add(Duration(days: daysUntilDue));
         final periodStart = dueDate.subtract(const Duration(days: 30));
         final periodEnd = dueDate.subtract(const Duration(days: 10));
-        
+
         return {
           'cardId': const Uuid().v4(),
           'bankName': PropertyTest.randomString(minLength: 5, maxLength: 15),
@@ -248,7 +256,10 @@ void main() {
           'dueDate': dueDate,
           'periodStart': periodStart,
           'periodEnd': periodEnd,
-          'minimumPayment': PropertyTest.randomPositiveDouble(min: 100, max: 500),
+          'minimumPayment': PropertyTest.randomPositiveDouble(
+            min: 100,
+            max: 500,
+          ),
           'totalDebt': PropertyTest.randomPositiveDouble(min: 500, max: 5000),
         };
       },
@@ -292,7 +303,8 @@ void main() {
 
         await notificationService.schedulePaymentReminderWithDays(statement, 0);
 
-        final pending = await NotificationSchedulerService().getPendingNotifications();
+        final pending = await NotificationSchedulerService()
+            .getPendingNotifications();
         final hasSameDayReminder = pending.any((n) {
           return n.title?.contains('Son Ödeme Günü') ?? false;
         });
@@ -306,15 +318,22 @@ void main() {
     /// **Feature: enhanced-credit-card-tracking, Property 15: Bildirim İçeriği Doğruluğu**
     /// **Validates: Requirements 5.4**
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 15: Notification should contain minimum and full payment amounts',
+      description:
+          'Property 15: Notification should contain minimum and full payment amounts',
       generator: () {
         final daysUntilDue = PropertyTest.randomInt(min: 4, max: 30);
         final dueDate = DateTime.now().add(Duration(days: daysUntilDue));
         final periodStart = dueDate.subtract(const Duration(days: 30));
         final periodEnd = dueDate.subtract(const Duration(days: 10));
-        final minimumPayment = PropertyTest.randomPositiveDouble(min: 100, max: 500);
-        final totalDebt = PropertyTest.randomPositiveDouble(min: 500, max: 5000);
-        
+        final minimumPayment = PropertyTest.randomPositiveDouble(
+          min: 100,
+          max: 500,
+        );
+        final totalDebt = PropertyTest.randomPositiveDouble(
+          min: 500,
+          max: 5000,
+        );
+
         return {
           'cardId': const Uuid().v4(),
           'bankName': PropertyTest.randomString(minLength: 5, maxLength: 15),
@@ -366,7 +385,8 @@ void main() {
 
         await notificationService.schedulePaymentReminderWithDays(statement, 3);
 
-        final pending = await NotificationSchedulerService().getPendingNotifications();
+        final pending = await NotificationSchedulerService()
+            .getPendingNotifications();
         final notification = pending.firstWhere(
           (n) => n.title?.contains('Ödeme Hatırlatması') ?? false,
           orElse: () => throw Exception('No payment reminder found'),
@@ -386,14 +406,18 @@ void main() {
     /// **Feature: enhanced-credit-card-tracking, Property 16: Bildirim Ayarları Uygulaması**
     /// **Validates: Requirements 5.5**
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 16: System should apply user notification preferences',
+      description:
+          'Property 16: System should apply user notification preferences',
       generator: () {
         final customDays = PropertyTest.randomInt(min: 1, max: 10);
-        final daysUntilDue = PropertyTest.randomInt(min: customDays + 1, max: 30);
+        final daysUntilDue = PropertyTest.randomInt(
+          min: customDays + 1,
+          max: 30,
+        );
         final dueDate = DateTime.now().add(Duration(days: daysUntilDue));
         final periodStart = dueDate.subtract(const Duration(days: 30));
         final periodEnd = dueDate.subtract(const Duration(days: 10));
-        
+
         return {
           'cardId': const Uuid().v4(),
           'bankName': PropertyTest.randomString(minLength: 5, maxLength: 15),
@@ -401,7 +425,10 @@ void main() {
           'dueDate': dueDate,
           'periodStart': periodStart,
           'periodEnd': periodEnd,
-          'minimumPayment': PropertyTest.randomPositiveDouble(min: 100, max: 500),
+          'minimumPayment': PropertyTest.randomPositiveDouble(
+            min: 100,
+            max: 500,
+          ),
           'totalDebt': PropertyTest.randomPositiveDouble(min: 500, max: 5000),
           'customDays': customDays,
         };
@@ -445,9 +472,13 @@ void main() {
         );
         await CreditCardBoxService.statementsBox.put(statement.id, statement);
 
-        await notificationService.schedulePaymentReminderWithDays(statement, customDays);
+        await notificationService.schedulePaymentReminderWithDays(
+          statement,
+          customDays,
+        );
 
-        final pending = await NotificationSchedulerService().getPendingNotifications();
+        final pending = await NotificationSchedulerService()
+            .getPendingNotifications();
         final hasCustomReminder = pending.any((n) {
           return n.title?.contains('Ödeme Hatırlatması') ?? false;
         });
@@ -461,12 +492,13 @@ void main() {
     /// **Feature: enhanced-credit-card-tracking, Property 46: Ekstre Kesim Bildirimi**
     /// **Validates: Requirements 13.1**
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 46: Statement cut notification should be scheduled',
+      description:
+          'Property 46: Statement cut notification should be scheduled',
       generator: () {
         final daysUntilCut = PropertyTest.randomInt(min: 1, max: 30);
         final cutDate = DateTime.now().add(Duration(days: daysUntilCut));
         final dueDate = cutDate.add(const Duration(days: 15));
-        
+
         return {
           'cardId': const Uuid().v4(),
           'bankName': PropertyTest.randomString(minLength: 5, maxLength: 15),
@@ -506,7 +538,8 @@ void main() {
           dueDate,
         );
 
-        final pending = await NotificationSchedulerService().getPendingNotifications();
+        final pending = await NotificationSchedulerService()
+            .getPendingNotifications();
         final hasStatementCutNotification = pending.any((n) {
           return n.title?.contains('Ekstre Kesildi') ?? false;
         });
@@ -520,13 +553,17 @@ void main() {
     /// **Feature: enhanced-credit-card-tracking, Property 47: Ekstre Bildirim İçeriği**
     /// **Validates: Requirements 13.2**
     PropertyTest.forAll<Map<String, dynamic>>(
-      description: 'Property 47: Statement notification should contain debt and due date',
+      description:
+          'Property 47: Statement notification should contain debt and due date',
       generator: () {
         final daysUntilCut = PropertyTest.randomInt(min: 1, max: 30);
         final cutDate = DateTime.now().add(Duration(days: daysUntilCut));
         final dueDate = cutDate.add(const Duration(days: 15));
-        final periodDebt = PropertyTest.randomPositiveDouble(min: 100, max: 5000);
-        
+        final periodDebt = PropertyTest.randomPositiveDouble(
+          min: 100,
+          max: 5000,
+        );
+
         return {
           'cardId': const Uuid().v4(),
           'bankName': PropertyTest.randomString(minLength: 5, maxLength: 15),
@@ -566,7 +603,8 @@ void main() {
           dueDate,
         );
 
-        final pending = await NotificationSchedulerService().getPendingNotifications();
+        final pending = await NotificationSchedulerService()
+            .getPendingNotifications();
         final notification = pending.firstWhere(
           (n) => n.title?.contains('Ekstre Kesildi') ?? false,
           orElse: () => throw Exception('No statement cut notification found'),

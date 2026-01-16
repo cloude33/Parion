@@ -26,14 +26,11 @@ import 'categories_screen.dart';
 import 'help_screen.dart';
 import 'about_screen.dart';
 import 'manage_wallets_screen.dart';
+import 'manage_loans_screen.dart';
 import 'notification_settings_screen.dart';
-import 'recurring_transaction_list_screen.dart';
 import 'change_password_screen.dart';
 import 'cloud_backup_screen.dart';
 import 'backup_and_export_screen.dart';
-
-import '../services/recurring_transaction_service.dart';
-import '../repositories/recurring_transaction_repository.dart';
 
 import '../widgets/theme_toggle_button.dart';
 import '../widgets/debug_background_lock_widget.dart';
@@ -329,34 +326,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           _buildSettingItem(
-            icon: Icons.repeat,
-            title: AppLocalizations.of(context)!.recurringTransactions,
-            subtitle: AppLocalizations.of(context)!.manageRecurringDesc,
-            iconColor: Colors.teal,
+            icon: Icons.account_balance_wallet_outlined,
+            title: AppLocalizations.of(context)!.loans,
+            subtitle: AppLocalizations.of(context)!.manageLoansDesc,
+            iconColor: Colors.indigo,
             trailing: const Icon(
               Icons.arrow_forward_ios,
               size: 16,
               color: Color(0xFF8E8E93),
             ),
             onTap: () async {
-              final repository = RecurringTransactionRepository();
-              await repository.init();
-
-              final service = RecurringTransactionService(
-                repository,
-                _dataService,
-                _notificationService,
-              );
-
-              if (!mounted) return;
-
               await Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      RecurringTransactionListScreen(service: service),
-                ),
+                MaterialPageRoute(builder: (context) => const ManageLoansScreen()),
               );
+              _loadUser();
             },
           ),
           _buildSettingItem(

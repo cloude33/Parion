@@ -317,4 +317,3 @@ bool _eventsMatch(SecurityEvent original, SecurityEvent logged) {
 
   return true;
 }
-

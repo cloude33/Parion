@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../models/cash_flow_data.dart';
@@ -25,7 +26,7 @@ class CashFlowTab extends StatefulWidget {
 }
 
 class _CashFlowTabState extends State<CashFlowTab> {
-  final StatisticsService _statisticsService = StatisticsService();
+  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
   CashFlowData? _cashFlowData;
   bool _isLoading = true;
   String? _error;

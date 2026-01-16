@@ -6,8 +6,17 @@ import 'package:parion/models/backup_optimization/backup_config.dart';
 import 'package:parion/models/backup_optimization/backup_enums.dart';
 import '../../property_test_utils.dart';
 import '../../test_helpers.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   setupCommonTestMocks();
   group('Backup Strategy Preference Persistence Property Tests', () {
     late BackupConfigurationManager configManager;

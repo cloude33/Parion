@@ -7,6 +7,7 @@ import 'package:parion/models/backup_optimization/backup_enums.dart';
 import 'package:parion/models/backup_optimization/offline_backup_models.dart';
 import 'package:parion/models/backup_optimization/enhanced_backup_metadata.dart';
 import '../../test_helpers.dart';
+import '../../test_setup.dart';
 
 // Simple mock classes for testing offline scenarios
 class MockNetworkMonitor extends NetworkMonitor {
@@ -124,6 +125,14 @@ class TestOfflineBackupQueue extends OfflineBackupQueue {
 }
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   setupCommonTestMocks();
   group('Offline Backup Scenarios', () {
     late TestOfflineBackupQueue testQueue;

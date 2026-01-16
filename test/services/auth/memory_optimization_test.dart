@@ -3,6 +3,7 @@ import 'package:parion/services/auth/auth_service.dart';
 import 'package:parion/services/auth/session_manager.dart';
 import 'package:parion/services/auth/secure_storage_service.dart';
 import 'package:parion/services/auth/biometric_service.dart';
+import '../../test_setup.dart';
 
 /// Memory Optimization Tests
 /// 
@@ -13,6 +14,14 @@ import 'package:parion/services/auth/biometric_service.dart';
 /// 
 /// Validates: Bellek performans gereksinimleri
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('Memory Optimization Tests', () {
     setUp(() {
       // Reset all services before each test

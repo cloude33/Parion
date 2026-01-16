@@ -276,6 +276,9 @@ class TestSetup {
     } catch (e) {
       // Ignore if already reset
     }
+
+    // Ensure platform channel mocks are registered
+    _setupPlatformChannelMocks();
     
     // Initialize SharedPreferences with empty data
     SharedPreferences.setMockInitialValues({});
@@ -331,7 +334,6 @@ class TestSetup {
       try {
         if (KmhBoxService.transactionsBox.isOpen) {
           await KmhBoxService.transactionsBox.clear();
-          await KmhBoxService.transactionsBox.close();
         }
       } catch (_) {
         // Box might not be initialized

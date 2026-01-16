@@ -41,6 +41,8 @@
   "myBills": "Faturalarım",
   "categories": "Kategoriler",
   "debts": "Borç/Alacak Takibi",
+  "loans": "Kredilerim",
+  "manageLoansDesc": "Banka kredilerinizi takip edin",
   "recurringTransactions": "Tekrarlayan İşlemler",
   "notifications": "Bildirimler",
   "currency": "Para Birimi",

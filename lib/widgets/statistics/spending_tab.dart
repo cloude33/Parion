@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/cash_flow_data.dart';
 import '../../services/statistics_service.dart';
-import 'summary_card.dart';
-import 'metric_card.dart';
+import 'package:get_it/get_it.dart';
+
 import 'interactive_pie_chart.dart';
 import 'spending_trend_chart.dart';
 import 'period_comparison_card.dart';
@@ -29,7 +29,7 @@ class SpendingTab extends StatefulWidget {
 }
 
 class _SpendingTabState extends State<SpendingTab> {
-  final StatisticsService _statisticsService = StatisticsService();
+  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
   SpendingAnalysis? _spendingData;
   SpendingAnalysis? _previousPeriodData;
   bool _isLoading = true;
@@ -188,57 +188,102 @@ class _SpendingTabState extends State<SpendingTab> {
 
   Widget _buildSummaryCards() {
     final data = _spendingData!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dailyAverage = data.totalSpending / 
+        (widget.endDate.difference(widget.startDate).inDays + 1);
 
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: SummaryCard(
-                title: 'Toplam Harcama',
-                value: _formatCurrency(data.totalSpending),
-                icon: Icons.shopping_cart,
-                color: Colors.red,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: SummaryCard(
-                title: 'En Çok Harcanan',
-                value: data.topCategory.isNotEmpty ? data.topCategory : 'Yok',
-                subtitle: data.topCategory.isNotEmpty
-                    ? _formatCurrency(data.topCategoryAmount)
-                    : null,
-                icon: Icons.star,
-                color: Colors.orange,
-              ),
-            ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            isDark ? const Color(0xFF1E1E24) : Colors.blue.shade800,
+            isDark ? const Color(0xFF2D2D35) : Colors.blue.shade600,
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: MetricCard(
-                label: 'Kategori Sayısı',
-                value: data.categoryBreakdown.length.toString(),
-                color: Colors.blue,
-              ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Text(
+            'Toplam Harcama',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _formatCurrency(data.totalSpending),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+              letterSpacing: -1,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: MetricCard(
-                label: 'Kategori Başına Ort.',
-                value: data.categoryBreakdown.isNotEmpty
-                    ? _formatCurrency(
-                        data.totalSpending / data.categoryBreakdown.length)
-                    : '₺0',
-                color: Colors.purple,
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              _buildSummaryItem(
+                'Günlük Ort.',
+                _formatCurrency(dailyAverage),
+                Icons.calendar_today,
+                Colors.white,
               ),
+              Container(width: 1, height: 40, color: Colors.white24),
+              _buildSummaryItem(
+                'En Çok',
+                data.topCategory.isNotEmpty ? data.topCategory : '-',
+                Icons.star,
+                Colors.amberAccent,
+              ),
+              Container(width: 1, height: 40, color: Colors.white24),
+              _buildSummaryItem(
+                'Kategori',
+                '${data.categoryBreakdown.length} Adet',
+                Icons.category,
+                Colors.lightGreenAccent,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, color: color.withValues(alpha: 0.8), size: 20),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white, 
+              fontWeight: FontWeight.bold,
+              fontSize: 13
             ),
-          ],
-        ),
-      ],
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white60, fontSize: 11),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 
@@ -247,15 +292,13 @@ class _SpendingTabState extends State<SpendingTab> {
     final theme = Theme.of(context);
 
     if (data.categoryBreakdown.isEmpty) {
-      return Card(
+      return Center(
         child: Padding(
           padding: const EdgeInsets.all(32.0),
-          child: Center(
-            child: Text(
-              'Bu dönem için harcama bulunmamaktadır',
-              style: TextStyle(
-                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-              ),
+          child: Text(
+            'Bu dönem için harcama bulunmamaktadır',
+            style: TextStyle(
+              color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
             ),
           ),
         ),
@@ -282,60 +325,55 @@ class _SpendingTabState extends State<SpendingTab> {
       colorIndex++;
     });
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Kategori Dağılımı',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Kategori Dağılımı',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                if (_selectedCategory != null)
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _selectedCategory = null;
-                      });
-                    },
-                    child: const Text('Temizle'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 300,
-              child: InteractivePieChart(
-                data: data.categoryBreakdown,
-                colors: colors,
-                centerSpaceRadius: 50,
-                radius: 100,
-                showPercentage: true,
-                enableTouch: true,
-                onSectionTap: (category, value) {
-                  setState(() {
-                    _selectedCategory =
-                        _selectedCategory == category ? null : category;
-                  });
-                },
               ),
-            ),
-            if (_selectedCategory != null) ...[
-              const SizedBox(height: 16),
-              _buildSelectedCategoryDetails(_selectedCategory!),
+              if (_selectedCategory != null)
+                TextButton.icon(
+                  onPressed: () => setState(() => _selectedCategory = null),
+                  icon: const Icon(Icons.clear, size: 16),
+                  label: const Text('Seçimi Kaldır'),
+                ),
             ],
-
-            const SizedBox(height: 16),
-            _buildLegend(colors),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 320,
+          child: InteractivePieChart(
+            data: data.categoryBreakdown,
+            colors: colors,
+            centerSpaceRadius: 60,
+            radius: 110,
+            showPercentage: true,
+            enableTouch: true,
+            onSectionTap: (category, value) {
+              setState(() {
+                _selectedCategory =
+                    _selectedCategory == category ? null : category;
+              });
+            },
+          ),
+        ),
+        if (_selectedCategory != null) ...[
+          const SizedBox(height: 16),
+          _buildSelectedCategoryDetails(_selectedCategory!),
+        ] else ...[
+            const SizedBox(height: 24),
+            _buildLegend(colors),
+        ],
+      ],
     );
   }
 
@@ -565,155 +603,170 @@ class _SpendingTabState extends State<SpendingTab> {
     final sortedCategories = data.categoryBreakdown.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Kategori Detayları',
-              style: theme.textTheme.titleMedium?.copyWith(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Text(
+            'Harcama Detayları',
+             style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
-            ),
-            const SizedBox(height: 16),
+          ),
+        ),
+        ...sortedCategories.asMap().entries.map((entry) {
+          final index = entry.key;
+          final categoryEntry = entry.value;
+          final category = categoryEntry.key;
+          final amount = categoryEntry.value;
+          final percentage = data.totalSpending > 0
+              ? (amount / data.totalSpending) * 100
+              : 0.0;
 
-            ...sortedCategories.asMap().entries.map((entry) {
-              final index = entry.key;
-              final categoryEntry = entry.value;
-              final category = categoryEntry.key;
-              final amount = categoryEntry.value;
-              final percentage = data.totalSpending > 0
-                  ? (amount / data.totalSpending) * 100
-                  : 0.0;
+          final color = categoryColors[category] ??
+              Colors.primaries[index % Colors.primaries.length];
+          final budgetComparison = data.budgetComparisons[category];
 
-              final color = categoryColors[category] ??
-                  Colors.primaries[index % Colors.primaries.length];
-              final budgetComparison = data.budgetComparisons[category];
+          final Map<String, IconData> iconMap = {
+            'Market': Icons.shopping_cart,
+            'Restoran': Icons.restaurant,
+            'Yiyecek': Icons.fastfood,
+            'Ulaşım': Icons.directions_car,
+            'Akaryakıt': Icons.local_gas_station,
+            'Faturalar': Icons.receipt,
+            'Elektrik': Icons.electric_bolt,
+            'Su': Icons.water_drop,
+            'Doğalgaz': Icons.fire_hydrant_alt,
+            'İnternet': Icons.wifi,
+            'Telefon': Icons.phone_android,
+            'Kira': Icons.home,
+            'Aidat': Icons.apartment,
+            'Sağlık': Icons.medical_services,
+            'Spor': Icons.fitness_center,
+            'Eğlence': Icons.movie,
+            'Giyim': Icons.checkroom,
+            'Kozmetik': Icons.face,
+            'Elektronik': Icons.devices,
+            'Eğitim': Icons.school,
+            'Hediye': Icons.card_giftcard,
+            'Tatil': Icons.flight,
+            'BES': Icons.savings,
+            'Yatırım': Icons.trending_up,
+            'Diğer': Icons.grid_view,
+          };
+          final IconData categoryIcon = iconMap[category] ?? Icons.category;
 
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _selectedCategory =
-                        _selectedCategory == category ? null : category;
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: _selectedCategory == category
-                        ? (isDark
-                            ? color.withValues(alpha: 0.2)
-                            : color.withValues(alpha: 0.1))
-                        : (isDark ? Colors.grey[850] : Colors.grey[50]),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _selectedCategory == category
-                          ? color
-                          : Colors.transparent,
-                      width: 2,
+          return InkWell(
+            onTap: () {
+              setState(() {
+                _selectedCategory =
+                    _selectedCategory == category ? null : category;
+              });
+            },
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: _selectedCategory == category
+                    ? color.withValues(alpha: 0.1)
+                    : theme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: _selectedCategory == category
+                    ? Border.all(color: color, width: 1.5)
+                    : null,
+                boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  child: Column(
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.2),
-                              shape: BoxShape.circle,
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(categoryIcon, color: color, size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              category,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
                             ),
-                            child: Center(
-                              child: Text(
-                                '${index + 1}',
+                            const SizedBox(height: 4),
+                             Text(
+                                '${percentage.toStringAsFixed(1)}% pay',
                                 style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: color,
+                                  fontSize: 12,
+                                  color: theme.textTheme.bodySmall?.color,
                                 ),
                               ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatCurrency(amount),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  category,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '${percentage.toStringAsFixed(1)}% toplam harcamadan',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _formatCurrency(amount),
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.red,
-                                ),
+                          if (budgetComparison != null) ...[
+                            const SizedBox(height: 4),
+                             Text(
+                              budgetComparison.exceeded
+                                  ? 'Bütçe Aşıldı'
+                                  : 'Bütçe Uygun',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: budgetComparison.exceeded
+                                    ? Colors.red
+                                    : Colors.green,
+                                fontWeight: FontWeight.w600,
                               ),
-                              if (budgetComparison != null) ...[
-                                const SizedBox(height: 2),
-                                Text(
-                                  budgetComparison.exceeded
-                                      ? 'Bütçe aşıldı!'
-                                      : '${budgetComparison.remaining.toStringAsFixed(0)} ₺ kaldı',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: budgetComparison.exceeded
-                                        ? Colors.red
-                                        : Colors.green,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
+                            ),
+                          ],
                         ],
                       ),
-                      if (budgetComparison != null) ...[
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: (budgetComparison.usagePercentage / 100)
-                                .clamp(0.0, 1.0),
-                            minHeight: 6,
-                            backgroundColor:
-                                isDark ? Colors.grey[800] : Colors.grey[200],
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              budgetComparison.exceeded
-                                  ? Colors.red
-                                  : Colors.green,
-                            ),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: percentage / 100,
+                      minHeight: 6,
+                      backgroundColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                      color: color,
+                    ),
+                  ),
+                   if (_selectedCategory == category) ...[
+                      const SizedBox(height: 16),
+                      _buildSelectedCategoryDetails(category),
+                    ],
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
     );
   }
 

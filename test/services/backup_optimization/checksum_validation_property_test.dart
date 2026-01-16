@@ -6,8 +6,17 @@ import 'package:parion/services/backup_optimization/validation_service.dart';
 import 'package:parion/models/backup_optimization/enhanced_backup_metadata.dart';
 import 'package:parion/models/backup_optimization/backup_enums.dart' as enums;
 import '../../property_test_utils.dart';
+import '../../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('ValidationService - Checksum Validation Property Tests', () {
     late ValidationService validationService;
 

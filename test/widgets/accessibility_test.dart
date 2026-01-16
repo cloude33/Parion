@@ -2,8 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/widgets/statistics/accessibility_helpers.dart';
 import 'package:parion/models/cash_flow_data.dart';
+import '../test_setup.dart';
 
 void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
   group('StatisticsAccessibility', () {
     group('currencyLabel', () {
       test('formats positive amount correctly', () {
