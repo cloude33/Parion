@@ -198,9 +198,9 @@ class ResponsiveHelper {
   static double getBottomPadding(BuildContext context) {
     return getResponsiveValue(
       context: context,
-      mobile: 80,
-      tablet: 100,
-      desktop: 120,
+      mobile: 16,
+      tablet: 24,
+      desktop: 32,
     );
   }
 

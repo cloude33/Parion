@@ -19,7 +19,7 @@ class ResponsiveStatisticsLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     final padding = ResponsiveHelper.getResponsivePadding(context);
     final spacing = ResponsiveHelper.getSpacing(context);
-    final bottom = bottomPadding ?? ResponsiveHelper.getBottomPadding(context);
+    final bottom = bottomPadding ?? 16.0; // Sabit bir değer kullan
 
     // Use grid layout for tablet/desktop
     if (useGrid && ResponsiveHelper.shouldUseSideBySideLayout(context)) {
@@ -36,16 +36,21 @@ class ResponsiveStatisticsLayout extends StatelessWidget {
     double spacing,
     double bottom,
   ) {
-    return ListView.separated(
+    return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         padding.left,
         padding.top,
         padding.right,
         bottom,
       ),
-      itemCount: children.length,
-      separatorBuilder: (context, index) => SizedBox(height: spacing),
-      itemBuilder: (context, index) => children[index],
+      child: Column(
+        children: [
+          for (int i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i < children.length - 1) SizedBox(height: spacing),
+          ],
+        ],
+      ),
     );
   }
 
@@ -56,22 +61,37 @@ class ResponsiveStatisticsLayout extends StatelessWidget {
     double bottom,
   ) {
     final columns = ResponsiveHelper.getGridColumns(context);
+    
+    // Group children into rows
+    final rows = <List<Widget>>[];
+    for (int i = 0; i < children.length; i += columns) {
+      final end = (i + columns < children.length) ? i + columns : children.length;
+      rows.add(children.sublist(i, end));
+    }
 
-    return GridView.builder(
+    return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         padding.left,
         padding.top,
         padding.right,
         bottom,
       ),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: columns,
-        crossAxisSpacing: spacing,
-        mainAxisSpacing: spacing,
-        childAspectRatio: ResponsiveHelper.getCardAspectRatio(context),
+      child: Column(
+        children: [
+          for (int i = 0; i < rows.length; i++) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (int j = 0; j < rows[i].length; j++) ...[
+                  Expanded(child: rows[i][j]),
+                  if (j < rows[i].length - 1) SizedBox(width: spacing),
+                ],
+              ],
+            ),
+            if (i < rows.length - 1) SizedBox(height: spacing),
+          ],
+        ],
       ),
-      itemCount: children.length,
-      itemBuilder: (context, index) => children[index],
     );
   }
 }

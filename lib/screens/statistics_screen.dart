@@ -183,21 +183,16 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       body: SafeArea(
         child: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).appBarTheme.backgroundColor,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
+            Material(
+              elevation: 4,
+              color: Theme.of(context).appBarTheme.backgroundColor ??
+                  (isDark ? const Color(0xFF1E1E24) : Colors.white),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0, vertical: 8.0),
                     child: _buildHeaderTimeFilter(),
                   ),
                   AdaptiveTabBar(

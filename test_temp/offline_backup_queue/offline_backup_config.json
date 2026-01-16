@@ -1,1 +1,0 @@
-{"maxQueueSize":100,"maxRetryAttempts":5,"retryDelay":300000,"maxLocalStorageMB":1000,"autoCleanupOnSync":true,"priorityCategories":["transactions","wallets"]}
