@@ -1,6 +1,8 @@
 import 'package:get_it/get_it.dart';
 import '../../services/auth_service.dart';
 import '../../services/backup_service.dart';
+import '../../services/data_service.dart';
+import '../../services/statistics_service.dart';
 import '../../services/auth/auth_orchestrator.dart';
 import '../../services/auth/interfaces/auth_orchestrator_interface.dart';
 import '../../services/auth/interfaces/session_manager_interface.dart';
@@ -71,11 +73,27 @@ Future<void> setupDependencyInjection() async {
     getIt.registerLazySingleton<BackupService>(() => BackupService());
   }
 
+  // Data services
+  if (!getIt.isRegistered<DataService>()) {
+    getIt.registerLazySingleton<DataService>(() => DataService());
+  }
+
+  // Statistics services
+  if (!getIt.isRegistered<StatisticsService>()) {
+    getIt.registerLazySingleton<StatisticsService>(() => StatisticsService());
+  }
+
   // Initialize services that need async initialization
   try {
     getIt<AppLogger>().init();
   } catch (e) {
     // Logger might already be initialized
+  }
+
+  try {
+    await getIt<DataService>().init();
+  } catch (e) {
+    // Service might already be initialized
   }
 
   try {
@@ -115,6 +133,12 @@ extension GetItExtensions on GetIt {
 
   /// Get BackupService instance
   BackupService get backupService => get<BackupService>();
+
+  /// Get DataService instance
+  DataService get dataService => get<DataService>();
+
+  /// Get StatisticsService instance
+  StatisticsService get statisticsService => get<StatisticsService>();
 
   /// Get AppLogger instance
   AppLogger get logger => get<AppLogger>();
