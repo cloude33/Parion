@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import '../models/credit_card.dart';
 import '../models/credit_card_transaction.dart';
+import '../models/category.dart';
 import '../services/credit_card_service.dart';
+import '../services/data_service.dart';
 import '../utils/image_helper.dart';
 
 class AddCreditCardTransactionScreen extends StatefulWidget {
@@ -25,6 +27,7 @@ class _AddCreditCardTransactionScreenState
     extends State<AddCreditCardTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final CreditCardService _cardService = CreditCardService();
+  final DataService _dataService = DataService();
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'tr_TR',
     symbol: '₺',
@@ -36,23 +39,12 @@ class _AddCreditCardTransactionScreenState
 
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'Market';
+  String? _selectedSubCategory;
   bool _isLoading = false;
   double _availableCredit = 0;
   double _installmentAmount = 0;
   final List<String> _images = [];
-  final List<String> _categories = [
-    'Market',
-    'Restoran',
-    'Giyim',
-    'Elektronik',
-    'Sağlık',
-    'Ulaşım',
-    'Eğlence',
-    'Faturalar',
-    'Yakıt',
-    'Seyahat',
-    'Diğer',
-  ];
+  List<Category> _categories = [];
 
   @override
   void initState() {
@@ -64,7 +56,30 @@ class _AddCreditCardTransactionScreenState
     _amountController.addListener(_calculateInstallmentAmount);
     _installmentCountController.addListener(_calculateInstallmentAmount);
 
-    _loadAvailableCredit();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    await _loadCategories();
+    await _loadAvailableCredit();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _dataService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          // Set default category if available
+          if (_categories.isNotEmpty &&
+              !_categories.any((c) => c.name == _selectedCategory)) {
+            _selectedCategory = _categories.first.name;
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading categories: $e');
+    }
   }
 
   @override
@@ -87,7 +102,8 @@ class _AddCreditCardTransactionScreenState
   }
 
   void _calculateInstallmentAmount() {
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
+    final amount =
+        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
     final installments = int.tryParse(_installmentCountController.text) ?? 1;
 
     if (amount > 0 && installments > 0) {
@@ -264,23 +280,69 @@ class _AddCreditCardTransactionScreenState
   }
 
   Widget _buildCategoryField() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedCategory,
-      decoration: const InputDecoration(
-        labelText: 'Kategori',
-        prefixIcon: Icon(Icons.category),
-        border: OutlineInputBorder(),
-      ),
-      items: _categories.map((category) {
-        return DropdownMenuItem(value: category, child: Text(category));
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) {
-          setState(() {
-            _selectedCategory = value;
-          });
-        }
-      },
+    if (_categories.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    Category? selectedCategoryObj;
+    try {
+      selectedCategoryObj = _categories.firstWhere(
+        (c) => c.name == _selectedCategory,
+      );
+    } catch (_) {}
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          initialValue: _selectedCategory,
+          decoration: const InputDecoration(
+            labelText: 'Kategori',
+            prefixIcon: Icon(Icons.category),
+            border: OutlineInputBorder(),
+          ),
+          items: _categories.map((category) {
+            return DropdownMenuItem(
+              value: category.name,
+              child: Row(
+                children: [
+                  Icon(category.icon, color: category.color, size: 20),
+                  const SizedBox(width: 8),
+                  Text(category.name),
+                ],
+              ),
+            );
+          }).toList(),
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedCategory = value;
+                _selectedSubCategory = null;
+              });
+            }
+          },
+        ),
+        if (selectedCategoryObj != null &&
+            selectedCategoryObj.subCategories.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedSubCategory,
+            decoration: const InputDecoration(
+              labelText: 'Alt Kategori',
+              prefixIcon: Icon(Icons.subdirectory_arrow_right),
+              border: OutlineInputBorder(),
+            ),
+            items: selectedCategoryObj.subCategories.map((sub) {
+              return DropdownMenuItem(value: sub, child: Text(sub));
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedSubCategory = value;
+              });
+            },
+          ),
+        ],
+      ],
     );
   }
 
@@ -362,7 +424,8 @@ class _AddCreditCardTransactionScreenState
   }
 
   Widget _buildAvailableCreditWarning() {
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
+    final amount =
+        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
 
     if (amount > _availableCredit) {
       return Card(
@@ -584,6 +647,7 @@ class _AddCreditCardTransactionScreenState
         description: _descriptionController.text.trim(),
         transactionDate: _selectedDate,
         category: _selectedCategory,
+        subCategory: _selectedSubCategory,
         installmentCount: int.parse(_installmentCountController.text),
         installmentsPaid: 0,
         createdAt: DateTime.now(),
@@ -729,5 +793,3 @@ class _AddCreditCardTransactionScreenState
     });
   }
 }
-
-

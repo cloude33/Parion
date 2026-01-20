@@ -70,6 +70,11 @@ class LoanInstallment {
   final DateTime dueDate;
   final DateTime? paymentDate;
   final bool isPaid;
+  final double principalAmount; // Anapara
+  final double interestAmount; // Faiz
+  final double kkdfAmount; // Fon
+  final double bsmvAmount; // Vergi
+  final double remainingPrincipalAmount; // Kalan Anapara
 
   LoanInstallment({
     required this.installmentNumber,
@@ -77,6 +82,11 @@ class LoanInstallment {
     required this.dueDate,
     this.paymentDate,
     this.isPaid = false,
+    this.principalAmount = 0.0,
+    this.interestAmount = 0.0,
+    this.kkdfAmount = 0.0,
+    this.bsmvAmount = 0.0,
+    this.remainingPrincipalAmount = 0.0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -85,6 +95,11 @@ class LoanInstallment {
     'dueDate': dueDate.toIso8601String(),
     'paymentDate': paymentDate?.toIso8601String(),
     'isPaid': isPaid,
+    'principalAmount': principalAmount,
+    'interestAmount': interestAmount,
+    'kkdfAmount': kkdfAmount,
+    'bsmvAmount': bsmvAmount,
+    'remainingPrincipalAmount': remainingPrincipalAmount,
   };
 
   factory LoanInstallment.fromJson(Map<String, dynamic> json) =>
@@ -96,5 +111,10 @@ class LoanInstallment {
             ? DateTime.parse(json['paymentDate'])
             : null,
         isPaid: json['isPaid'] ?? false,
+        principalAmount: (json['principalAmount'] as num?)?.toDouble() ?? 0.0,
+        interestAmount: (json['interestAmount'] as num?)?.toDouble() ?? 0.0,
+        kkdfAmount: (json['kkdfAmount'] as num?)?.toDouble() ?? 0.0,
+        bsmvAmount: (json['bsmvAmount'] as num?)?.toDouble() ?? 0.0,
+        remainingPrincipalAmount: (json['remainingPrincipalAmount'] as num?)?.toDouble() ?? 0.0,
       );
 }

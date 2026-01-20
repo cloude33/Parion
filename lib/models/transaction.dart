@@ -13,6 +13,7 @@ class Transaction {
   final String? parentTransactionId;
   final String? recurringTransactionId;
   final bool isIncome;
+  final String? subCategory;
 
   Transaction({
     required this.id,
@@ -29,6 +30,7 @@ class Transaction {
     this.parentTransactionId,
     this.recurringTransactionId,
     this.isIncome = false,
+    this.subCategory,
   });
 
   Map<String, dynamic> toJson() => {
@@ -46,6 +48,7 @@ class Transaction {
     'parentTransactionId': parentTransactionId,
     'recurringTransactionId': recurringTransactionId,
     'isIncome': isIncome,
+    'subCategory': subCategory,
   };
 
   factory Transaction.fromJson(Map<String, dynamic> json) => Transaction(
@@ -63,6 +66,7 @@ class Transaction {
     parentTransactionId: json['parentTransactionId'],
     recurringTransactionId: json['recurringTransactionId'],
     isIncome: json['isIncome'] ?? false,
+    subCategory: json['subCategory'],
   );
 
   Transaction copyWith({
@@ -80,6 +84,7 @@ class Transaction {
     String? parentTransactionId,
     String? recurringTransactionId,
     bool? isIncome,
+    String? subCategory,
   }) {
     return Transaction(
       id: id ?? this.id,
@@ -97,6 +102,7 @@ class Transaction {
       recurringTransactionId:
           recurringTransactionId ?? this.recurringTransactionId,
       isIncome: isIncome ?? this.isIncome,
+      subCategory: subCategory ?? this.subCategory,
     );
   }
 }

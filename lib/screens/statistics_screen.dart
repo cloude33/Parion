@@ -24,13 +24,7 @@ import 'manage_goals_screen.dart';
 import '../utils/cache_manager.dart';
 import '../widgets/statistics/interactive_pie_chart.dart';
 
-enum TimeFilter {
-  daily,
-  weekly,
-  monthly,
-  yearly,
-  custom,
-}
+enum TimeFilter { daily, weekly, monthly, yearly, custom }
 
 class StatisticsScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -145,12 +139,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     final regularFiltered = widget.transactions
         .where(
           (t) =>
-              t.date.isAfter(
-                startDate.subtract(const Duration(seconds: 1)),
-              ) &&
-              t.date.isBefore(
-                endDate.add(const Duration(seconds: 1)),
-              ) &&
+              t.date.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
+              t.date.isBefore(endDate.add(const Duration(seconds: 1))) &&
               (_selectedWalletId == 'all' || t.walletId == _selectedWalletId) &&
               (_selectedCategory == 'all' || t.category == _selectedCategory) &&
               (_selectedTransactionType == 'all' ||
@@ -185,14 +175,17 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           children: [
             Material(
               elevation: 4,
-              color: Theme.of(context).appBarTheme.backgroundColor ??
+              color:
+                  Theme.of(context).appBarTheme.backgroundColor ??
                   (isDark ? const Color(0xFF1E1E24) : Colors.white),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 8.0),
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
                     child: _buildHeaderTimeFilter(),
                   ),
                   AdaptiveTabBar(
@@ -242,10 +235,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   Widget _buildSpendingTab() {
     final period = _getCurrentPeriod();
 
-    return SpendingTab(
-      startDate: period.start,
-      endDate: period.end,
-    );
+    return SpendingTab(startDate: period.start, endDate: period.end);
   }
 
   Widget _buildCreditTab() {
@@ -260,23 +250,31 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
-
-
-
-
-
   Widget _buildLoanTrackingCard() {
     if (widget.loans.isEmpty) {
-      return _buildEmptyState('Aktif kredi bulunmuyor', Icons.check_circle, Colors.green);
+      return _buildEmptyState(
+        'Aktif kredi bulunmuyor',
+        Icons.check_circle,
+        Colors.green,
+      );
     }
-    
-    final activeLoans = widget.loans.where((l) => l.remainingAmount > 0).toList();
+
+    final activeLoans = widget.loans
+        .where((l) => l.remainingAmount > 0)
+        .toList();
     if (activeLoans.isEmpty) {
-      return _buildEmptyState('Tebrikler! Tüm krediler ödendi', Icons.celebration, Colors.amber);
+      return _buildEmptyState(
+        'Tebrikler! Tüm krediler ödendi',
+        Icons.celebration,
+        Colors.amber,
+      );
     }
 
     // İstatistikler
-    final totalRemaining = activeLoans.fold(0.0, (sum, l) => sum + l.remainingAmount);
+    final totalRemaining = activeLoans.fold(
+      0.0,
+      (sum, l) => sum + l.remainingAmount,
+    );
     final totalMonthly = activeLoans.fold(0.0, (sum, l) {
       final next = l.installments.where((i) => !i.isPaid).firstOrNull;
       return sum + (next?.amount ?? 0);
@@ -287,7 +285,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         // Özet Kartı
         _buildLoanSummaryCard(totalRemaining, totalMonthly, activeLoans.length),
         const SizedBox(height: 24),
-        
+
         // Liste Başlığı
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -299,7 +297,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -317,7 +318,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Kredi Listesi
         ...activeLoans.map((loan) => _buildEnhancedLoanCard(loan)),
       ],
@@ -352,12 +353,19 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
-  Widget _buildLoanSummaryCard(double totalDebt, double monthlyPayment, int count) {
+  Widget _buildLoanSummaryCard(
+    double totalDebt,
+    double monthlyPayment,
+    int count,
+  ) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [Colors.indigo.shade800, Colors.indigo.shade600], // Premium Gradient
+          colors: [
+            Colors.indigo.shade800,
+            Colors.indigo.shade600,
+          ], // Premium Gradient
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -403,7 +411,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.show_chart, color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.show_chart,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ],
           ),
@@ -475,24 +487,24 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     final progress = loan.totalAmount > 0
         ? (loan.totalAmount - loan.remainingAmount) / loan.totalAmount
         : 0.0;
-    
-    final nextInstallment = loan.installments
-        .where((i) => !i.isPaid)
-        .toList()
+
+    final nextInstallment = loan.installments.where((i) => !i.isPaid).toList()
       ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
-      
+
     final upcoming = nextInstallment.firstOrNull;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Kredi tipine göre ikon belirleme
     IconData loanIcon = Icons.request_quote;
     Color iconBgColor = Colors.orange;
-    
+
     final nameLower = loan.name.toLowerCase();
     if (nameLower.contains('konut') || nameLower.contains('ev')) {
       loanIcon = Icons.home;
       iconBgColor = Colors.purple;
-    } else if (nameLower.contains('taşıt') || nameLower.contains('araç') || nameLower.contains('araba')) {
+    } else if (nameLower.contains('taşıt') ||
+        nameLower.contains('araç') ||
+        nameLower.contains('araba')) {
       loanIcon = Icons.directions_car;
       iconBgColor = Colors.blue;
     } else if (nameLower.contains('ihtiyaç')) {
@@ -573,7 +585,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               ],
             ),
           ),
-          
+
           // Progress Bar
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -606,16 +618,18 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   child: LinearProgressIndicator(
                     value: progress,
                     minHeight: 8,
-                    backgroundColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                    backgroundColor: isDark
+                        ? Colors.grey[800]
+                        : Colors.grey[100],
                     color: iconBgColor,
                   ),
                 ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 20),
-          
+
           // Alt Detay (Sıradaki Taksit)
           if (upcoming != null)
             Container(
@@ -629,9 +643,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, 
-                    size: 16, 
-                    color: isDark ? Colors.grey[400] : Colors.grey[600]
+                  Icon(
+                    Icons.calendar_today_outlined,
+                    size: 16,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -657,8 +672,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       ),
     );
   }
-
-
 
   Widget _buildAssetsTab() {
     final assetWallets = widget.wallets
@@ -1002,8 +1015,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           scoreColor = Colors.red;
         }
 
-        final recommendation =
-            score.recommendations.isNotEmpty ? score.recommendations.first : null;
+        final recommendation = score.recommendations.isNotEmpty
+            ? score.recommendations.first
+            : null;
 
         return _buildCard(
           title: 'Finansal Sağlık Skoru',
@@ -1028,10 +1042,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     Expanded(
                       child: Text(
                         '0-100 arası skor: 80+ çok iyi, 60-80 iyi, 40-60 geliştirmeye açık',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
                     ),
                   ],
@@ -1101,7 +1112,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                           const SizedBox(height: 4),
                           Text(
                             'Likidite Oranı: ${analysis.liquidityRatio.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
                           ),
                         ],
                       ),
@@ -1113,14 +1127,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   Text(
                     'Öneri',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    recommendation,
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  Text(recommendation, style: const TextStyle(fontSize: 12)),
                 ],
               ],
             ),
@@ -1148,8 +1159,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         final expense = comparison.expense;
         final net = comparison.netCashFlow;
 
-        Widget buildMetricRow(String label, ComparisonMetric metric,
-            {bool higherIsBetter = true}) {
+        Widget buildMetricRow(
+          String label,
+          ComparisonMetric metric, {
+          bool higherIsBetter = true,
+        }) {
           final change = metric.percentageChange;
           final isPositive = change >= 0;
           final isGood = higherIsBetter ? isPositive : !isPositive;
@@ -1161,10 +1175,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  child: Text(label, style: const TextStyle(fontSize: 13)),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -1178,10 +1189,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     ),
                     Text(
                       '${isPositive ? '+' : ''}${change.toStringAsFixed(1)}% önceki döneme göre',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: color,
-                      ),
+                      style: TextStyle(fontSize: 11, color: color),
                     ),
                   ],
                 ),
@@ -1192,8 +1200,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
         return _buildCard(
           title: 'Dönem Karşılaştırması',
-          subtitle:
-              '${comparison.period1Label} vs ${comparison.period2Label}',
+          subtitle: '${comparison.period1Label} vs ${comparison.period2Label}',
           content: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -1210,10 +1217,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     Expanded(
                       child: Text(
                         'Seçili dönemi bir önceki eş dönemle karşılaştırır.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
                     ),
                   ],
@@ -1236,10 +1240,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return StatisticsFutureBuilder<GoalComparisonSummary>(
       future: _statisticsService.compareGoals(),
       builder: (context, summary) {
-        final achievedRate =
-            summary.overallAchievementRate.toStringAsFixed(1);
-        final insight =
-            summary.insights.isNotEmpty ? summary.insights.first : null;
+        final achievedRate = summary.overallAchievementRate.toStringAsFixed(1);
+        final insight = summary.insights.isNotEmpty
+            ? summary.insights.first
+            : null;
 
         return _buildCard(
           title: 'Hedef Performansı',
@@ -1268,19 +1272,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.flag,
-                      size: 20,
-                      color: Colors.deepPurple,
-                    ),
+                    const Icon(Icons.flag, size: 20, color: Colors.deepPurple),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Tasarruf / yatırım hedeflerinizin sayısı ve tamamlama oranı.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
                     ),
                   ],
@@ -1364,10 +1361,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   children: [
                     Text(
                       'Genel Tamamlama Oranı',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                     ),
                     Text(
                       '%$achievedRate',
@@ -1386,8 +1380,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   color: summary.overallAchievementRate >= 70
                       ? Colors.green
                       : (summary.overallAchievementRate >= 40
-                          ? Colors.orange
-                          : Colors.red),
+                            ? Colors.orange
+                            : Colors.red),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 if (insight != null) ...[
@@ -1395,14 +1389,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   Text(
                     'Özet',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    insight,
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                  Text(insight, style: const TextStyle(fontSize: 12)),
                 ],
               ],
             ),
@@ -1428,8 +1419,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           if (benchmark.performanceRating == PerformanceRating.excellent ||
               benchmark.performanceRating == PerformanceRating.good) {
             color = Colors.green;
-          } else if (benchmark.performanceRating ==
-                  PerformanceRating.below ||
+          } else if (benchmark.performanceRating == PerformanceRating.below ||
               benchmark.performanceRating == PerformanceRating.poor) {
             color = Colors.red;
           } else {
@@ -1442,10 +1432,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(
-                    label,
-                    style: const TextStyle(fontSize: 13),
-                  ),
+                  child: Text(label, style: const TextStyle(fontSize: 13)),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
@@ -1459,10 +1446,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     ),
                     Text(
                       '${isPositive ? '+' : ''}${deviation.toStringAsFixed(1)}% ortalamaya göre',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: color,
-                      ),
+                      style: TextStyle(fontSize: 11, color: color),
                     ),
                   ],
                 ),
@@ -1481,19 +1465,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               children: [
                 Row(
                   children: [
-                    const Icon(
-                      Icons.insights,
-                      size: 20,
-                      color: Colors.teal,
-                    ),
+                    const Icon(Icons.insights, size: 20, color: Colors.teal),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Net nakit akışınız, geçmiş ortalamalara göre ne durumda gösterir.',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                       ),
                     ),
                   ],
@@ -2286,11 +2263,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     final expenseCategories = <String, double>{};
     for (var item in _filteredTransactions) {
       if (item is Transaction && item.type == 'expense') {
-        expenseCategories[item.category] =
-            (expenseCategories[item.category] ?? 0) + item.amount;
+        final key = item.subCategory != null
+            ? '${item.category} > ${item.subCategory}'
+            : item.category;
+        expenseCategories[key] = (expenseCategories[key] ?? 0) + item.amount;
       } else if (item is CreditCardTransaction) {
-        expenseCategories[item.category] =
-            (expenseCategories[item.category] ?? 0) + item.amount;
+        final key = item.subCategory != null
+            ? '${item.category} > ${item.subCategory}'
+            : item.category;
+        expenseCategories[key] = (expenseCategories[key] ?? 0) + item.amount;
       }
     }
 
@@ -2349,16 +2330,21 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   IconData _getCategoryIcon(String categoryName) {
+    String searchName = categoryName;
+    if (categoryName.contains(' > ')) {
+      searchName = categoryName.split(' > ')[0];
+    }
+
     if (_categories.isEmpty) {
       final cat = defaultCategories.firstWhere(
-        (c) => c.name == categoryName,
+        (c) => c.name == searchName,
         orElse: () => defaultCategories.first,
       );
       return cat.icon;
     }
 
     final cat = _categories.firstWhere(
-      (c) => c.name == categoryName,
+      (c) => c.name == searchName,
       orElse: () =>
           _categories.isNotEmpty ? _categories.first : defaultCategories.first,
     );
@@ -2845,8 +2831,6 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     }
   }
 
-
-
   Widget _buildPaymentMethodDistributionCard() {
     final paymentMethodExpenses = <String, double>{};
     final paymentMethodColors = <String, Color>{};
@@ -2870,34 +2854,34 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         final walletName = wallet.name;
         paymentMethodExpenses[walletName] =
             (paymentMethodExpenses[walletName] ?? 0) + item.amount;
-        
+
         try {
           paymentMethodColors[walletName] = Color(int.parse(wallet.color));
         } catch (_) {
           paymentMethodColors[walletName] = Colors.grey;
         }
-            
+
         totalExpense += item.amount;
       } else if (item is CreditCardTransaction) {
         // Kredi kartı wallet'ları cc_cardId formatında saklanıyor
         final ccWalletId = 'cc_${item.cardId}';
         var wallet = widget.wallets.firstWhere(
-           (w) => w.id == ccWalletId,
-           orElse: () => Wallet(
-             id: '',
-             name: '',
-             balance: 0,
-             type: 'credit_card',
-             color: '0xFFF44336',
-             icon: 'credit_card',
-             creditLimit: 0.0,
-           ),
+          (w) => w.id == ccWalletId,
+          orElse: () => Wallet(
+            id: '',
+            name: '',
+            balance: 0,
+            type: 'credit_card',
+            color: '0xFFF44336',
+            icon: 'credit_card',
+            creditLimit: 0.0,
+          ),
         );
 
         // Eğer wallet bulunamadıysa, kredi kartı adını doğrudan CreditCardService'den al
         String walletName;
         Color walletColor;
-        
+
         if (wallet.name.isEmpty) {
           // Asenkron olmayan alternatif olarak, cardId'den varsayılan isim oluştur
           // veya widget'a geçirilen creditCardTransactions'dan bilgi al
@@ -2952,8 +2936,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Column(
                 children: sortedMethods.map((entry) {
-                  final percentage =
-                      totalExpense > 0 ? (entry.value / totalExpense) * 100 : 0.0;
+                  final percentage = totalExpense > 0
+                      ? (entry.value / totalExpense) * 100
+                      : 0.0;
                   final color = paymentMethodColors[entry.key] ?? Colors.grey;
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),

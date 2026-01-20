@@ -7,6 +7,7 @@ class Category {
   final Color color;
   final String type;
   final bool isBank;
+  final List<String> subCategories;
 
   Category({
     required this.id,
@@ -15,6 +16,7 @@ class Category {
     required this.color,
     required this.type,
     this.isBank = false,
+    this.subCategories = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,7 @@ class Category {
       'color': color.toARGB32(),
       'type': type,
       'isBank': isBank,
+      'subCategories': subCategories,
     };
   }
 
@@ -37,6 +40,11 @@ class Category {
       color: Color(json['color'] as int),
       type: json['type'] as String,
       isBank: json['isBank'] as bool? ?? false,
+      subCategories:
+          (json['subCategories'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
     );
   }
 
@@ -150,6 +158,7 @@ class Category {
 }
 
 final List<Category> _defaultCategories = [
+  // ===== GELİR KATEGORİLERİ =====
   Category(
     id: 'i1',
     name: 'Maaş',
@@ -185,6 +194,49 @@ final List<Category> _defaultCategories = [
     color: Colors.lightGreen,
     type: 'income',
   ),
+  Category(
+    id: 'i6',
+    name: 'Harçlık',
+    icon: Icons.savings,
+    color: Colors.orange,
+    type: 'income',
+  ),
+  Category(
+    id: 'i7',
+    name: 'Freelance',
+    icon: Icons.work_outline,
+    color: Colors.indigo,
+    type: 'income',
+  ),
+  Category(
+    id: 'i8',
+    name: 'İade',
+    icon: Icons.assignment_return,
+    color: Colors.cyan,
+    type: 'income',
+  ),
+  Category(
+    id: 'i9',
+    name: 'Satış',
+    icon: Icons.sell,
+    color: Colors.deepOrange,
+    type: 'income',
+  ),
+  Category(
+    id: 'i10',
+    name: 'Burs',
+    icon: Icons.school,
+    color: Colors.blue,
+    type: 'income',
+  ),
+  Category(
+    id: 'i11',
+    name: 'Kira Geliri',
+    icon: Icons.home_work,
+    color: Colors.brown,
+    type: 'income',
+  ),
+  // ===== GİDER KATEGORİLERİ =====
   Category(
     id: 'e1',
     name: 'Faturalar',
@@ -253,6 +305,100 @@ final List<Category> _defaultCategories = [
     name: 'Alışveriş',
     icon: Icons.shopping_cart,
     color: Colors.deepPurple,
+    type: 'expense',
+  ),
+  // Yeni Gider Kategorileri
+  Category(
+    id: 'e11',
+    name: 'Ulaşım',
+    icon: Icons.directions_car,
+    color: Colors.blueGrey,
+    type: 'expense',
+    subCategories: [
+      'Yakıt',
+      'Sigorta',
+      'Bakım',
+      'Otopark',
+      'MTV',
+      'HGS/OGS',
+      'Muayene',
+    ],
+  ),
+  Category(
+    id: 'e12',
+    name: 'ESHOT',
+    icon: Icons.directions_bus,
+    color: const Color(0xFF1565C0),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e13',
+    name: 'İZBAN',
+    icon: Icons.train,
+    color: const Color(0xFF7B1FA2),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e14',
+    name: 'Vergi',
+    icon: Icons.account_balance,
+    color: Colors.brown,
+    type: 'expense',
+  ),
+  Category(
+    id: 'e15',
+    name: 'BES',
+    icon: Icons.savings,
+    color: const Color(0xFF00695C),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e16',
+    name: 'Kira',
+    icon: Icons.home,
+    color: const Color(0xFF5D4037),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e17',
+    name: 'Abonelik',
+    icon: Icons.subscriptions,
+    color: const Color(0xFFE91E63),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e18',
+    name: 'Teknoloji',
+    icon: Icons.devices,
+    color: const Color(0xFF455A64),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e19',
+    name: 'Kişisel Bakım',
+    icon: Icons.spa,
+    color: const Color(0xFFEC407A),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e20',
+    name: 'Ev & Yaşam',
+    icon: Icons.home_repair_service,
+    color: const Color(0xFF8D6E63),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e21',
+    name: 'Evcil Hayvan',
+    icon: Icons.pets,
+    color: const Color(0xFFFF7043),
+    type: 'expense',
+  ),
+  Category(
+    id: 'e22',
+    name: 'Sigorta',
+    icon: Icons.security,
+    color: const Color(0xFF37474F),
     type: 'expense',
   ),
 ];

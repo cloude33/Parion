@@ -459,6 +459,95 @@ class DataService {
     await saveLoans(loans);
   }
 
+  /// Automatically updates loan installment statuses based on due dates.
+  /// Installments with due dates on or before today are marked as paid.
+  /// Also recalculates remainingAmount, remainingInstallments, and currentInstallment.
+  Future<void> updateLoanInstallmentStatuses() async {
+    final loans = await getLoans();
+    if (loans.isEmpty) {
+      debugPrint('updateLoanInstallmentStatuses: No loans found');
+      return;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    bool hasChanges = false;
+
+    debugPrint('updateLoanInstallmentStatuses: Processing ${loans.length} loans. Today: $today');
+
+    final updatedLoans = loans.map((loan) {
+      bool loanChanged = false;
+      
+      debugPrint('Loan "${loan.name}": ${loan.installments.length} installments, remainingAmount: ${loan.remainingAmount}');
+      
+      final updatedInstallments = loan.installments.map((installment) {
+        // Check if due date is today or in the past and not already paid
+        final dueDate = DateTime(
+          installment.dueDate.year,
+          installment.dueDate.month,
+          installment.dueDate.day,
+        );
+        
+        final shouldBePaid = dueDate.isBefore(today) || dueDate.isAtSameMomentAs(today);
+        
+        debugPrint('  Installment #${installment.installmentNumber}: dueDate=$dueDate, isPaid=${installment.isPaid}, shouldBePaid=$shouldBePaid');
+        
+        if (shouldBePaid && !installment.isPaid) {
+          loanChanged = true;
+          hasChanges = true;
+          debugPrint('    -> Marking as PAID');
+          return LoanInstallment(
+            installmentNumber: installment.installmentNumber,
+            amount: installment.amount,
+            dueDate: installment.dueDate,
+            paymentDate: installment.dueDate, // Mark as paid on due date
+            isPaid: true,
+            principalAmount: installment.principalAmount,
+            interestAmount: installment.interestAmount,
+            kkdfAmount: installment.kkdfAmount,
+            bsmvAmount: installment.bsmvAmount,
+            remainingPrincipalAmount: installment.remainingPrincipalAmount,
+          );
+        }
+        return installment;
+      }).toList();
+
+      if (loanChanged) {
+        // Recalculate loan summary values
+        final unpaidInstallments = updatedInstallments.where((i) => !i.isPaid).toList();
+        final paidInstallments = updatedInstallments.where((i) => i.isPaid).toList();
+        final remainingAmount = unpaidInstallments.fold(0.0, (sum, i) => sum + i.amount);
+        
+        debugPrint('Loan "${loan.name}" updated: paid=${paidInstallments.length}, unpaid=${unpaidInstallments.length}, newRemainingAmount=$remainingAmount');
+        
+        return Loan(
+          id: loan.id,
+          name: loan.name,
+          bankName: loan.bankName,
+          totalAmount: loan.totalAmount,
+          remainingAmount: remainingAmount,
+          totalInstallments: loan.totalInstallments,
+          remainingInstallments: unpaidInstallments.length,
+          currentInstallment: paidInstallments.length + 1,
+          installmentAmount: loan.installmentAmount,
+          startDate: loan.startDate,
+          endDate: loan.endDate,
+          walletId: loan.walletId,
+          installments: updatedInstallments,
+        );
+      }
+      
+      return loan;
+    }).toList();
+
+    if (hasChanges) {
+      await saveLoans(updatedLoans);
+      debugPrint('Loan installment statuses updated and saved successfully');
+    } else {
+      debugPrint('No changes needed for loan installments');
+    }
+  }
+
   Future<void> clearAllData() async {
     await _prefs?.clear();
     _cache.clear();

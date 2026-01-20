@@ -10,6 +10,7 @@ import 'period_comparison_card.dart';
 import 'budget_tracker_card.dart';
 import 'spending_habits_card.dart';
 import 'responsive_statistics_layout.dart';
+
 class SpendingTab extends StatefulWidget {
   final DateTime startDate;
   final DateTime endDate;
@@ -82,7 +83,9 @@ class _SpendingTabState extends State<SpendingTab> {
       if (_showComparison) {
         final periodDuration = widget.endDate.difference(widget.startDate);
         final previousStartDate = widget.startDate.subtract(periodDuration);
-        final previousEndDate = widget.startDate.subtract(const Duration(days: 1));
+        final previousEndDate = widget.startDate.subtract(
+          const Duration(days: 1),
+        );
 
         try {
           previousData = await _statisticsService.analyzeSpending(
@@ -116,9 +119,7 @@ class _SpendingTabState extends State<SpendingTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_error != null) {
@@ -126,11 +127,7 @@ class _SpendingTabState extends State<SpendingTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 48,
-              color: Colors.red,
-            ),
+            const Icon(Icons.error_outline, size: 48, color: Colors.red),
             const SizedBox(height: 16),
             Text(
               'Hata: $_error',
@@ -148,9 +145,7 @@ class _SpendingTabState extends State<SpendingTab> {
     }
 
     if (_spendingData == null) {
-      return const Center(
-        child: Text('Veri bulunamadı'),
-      );
+      return const Center(child: Text('Veri bulunamadı'));
     }
 
     return RefreshIndicator(
@@ -189,7 +184,8 @@ class _SpendingTabState extends State<SpendingTab> {
   Widget _buildSummaryCards() {
     final data = _spendingData!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final dailyAverage = data.totalSpending / 
+    final dailyAverage =
+        data.totalSpending /
         (widget.endDate.difference(widget.startDate).inDays + 1);
 
     return Container(
@@ -259,7 +255,12 @@ class _SpendingTabState extends State<SpendingTab> {
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
+  Widget _buildSummaryItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Column(
         children: [
@@ -268,9 +269,9 @@ class _SpendingTabState extends State<SpendingTab> {
           Text(
             value,
             style: const TextStyle(
-              color: Colors.white, 
+              color: Colors.white,
               fontWeight: FontWeight.bold,
-              fontSize: 13
+              fontSize: 13,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
@@ -320,7 +321,8 @@ class _SpendingTabState extends State<SpendingTab> {
     ];
 
     data.categoryBreakdown.forEach((category, value) {
-      colors[category] = categoryColors[category] ??
+      colors[category] =
+          categoryColors[category] ??
           defaultColors[colorIndex % defaultColors.length];
       colorIndex++;
     });
@@ -360,8 +362,9 @@ class _SpendingTabState extends State<SpendingTab> {
             enableTouch: true,
             onSectionTap: (category, value) {
               setState(() {
-                _selectedCategory =
-                    _selectedCategory == category ? null : category;
+                _selectedCategory = _selectedCategory == category
+                    ? null
+                    : category;
               });
             },
           ),
@@ -370,8 +373,8 @@ class _SpendingTabState extends State<SpendingTab> {
           const SizedBox(height: 16),
           _buildSelectedCategoryDetails(_selectedCategory!),
         ] else ...[
-            const SizedBox(height: 24),
-            _buildLegend(colors),
+          const SizedBox(height: 24),
+          _buildLegend(colors),
         ],
       ],
     );
@@ -396,10 +399,7 @@ class _SpendingTabState extends State<SpendingTab> {
             Container(
               width: 12,
               height: 12,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
             Text(
@@ -458,18 +458,16 @@ class _SpendingTabState extends State<SpendingTab> {
     );
   }
 
-  Widget _buildDetailItem(String label, double value, Color color,
-      {String? suffix}) {
+  Widget _buildDetailItem(
+    String label,
+    double value,
+    Color color, {
+    String? suffix,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
         const SizedBox(height: 2),
         Text(
           suffix != null
@@ -610,9 +608,9 @@ class _SpendingTabState extends State<SpendingTab> {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
           child: Text(
             'Harcama Detayları',
-             style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         ...sortedCategories.asMap().entries.map((entry) {
@@ -624,7 +622,9 @@ class _SpendingTabState extends State<SpendingTab> {
               ? (amount / data.totalSpending) * 100
               : 0.0;
 
-          final color = categoryColors[category] ??
+          final mainCategory = category.split(' > ')[0];
+          final color =
+              categoryColors[mainCategory] ??
               Colors.primaries[index % Colors.primaries.length];
           final budgetComparison = data.budgetComparisons[category];
 
@@ -655,13 +655,14 @@ class _SpendingTabState extends State<SpendingTab> {
             'Yatırım': Icons.trending_up,
             'Diğer': Icons.grid_view,
           };
-          final IconData categoryIcon = iconMap[category] ?? Icons.category;
+          final IconData categoryIcon = iconMap[mainCategory] ?? Icons.category;
 
           return InkWell(
             onTap: () {
               setState(() {
-                _selectedCategory =
-                    _selectedCategory == category ? null : category;
+                _selectedCategory = _selectedCategory == category
+                    ? null
+                    : category;
               });
             },
             child: Container(
@@ -676,11 +677,11 @@ class _SpendingTabState extends State<SpendingTab> {
                     ? Border.all(color: color, width: 1.5)
                     : null,
                 boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Column(
@@ -708,13 +709,13 @@ class _SpendingTabState extends State<SpendingTab> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                             Text(
-                                '${percentage.toStringAsFixed(1)}% pay',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: theme.textTheme.bodySmall?.color,
-                                ),
+                            Text(
+                              '${percentage.toStringAsFixed(1)}% pay',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: theme.textTheme.bodySmall?.color,
                               ),
+                            ),
                           ],
                         ),
                       ),
@@ -730,7 +731,7 @@ class _SpendingTabState extends State<SpendingTab> {
                           ),
                           if (budgetComparison != null) ...[
                             const SizedBox(height: 4),
-                             Text(
+                            Text(
                               budgetComparison.exceeded
                                   ? 'Bütçe Aşıldı'
                                   : 'Bütçe Uygun',
@@ -753,14 +754,16 @@ class _SpendingTabState extends State<SpendingTab> {
                     child: LinearProgressIndicator(
                       value: percentage / 100,
                       minHeight: 6,
-                      backgroundColor: isDark ? Colors.grey[800] : Colors.grey[100],
+                      backgroundColor: isDark
+                          ? Colors.grey[800]
+                          : Colors.grey[100],
                       color: color,
                     ),
                   ),
-                   if (_selectedCategory == category) ...[
-                      const SizedBox(height: 16),
-                      _buildSelectedCategoryDetails(category),
-                    ],
+                  if (_selectedCategory == category) ...[
+                    const SizedBox(height: 16),
+                    _buildSelectedCategoryDetails(category),
+                  ],
                 ],
               ),
             ),
@@ -844,11 +847,7 @@ class _SpendingTabState extends State<SpendingTab> {
             color: color.withValues(alpha: 0.2),
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            color: color,
-            size: 20,
-          ),
+          child: Icon(icon, color: color, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -857,10 +856,7 @@ class _SpendingTabState extends State<SpendingTab> {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
               ),
               const SizedBox(height: 2),
               Text(
@@ -969,20 +965,13 @@ class _SpendingTabState extends State<SpendingTab> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                Icon(
-                  Icons.trending_up,
-                  size: 20,
-                  color: Colors.blue,
-                ),
+                Icon(Icons.trending_up, size: 20, color: Colors.blue),
               ],
             ),
             const SizedBox(height: 8),
             Text(
               'Kategorilerin zaman içindeki harcama değişimini görün',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             const SizedBox(height: 16),
             SpendingTrendChart(

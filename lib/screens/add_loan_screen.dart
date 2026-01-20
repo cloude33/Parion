@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter/services.dart';
+import 'package:currency_text_input_formatter/currency_text_input_formatter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/loan.dart';
 import '../models/wallet.dart';
@@ -26,6 +28,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   final TextEditingController _installmentCountController =
       TextEditingController();
   final TextEditingController _interestRateController = TextEditingController();
+  final TextEditingController _kkdfRateController = TextEditingController(text: '15');
+  final TextEditingController _bsmvRateController = TextEditingController(text: '15');
   final TextEditingController _monthlyPaymentController =
       TextEditingController();
   final TextEditingController _notesController = TextEditingController();
@@ -82,6 +86,8 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     _totalAmountController.addListener(_onAmountChanged);
     _installmentCountController.addListener(_onAmountChanged);
     _interestRateController.addListener(_onRateChanged);
+    _kkdfRateController.addListener(_onRateChanged);
+    _bsmvRateController.addListener(_onRateChanged);
     _monthlyPaymentController.addListener(_onMonthlyPaymentChanged);
   }
 
@@ -89,9 +95,15 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     final loan = widget.existingLoan!;
     _nameController.text = loan.name;
     _bankNameController.text = loan.bankName;
-    _totalAmountController.text = loan.totalAmount.toStringAsFixed(2);
+    _totalAmountController.text =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 0)
+            .format(loan.totalAmount)
+            .trim();
     _installmentCountController.text = loan.totalInstallments.toString();
-    _monthlyPaymentController.text = loan.installmentAmount.toStringAsFixed(2);
+    _monthlyPaymentController.text =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 2)
+            .format(loan.installmentAmount)
+            .trim();
     _selectedWalletId = loan.walletId;
     _startDate = loan.startDate;
     _firstPaymentDate = loan.installments.isNotEmpty
@@ -106,7 +118,10 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
   }
 
   void _onRateChanged() {
-    if (_isCalculatingFromRate && _interestRateController.text.isNotEmpty) {
+    if (_isCalculatingFromRate &&
+        _interestRateController.text.isNotEmpty &&
+        _kkdfRateController.text.isNotEmpty &&
+        _bsmvRateController.text.isNotEmpty) {
       _calculateMonthlyPayment();
     }
   }
@@ -121,26 +136,39 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     final totalAmount = _parseAmount(_totalAmountController.text);
     final installmentCount =
         int.tryParse(_installmentCountController.text) ?? 0;
-    final yearlyRate =
+    final monthlyInterestRate =
         double.tryParse(_interestRateController.text.replaceAll(',', '.')) ?? 0;
+    final kkdfRate =
+        double.tryParse(_kkdfRateController.text.replaceAll(',', '.')) ?? 15;
+    final bsmvRate =
+        double.tryParse(_bsmvRateController.text.replaceAll(',', '.')) ?? 15;
 
     if (totalAmount > 0 && installmentCount > 0) {
       double monthlyPayment;
 
-      if (yearlyRate > 0) {
-        // With interest - PMT formula
-        final monthlyRate = yearlyRate / 12 / 100;
+      if (monthlyInterestRate > 0) {
+        // With interest - PMT formula including taxes (KKDF + BSMV)
+        // Rate is entered as Monthly Rate (e.g. 2.99 means 2.99%)
+        final monthlyRate = monthlyInterestRate / 100;
+        
+        // Effective rate = rate * (1 + KKDF + BSMV)
+        final totalTaxRate = (kkdfRate + bsmvRate) / 100;
+        final effectiveRate = monthlyRate * (1 + totalTaxRate);
+        
         monthlyPayment =
             totalAmount *
-            (monthlyRate * pow(1 + monthlyRate, installmentCount)) /
-            (pow(1 + monthlyRate, installmentCount) - 1);
+            (effectiveRate * pow(1 + effectiveRate, installmentCount)) /
+            (pow(1 + effectiveRate, installmentCount) - 1);
       } else {
         // Without interest
         monthlyPayment = totalAmount / installmentCount;
       }
 
       setState(() {
-        _monthlyPaymentController.text = monthlyPayment.toStringAsFixed(2);
+        _monthlyPaymentController.text =
+            NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 2)
+                .format(monthlyPayment)
+                .trim();
       });
     }
   }
@@ -155,12 +183,17 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       final totalPayment = monthlyPayment * installmentCount;
       final totalInterest = totalPayment - totalAmount;
 
-      // Simple approximation for display
+      // Simple approximation for display (Rough Reverse Calculation)
+      // This is complex to reverse exactly with taxes, so we show approximate Gross Monthly Rate
+      // or we can just leave it as is for now as it's an estimation for the user.
       final avgMonthlyRate = (totalInterest / totalAmount) / installmentCount;
-      final yearlyRate = avgMonthlyRate * 12 * 100;
+      final estimatedMonthlyRate = avgMonthlyRate * 100; // Just percentage
 
       setState(() {
-        _interestRateController.text = yearlyRate.toStringAsFixed(2);
+        _interestRateController.text =
+            NumberFormat.currency(locale: 'tr_TR', symbol: '', decimalDigits: 2)
+                .format(estimatedMonthlyRate)
+                .trim();
       });
     }
   }
@@ -248,19 +281,76 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         firstPayment.day,
       );
 
-      // Generate installments
+      final monthlyInterestRate =
+          double.tryParse(_interestRateController.text.replaceAll(',', '.')) ?? 0;
+      final monthlyRate = monthlyInterestRate / 100;
+
+      final kkdfRate =
+          double.tryParse(_kkdfRateController.text.replaceAll(',', '.')) ?? 15;
+      final bsmvRate =
+          double.tryParse(_bsmvRateController.text.replaceAll(',', '.')) ?? 15;
+      
+      // Generate installments with detailed amortization
       final List<LoanInstallment> installments = [];
+      double remainingPrincipal = totalAmount; // Start with total amount
+      
       for (int i = 0; i < installmentCount; i++) {
         final dueDate = DateTime(
           firstPayment.year,
           firstPayment.month + i,
           firstPayment.day,
         );
+        
+        double interest = 0;
+        double kkdf = 0;
+        double bsmv = 0;
+        double principalPayment = 0;
+        
+        if (monthlyRate > 0) {
+          // Interest on remaining balance
+          interest = remainingPrincipal * monthlyRate;
+          kkdf = interest * (kkdfRate / 100);
+          bsmv = interest * (bsmvRate / 100);
+          
+          final totalInterestPart = interest + kkdf + bsmv;
+          
+          // If it's the last installment, adjust to close the loan exactly
+          if (i == installmentCount - 1) {
+            final calculatedPrincipal = monthlyPayment - totalInterestPart;
+            // Adjust principal payment to match remaining principal exactly if close
+            if ((calculatedPrincipal - remainingPrincipal).abs() < 1.0) {
+               principalPayment = remainingPrincipal;
+            } else {
+               principalPayment = calculatedPrincipal;
+            }
+          } else {
+            principalPayment = monthlyPayment - totalInterestPart;
+          }
+        } else {
+           principalPayment = monthlyPayment;
+        }
+        
+        remainingPrincipal -= principalPayment;
+        // Fix float precision issues
+        if (remainingPrincipal < 0.01) remainingPrincipal = 0;
+
+        // Check if installment should be considered paid (past or today)
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final isPastDue = dueDate.isBefore(today) || dueDate.isAtSameMomentAs(today);
+
         installments.add(
           LoanInstallment(
             installmentNumber: i + 1,
             amount: monthlyPayment,
             dueDate: dueDate,
+            paymentDate: isPastDue ? dueDate : null,
+            isPaid: isPastDue,
+            principalAmount: principalPayment,
+            interestAmount: interest,
+            kkdfAmount: kkdf,
+            bsmvAmount: bsmv,
+            remainingPrincipalAmount: remainingPrincipal,
           ),
         );
       }
@@ -270,10 +360,12 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
         name: _nameController.text.trim(),
         bankName: _bankNameController.text.trim(),
         totalAmount: totalAmount,
-        remainingAmount: monthlyPayment * installmentCount,
+        remainingAmount: installments
+            .where((i) => !i.isPaid)
+            .fold(0.0, (sum, i) => sum + i.amount),
         totalInstallments: installmentCount,
-        remainingInstallments: installmentCount,
-        currentInstallment: 0,
+        remainingInstallments: installments.where((i) => !i.isPaid).length,
+        currentInstallment: installments.where((i) => i.isPaid).length + 1,
         installmentAmount: monthlyPayment,
         startDate: _startDate,
         endDate: endDate,
@@ -408,6 +500,13 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                 icon: Icons.payments_outlined,
                 prefix: '₺ ',
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  CurrencyTextInputFormatter.currency(
+                    locale: 'tr_TR',
+                    symbol: '',
+                    decimalDigits: 0,
+                  ),
+                ],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Kredi tutarı gerekli';
@@ -418,6 +517,30 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
                   }
                   return null;
                 },
+              ),
+
+              const SizedBox(height: 16),
+              
+              Row(
+                children: [
+                   Expanded(
+                     child: _buildTextField(
+                       controller: _kkdfRateController,
+                       label: 'KKDF (%)',
+                       hint: '15',
+                       keyboardType: TextInputType.number,
+                     ),
+                   ),
+                   const SizedBox(width: 12),
+                   Expanded(
+                     child: _buildTextField(
+                       controller: _bsmvRateController,
+                       label: 'BSMV (%)',
+                       hint: '15',
+                       keyboardType: TextInputType.number,
+                     ),
+                   ),
+                ],
               ),
 
               const SizedBox(height: 16),
@@ -707,6 +830,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     String? Function(String?)? validator,
     bool readOnly = false,
     VoidCallback? onTap,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextFormField(
       controller: controller,
@@ -714,6 +838,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
       maxLines: maxLines,
       readOnly: readOnly,
       onTap: onTap,
+      inputFormatters: inputFormatters,
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -818,7 +943,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
             Expanded(
               child: _buildTextField(
                 controller: _interestRateController,
-                label: 'Yıllık Faiz (%)',
+                label: 'Aylık Faiz (%)',
                 hint: '0.00',
                 icon: Icons.percent,
                 keyboardType: TextInputType.number,

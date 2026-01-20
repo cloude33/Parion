@@ -1235,7 +1235,7 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
-        '${DateFormat('dd MMM yyyy', 'tr_TR').format(transaction.transactionDate)} • ${transaction.category}',
+        '${DateFormat('dd MMM yyyy', 'tr_TR').format(transaction.transactionDate)} • ${transaction.category}${transaction.subCategory != null ? ' > ${transaction.subCategory}' : ''}',
         style: const TextStyle(fontSize: 12),
       ),
       trailing: Column(

@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import '../models/credit_card.dart';
 import '../models/credit_card_transaction.dart';
+import '../models/category.dart';
 import '../services/credit_card_service.dart';
+import '../services/data_service.dart';
 import '../utils/image_helper.dart';
 import '../widgets/full_screen_image_viewer.dart';
 
@@ -30,6 +32,7 @@ class _EditCreditCardTransactionScreenState
     extends State<EditCreditCardTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final CreditCardService _cardService = CreditCardService();
+  final DataService _dataService = DataService();
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'tr_TR',
     symbol: '₺',
@@ -41,23 +44,12 @@ class _EditCreditCardTransactionScreenState
 
   late DateTime _selectedDate;
   late String _selectedCategory;
+  String? _selectedSubCategory;
   bool _isLoading = false;
   double _availableCredit = 0;
   double _installmentAmount = 0;
   late List<String> _images;
-  final List<String> _categories = [
-    'Market',
-    'Restoran',
-    'Giyim',
-    'Elektronik',
-    'Sağlık',
-    'Ulaşım',
-    'Eğlence',
-    'Faturalar',
-    'Yakıt',
-    'Seyahat',
-    'Diğer',
-  ];
+  List<Category> _categories = [];
 
   @override
   void initState() {
@@ -73,13 +65,33 @@ class _EditCreditCardTransactionScreenState
     );
     _selectedDate = widget.transaction.transactionDate;
     _selectedCategory = widget.transaction.category;
+    _selectedSubCategory = widget.transaction.subCategory;
     _images = List<String>.from(widget.transaction.images);
 
     _amountController.addListener(_calculateInstallmentAmount);
     _installmentCountController.addListener(_calculateInstallmentAmount);
 
-    _loadAvailableCredit();
+    _loadData();
     _calculateInstallmentAmount();
+  }
+
+  Future<void> _loadData() async {
+    await _loadCategories();
+    await _loadAvailableCredit();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final categories = await _dataService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = categories;
+          // If selected category isn't in the list, keep it anyway
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading categories: $e');
+    }
   }
 
   @override
@@ -292,23 +304,89 @@ class _EditCreditCardTransactionScreenState
   }
 
   Widget _buildCategoryField() {
-    return DropdownButtonFormField<String>(
-      initialValue: _selectedCategory,
-      decoration: const InputDecoration(
-        labelText: 'Kategori',
-        prefixIcon: Icon(Icons.category),
-        border: OutlineInputBorder(),
-      ),
-      items: _categories.map((category) {
-        return DropdownMenuItem(value: category, child: Text(category));
-      }).toList(),
-      onChanged: (value) {
-        if (value != null) {
-          setState(() {
-            _selectedCategory = value;
-          });
-        }
-      },
+    // Build dropdown items from categories
+    final categoryItems = _categories.map((category) {
+      return DropdownMenuItem(
+        value: category.name,
+        child: Row(
+          children: [
+            Icon(category.icon, color: category.color, size: 20),
+            const SizedBox(width: 8),
+            Text(category.name),
+          ],
+        ),
+      );
+    }).toList();
+
+    // If selected category is not in the list, add it
+    if (!_categories.any((c) => c.name == _selectedCategory)) {
+      categoryItems.insert(
+        0,
+        DropdownMenuItem(
+          value: _selectedCategory,
+          child: Text(_selectedCategory),
+        ),
+      );
+    }
+
+    Category? selectedCategoryObj;
+    try {
+      selectedCategoryObj = _categories.firstWhere(
+        (c) => c.name == _selectedCategory,
+      );
+    } catch (_) {}
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DropdownButtonFormField<String>(
+          initialValue: _selectedCategory,
+          decoration: const InputDecoration(
+            labelText: 'Kategori',
+            prefixIcon: Icon(Icons.category),
+            border: OutlineInputBorder(),
+          ),
+          items: categoryItems,
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedCategory = value;
+                _selectedSubCategory = null;
+              });
+            }
+          },
+        ),
+        if (selectedCategoryObj != null &&
+            selectedCategoryObj.subCategories.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedSubCategory,
+            decoration: const InputDecoration(
+              labelText: 'Alt Kategori',
+              prefixIcon: Icon(Icons.subdirectory_arrow_right),
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              ...selectedCategoryObj.subCategories.map((sub) {
+                return DropdownMenuItem(value: sub, child: Text(sub));
+              }),
+              if (_selectedSubCategory != null &&
+                  !selectedCategoryObj.subCategories.contains(
+                    _selectedSubCategory,
+                  ))
+                DropdownMenuItem(
+                  value: _selectedSubCategory,
+                  child: Text(_selectedSubCategory!),
+                ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _selectedSubCategory = value;
+              });
+            },
+          ),
+        ],
+      ],
     );
   }
 
@@ -444,7 +522,8 @@ class _EditCreditCardTransactionScreenState
   }
 
   Widget _buildAvailableCreditWarning() {
-    final amount = double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
+    final amount =
+        double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 0;
 
     if (amount > _availableCredit) {
       return Card(
@@ -666,6 +745,7 @@ class _EditCreditCardTransactionScreenState
         category: _selectedCategory,
         installmentCount: int.parse(_installmentCountController.text),
         images: _images,
+        subCategory: _selectedSubCategory,
       );
 
       await _cardService.updateTransaction(updatedTransaction);
@@ -809,12 +889,14 @@ class _EditCreditCardTransactionScreenState
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
                               image: DecorationImage(
-                                image: MemoryImage(base64Decode(_images[index])),
+                                image: MemoryImage(
+                                  base64Decode(_images[index]),
+                                ),
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
-                         ),
+                        ),
                         Positioned(
                           top: 4,
                           right: 12,
@@ -873,5 +955,3 @@ class _EditCreditCardTransactionScreenState
     });
   }
 }
-
-

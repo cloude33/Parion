@@ -4,6 +4,7 @@ import '../models/loan.dart';
 import '../models/wallet.dart';
 import '../services/data_service.dart';
 import 'add_loan_screen.dart';
+import 'loan_detail_screen.dart';
 
 class ManageLoansScreen extends StatefulWidget {
   const ManageLoansScreen({super.key});
@@ -25,6 +26,8 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
   }
 
   Future<void> _loadData() async {
+    // Update loan installment statuses automatically (marks past due as paid)
+    await _dataService.updateLoanInstallmentStatuses();
     final loans = await _dataService.getLoans();
     final wallets = await _dataService.getWallets();
     setState(() {
@@ -189,7 +192,16 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
               loan.totalInstallments
         : 0.0;
 
-    return Card(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoanDetailScreen(loan: loan),
+          ),
+        );
+      },
+      child: Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 3,
       shadowColor: Colors.grey.withValues(alpha: 0.2),
@@ -332,6 +344,7 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

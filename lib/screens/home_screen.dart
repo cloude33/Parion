@@ -165,6 +165,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         debugPrint('WARN _loadData: categories $e');
       }
       try {
+        // Update loan installment statuses before loading (marks past due as paid)
+        await _dataService.updateLoanInstallmentStatuses();
         loadedLoans = await _dataService.getLoans();
       } catch (e) {
         debugPrint('WARN _loadData: loans $e');
@@ -329,6 +331,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ? StatisticsScreen(
                   transactions: transactions,
                   wallets: wallets,
+                  loans: _loans,
                   creditCardTransactions: _creditCardTransactions,
                 )
               : const SettingsScreen(),
@@ -376,7 +379,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         alignment: Alignment.center,
         height: double.infinity,
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).primaryColor : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).primaryColor
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Text(
@@ -559,21 +564,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     children: [
                       Text(
                         _getDateHeader(entry.key),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Theme.of(context).textTheme.bodyLarge?.color,
+                        ),
+                      ),
+                      if (dailyExpenseTotal > 0)
+                        Text(
+                          CurrencyHelper.formatAmount(
+                            dailyExpenseTotal,
+                            _currentUser,
+                          ),
                           style: TextStyle(
                             fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                            fontWeight: FontWeight.bold,
                             color: Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
-                        if (dailyExpenseTotal > 0)
-                          Text(
-                            CurrencyHelper.formatAmount(dailyExpenseTotal, _currentUser),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).textTheme.bodyLarge?.color,
-                            ),
-                          ),
                     ],
                   ),
                 ),
@@ -615,7 +623,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     } else if (date == yesterday) {
       return AppLocalizations.of(context)!.yesterday;
     } else {
-      return DateFormat('d MMMM y', Localizations.localeOf(context).toString()).format(date);
+      return DateFormat(
+        'd MMMM y',
+        Localizations.localeOf(context).toString(),
+      ).format(date);
     }
   }
 
@@ -692,9 +703,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Container(
         margin: EdgeInsets.zero,
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
+        decoration: const BoxDecoration(color: Colors.transparent),
         child: Column(
           children: [
             Row(
@@ -725,10 +734,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                         children: [
                           Flexible(
                             child: Text(
-                              wallet.name,
+                              transaction.subCategory != null
+                                  ? '${transaction.category} > ${transaction.subCategory} • ${wallet.name}'
+                                  : '${transaction.category} • ${wallet.name}',
                               style: const TextStyle(
                                 fontSize: 13,
-                                color: Color(0xFF212121), // Siyaha yakın çok koyu gri
+                                color: Color(
+                                  0xFF212121,
+                                ), // Siyaha yakın çok koyu gri
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -742,7 +755,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               '${transaction.currentInstallment}/${transaction.installments} Taksit',
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Theme.of(context).textTheme.bodySmall?.color,
+                                color: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.color,
                               ),
                             ),
                           ],
@@ -792,8 +807,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black
-                                          .withValues(alpha: 0.7),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.7,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -850,9 +866,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     } else {
       categoryColor = AppIcons.getCategoryColor(transaction.category);
       if (categoryColor == Colors.grey) {
-         categoryColor = card?.color ?? Colors.blue;
+        categoryColor = card?.color ?? Colors.blue;
       }
-      iconWidget = AppIcons.getCategoryIcon(transaction.category, size: 24, color: categoryColor);
+      iconWidget = AppIcons.getCategoryIcon(
+        transaction.category,
+        size: 24,
+        color: categoryColor,
+      );
     }
 
     return GestureDetector(
@@ -875,9 +895,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Container(
         margin: EdgeInsets.zero,
         padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
+        decoration: const BoxDecoration(color: Colors.transparent),
         child: Column(
           children: [
             Row(
@@ -912,7 +930,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 '${card.bankName} •••• ${card.last4Digits}',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -926,7 +946,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 '${transaction.installmentsPaid}/${transaction.installmentCount} Taksit',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color,
                                 ),
                               ),
                             ],
@@ -936,7 +958,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                 transaction.category,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Theme.of(context).textTheme.bodySmall?.color,
+                                  color: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.color,
                                 ),
                                 overflow: TextOverflow.ellipsis,
                               ),
@@ -987,8 +1011,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: Colors.black
-                                          .withValues(alpha: 0.7),
+                                      color: Colors.black.withValues(
+                                        alpha: 0.7,
+                                      ),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -1033,13 +1058,81 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final regularMonthlyExpense = monthlyTransactions
         .where((t) => t.type == 'expense')
         .fold(0.0, (sum, t) => sum + t.amount);
-    final creditCardMonthlyExpense = _creditCardTransactions
-        .where(
-          (t) =>
-              t.transactionDate.month == now.month &&
-              t.transactionDate.year == now.year,
-        )
-        .fold(0.0, (sum, t) => sum + t.amount);
+
+    double creditCardMonthlyExpense = 0.0;
+    for (final t in _creditCardTransactions) {
+      final card = _creditCards[t.cardId];
+      if (card == null) {
+        continue;
+      }
+
+      final effectiveDate = t.installmentStartDate ?? t.transactionDate;
+
+      final statementDay = card.statementDay;
+      final dueOffset = card.dueDateOffset;
+
+      final lastDayOfMonth = DateTime(
+        effectiveDate.year,
+        effectiveDate.month + 1,
+        0,
+      ).day;
+      final adjustedStatementDay = statementDay > lastDayOfMonth
+          ? lastDayOfMonth
+          : statementDay;
+
+      DateTime statementDate;
+      if (effectiveDate.day <= adjustedStatementDay) {
+        statementDate = DateTime(
+          effectiveDate.year,
+          effectiveDate.month,
+          adjustedStatementDay,
+        );
+      } else {
+        final nextMonth = DateTime(
+          effectiveDate.year,
+          effectiveDate.month + 1,
+          1,
+        );
+        final lastDayOfNextMonth = DateTime(
+          nextMonth.year,
+          nextMonth.month + 1,
+          0,
+        ).day;
+        final nextStatementDay = statementDay > lastDayOfNextMonth
+            ? lastDayOfNextMonth
+            : statementDay;
+        statementDate = DateTime(
+          nextMonth.year,
+          nextMonth.month,
+          nextStatementDay,
+        );
+      }
+
+      final firstDueDate = statementDate.add(Duration(days: dueOffset));
+
+      if (t.installmentCount <= 1) {
+        final isThisMonth =
+            firstDueDate.month == now.month && firstDueDate.year == now.year;
+        if (isThisMonth) {
+          creditCardMonthlyExpense += t.amount;
+        }
+      } else {
+        for (int i = 0; i < t.installmentCount; i++) {
+          final installmentDueDate = DateTime(
+            firstDueDate.year,
+            firstDueDate.month + i,
+            firstDueDate.day,
+          );
+          final isThisMonth =
+              installmentDueDate.month == now.month &&
+              installmentDueDate.year == now.year;
+          if (isThisMonth) {
+            creditCardMonthlyExpense += t.installmentAmount;
+            break;
+          }
+        }
+      }
+    }
 
     final monthlyExpense = regularMonthlyExpense + creditCardMonthlyExpense;
     final netBalance = monthlyIncome - monthlyExpense;
@@ -1117,7 +1210,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 1.5),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.15),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -1141,11 +1237,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               child: Row(
                 children: [
-                  FaIcon(
-                    AppIcons.income,
-                    color: Colors.white,
-                    size: 24,
-                  ),
+                  FaIcon(AppIcons.income, color: Colors.white, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1215,7 +1307,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.15), width: 1.5),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.15),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -1230,9 +1325,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 color: Color(0xFFC62828), // Dark Red
               ),
               child: Row(
@@ -1312,7 +1405,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     );
   }
-
 
   Widget _buildDebtStat(String label, double amount, IconData icon) {
     return Expanded(
@@ -1883,6 +1975,3 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 }
-
-
-

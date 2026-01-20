@@ -61,6 +61,7 @@ class StatisticsService {
       return TrendDirection.stable;
     }
   }
+
   double _predictNextValue(List<double> values) {
     if (values.isEmpty) {
       return 0.0;
@@ -89,6 +90,7 @@ class StatisticsService {
     final prediction = slope * n + intercept;
     return prediction < 0 ? 0.0 : prediction;
   }
+
   Future<CashFlowData> calculateCashFlow({
     required DateTime startDate,
     required DateTime endDate,
@@ -252,6 +254,7 @@ class StatisticsService {
       throw Exception('${ErrorCodes.CALCULATION_ERROR}: ${e.toString()}');
     }
   }
+
   Future<SpendingAnalysis> analyzeSpending({
     required DateTime startDate,
     required DateTime endDate,
@@ -295,45 +298,56 @@ class StatisticsService {
       }).toList();
       for (var transaction in filteredTransactions) {
         totalSpending += transaction.amount;
-        categoryBreakdown[transaction.category] =
-            (categoryBreakdown[transaction.category] ?? 0) + transaction.amount;
+        final key = transaction.subCategory != null
+            ? '${transaction.category} > ${transaction.subCategory}'
+            : transaction.category;
+        categoryBreakdown[key] =
+            (categoryBreakdown[key] ?? 0) + transaction.amount;
         paymentMethodBreakdown['Kredi Kartı'] =
             (paymentMethodBreakdown['Kredi Kartı'] ?? 0) + transaction.amount;
-        final dayOfWeek =
-            transaction.transactionDate.weekday;
+        final dayOfWeek = transaction.transactionDate.weekday;
         dayOfWeekSpending[dayOfWeek] =
             (dayOfWeekSpending[dayOfWeek] ?? 0) + transaction.amount;
         final hour = transaction.transactionDate.hour;
         hourOfDaySpending[hour] =
             (hourOfDaySpending[hour] ?? 0) + transaction.amount;
       }
-      
+
       // Also include regular expense transactions
       final regularTransactions = await _dataService.getTransactions();
       final filteredRegularTransactions = regularTransactions.where((t) {
         final isExpense = t.type == 'expense';
-        final isInRange = t.date.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
+        final isInRange =
+            t.date.isAfter(startDate.subtract(const Duration(seconds: 1))) &&
             t.date.isBefore(endDate.add(const Duration(days: 1)));
-        final matchesCategory = categories == null || categories.contains(t.category);
+        final matchesCategory =
+            categories == null || categories.contains(t.category);
         return isExpense && isInRange && matchesCategory;
       }).toList();
-      
+
       for (var transaction in filteredRegularTransactions) {
         totalSpending += transaction.amount;
-        categoryBreakdown[transaction.category] =
-            (categoryBreakdown[transaction.category] ?? 0) + transaction.amount;
-        
+        final key = transaction.subCategory != null
+            ? '${transaction.category} > ${transaction.subCategory}'
+            : transaction.category;
+        categoryBreakdown[key] =
+            (categoryBreakdown[key] ?? 0) + transaction.amount;
+
         // Get wallet type for payment method breakdown
         final wallets = await _dataService.getWallets();
         final wallet = wallets.firstWhere(
           (w) => w.id == transaction.walletId,
-          orElse: () => wallets.isNotEmpty ? wallets.first : throw Exception('No wallet'),
+          orElse: () =>
+              wallets.isNotEmpty ? wallets.first : throw Exception('No wallet'),
         );
-        final walletType = wallet.type == 'cash' ? 'Nakit' : 
-                          wallet.type == 'bank' ? 'Banka' : 'Diğer';
+        final walletType = wallet.type == 'cash'
+            ? 'Nakit'
+            : wallet.type == 'bank'
+            ? 'Banka'
+            : 'Diğer';
         paymentMethodBreakdown[walletType] =
             (paymentMethodBreakdown[walletType] ?? 0) + transaction.amount;
-        
+
         final dayOfWeek = transaction.date.weekday;
         dayOfWeekSpending[dayOfWeek] =
             (dayOfWeekSpending[dayOfWeek] ?? 0) + transaction.amount;
@@ -341,7 +355,7 @@ class StatisticsService {
         hourOfDaySpending[hour] =
             (hourOfDaySpending[hour] ?? 0) + transaction.amount;
       }
-      
+
       final wallets = await _dataService.getWallets();
       for (var wallet in wallets) {
         if (wallet.isKmhAccount) {
@@ -424,6 +438,7 @@ class StatisticsService {
       throw Exception('${ErrorCodes.CALCULATION_ERROR}: ${e.toString()}');
     }
   }
+
   Future<List<CategoryTrend>> _calculateCategoryTrends({
     required DateTime startDate,
     required DateTime endDate,
@@ -458,7 +473,15 @@ class StatisticsService {
           );
 
           for (var transaction in cardTransactions) {
-            if (transaction.category == category) {
+            if (category.contains(' > ')) {
+              final parts = category.split(' > ');
+              final mainCat = parts[0];
+              final subCat = parts[1];
+              if (transaction.category == mainCat &&
+                  transaction.subCategory == subCat) {
+                monthAmount += transaction.amount;
+              }
+            } else if (transaction.category == category) {
               monthAmount += transaction.amount;
             }
           }
@@ -473,8 +496,7 @@ class StatisticsService {
             );
 
             for (var transaction in kmhTransactions) {
-              if (transaction.type.toString().contains('withdrawal')) {
-              }
+              if (transaction.type.toString().contains('withdrawal')) {}
             }
           }
         }
@@ -511,6 +533,7 @@ class StatisticsService {
 
     return trends;
   }
+
   Map<String, BudgetComparison> _calculateBudgetComparisons({
     required Map<String, double> categoryBreakdown,
     Map<String, double>? budgets,
@@ -539,6 +562,7 @@ class StatisticsService {
 
     return comparisons;
   }
+
   Future<CreditAnalysis> analyzeCreditAndKmh() async {
     try {
       const cacheKey = CacheKeys.creditAnalysis;
@@ -605,8 +629,7 @@ class StatisticsService {
             ? (debt / wallet.creditLimit) * 100.0
             : 0.0;
         double accountDailyInterest = 0.0;
-        final interestRate =
-            wallet.interestRate ?? 24.0;
+        final interestRate = wallet.interestRate ?? 24.0;
 
         if (debt > 0) {
           final annualRate = interestRate / 100;
@@ -658,6 +681,7 @@ class StatisticsService {
       throw Exception('${ErrorCodes.DEBT_CALCULATION_ERROR}: ${e.toString()}');
     }
   }
+
   Future<List<DebtTrendData>> _calculateDebtTrend({
     required List<dynamic> creditCards,
     required List<dynamic> kmhAccounts,
@@ -741,6 +765,7 @@ class StatisticsService {
 
     return trendData;
   }
+
   Future<AssetAnalysis> analyzeAssets() async {
     try {
       const cacheKey = CacheKeys.assetAnalysis;
@@ -826,6 +851,7 @@ class StatisticsService {
       throw Exception('${ErrorCodes.CALCULATION_ERROR}: ${e.toString()}');
     }
   }
+
   Future<List<NetWorthTrendData>> _calculateNetWorthTrend() async {
     final trendData = <NetWorthTrendData>[];
     final now = DateTime.now();
@@ -894,6 +920,7 @@ class StatisticsService {
 
     return trendData;
   }
+
   Future<FinancialHealthScore> _calculateFinancialHealthScore({
     required double totalAssets,
     required double totalLiabilities,
@@ -904,7 +931,6 @@ class StatisticsService {
     required List<NetWorthTrendData> netWorthTrend,
     required CreditAnalysis creditAnalysis,
   }) async {
-
     double liquidityScore = 0.0;
     if (liquidityRatio >= 2.0) {
       liquidityScore += 60.0;
@@ -1162,6 +1188,7 @@ class StatisticsService {
       recommendations: recommendations,
     );
   }
+
   Future<ComparisonData> comparePeriods({
     required DateTime period1Start,
     required DateTime period1End,
@@ -1296,6 +1323,7 @@ class StatisticsService {
       throw Exception('${ErrorCodes.CALCULATION_ERROR}: ${e.toString()}');
     }
   }
+
   ComparisonMetric _createComparisonMetric({
     required String label,
     required double period1Value,
@@ -1329,6 +1357,7 @@ class StatisticsService {
       trend: trend,
     );
   }
+
   List<CategoryComparison> _calculateCategoryComparisons({
     required Map<String, double> period1Breakdown,
     required Map<String, double> period2Breakdown,
@@ -1377,6 +1406,7 @@ class StatisticsService {
 
     return comparisons;
   }
+
   String _generatePeriodLabel(DateTime start, DateTime end) {
     if (start.year == end.year && start.month == end.month) {
       final monthNames = [
@@ -1404,6 +1434,7 @@ class StatisticsService {
     }
     return '${start.day}/${start.month}/${start.year} - ${end.day}/${end.month}/${end.year}';
   }
+
   List<String> _generateComparisonInsights({
     required ComparisonMetric income,
     required ComparisonMetric expense,
@@ -1494,6 +1525,7 @@ class StatisticsService {
 
     return insights;
   }
+
   Future<AverageComparisonData> compareWithAverages({
     required DateTime currentPeriodStart,
     required DateTime currentPeriodEnd,
@@ -1647,6 +1679,7 @@ class StatisticsService {
       throw Exception('${ErrorCodes.CALCULATION_ERROR}: ${e.toString()}');
     }
   }
+
   Future<PeriodAverage> _calculatePeriodAverage({
     required DateTime endDate,
     required int monthsBack,
@@ -1697,6 +1730,7 @@ class StatisticsService {
       monthsIncluded: validMonths,
     );
   }
+
   Future<GoalComparisonSummary> compareGoals() async {
     try {
       final cacheCheckTime = DateTime.now();
@@ -1823,6 +1857,7 @@ class StatisticsService {
       throw Exception('Hedef karşılaştırması hesaplanamadı: $e');
     }
   }
+
   List<String> _generateGoalInsights({
     required List<GoalComparison> goalComparisons,
     required int achievedCount,
@@ -1880,6 +1915,7 @@ class StatisticsService {
 
     return insights;
   }
+
   double _calculateDeviation(double currentValue, double averageValue) {
     if (averageValue == 0) {
       if (currentValue == 0) {
@@ -1890,6 +1926,7 @@ class StatisticsService {
 
     return ((currentValue - averageValue) / averageValue.abs()) * 100;
   }
+
   PerformanceRating _calculatePerformanceRating({
     required double currentNetFlow,
     required double averageNetFlow,
@@ -1908,6 +1945,7 @@ class StatisticsService {
       return PerformanceRating.poor;
     }
   }
+
   List<String> _generateAverageComparisonInsights({
     required AverageBenchmark threeMonth,
     required AverageBenchmark sixMonth,
@@ -1979,13 +2017,16 @@ class StatisticsService {
 
     return insights;
   }
+
   void clearCache() {
     _cache.clear();
   }
+
   void clearCacheEntry(String key) {
     _cache.remove(key);
   }
 }
+
 class PeriodAverage {
   final double averageIncome;
   final double averageExpense;
@@ -1999,6 +2040,7 @@ class PeriodAverage {
     required this.monthsIncluded,
   });
 }
+
 class AverageComparisonData {
   final DateTime currentPeriodStart;
   final DateTime currentPeriodEnd;
@@ -2022,6 +2064,7 @@ class AverageComparisonData {
     required this.insights,
   });
 }
+
 class AverageBenchmark {
   final String periodLabel;
   final double averageIncome;
@@ -2049,4 +2092,5 @@ class AverageBenchmark {
     required this.performanceRating,
   });
 }
+
 enum PerformanceRating { excellent, good, average, below, poor }

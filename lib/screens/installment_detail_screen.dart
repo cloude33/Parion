@@ -100,7 +100,9 @@ class _InstallmentDetailScreenState extends State<InstallmentDetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        transaction.category,
+                        transaction.subCategory != null
+                            ? '${transaction.category} > ${transaction.subCategory}'
+                            : transaction.category,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],

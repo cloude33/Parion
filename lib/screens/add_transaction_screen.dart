@@ -40,19 +40,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final CreditCardService _creditCardService = CreditCardService();
   late TextEditingController _amountController;
   late TextEditingController _descriptionController;
+  late TextEditingController _installmentCountController;
   late DateTime _selectedDate;
   late String _selectedCategory;
+  String? _selectedSubCategory;
   late String _selectedWalletId;
   String? _selectedImage;
   bool _isIncome = false;
   CategorySuggestion? _suggestion;
   List<Category> _categories = [];
+  int _installmentCount = 1;
 
   @override
   void initState() {
     super.initState();
     _amountController = TextEditingController();
     _descriptionController = TextEditingController();
+    _installmentCountController = TextEditingController(text: '1');
     _selectedDate = DateTime.now();
     if (widget.defaultType == 'income') {
       _isIncome = true;
@@ -122,6 +126,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void dispose() {
     _amountController.dispose();
     _descriptionController.dispose();
+    _installmentCountController.dispose();
     super.dispose();
   }
 
@@ -172,15 +177,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _saveTransaction() async {
+    final isCreditCard = _selectedWalletId.startsWith('cc_');
+    final installmentCount = isCreditCard
+        ? (int.tryParse(_installmentCountController.text) ?? 1)
+        : 1;
+
     final error = TransactionFormValidator.validate(
       amountText: _amountController.text,
       description: _descriptionController.text,
       category: _selectedCategory,
       walletId: _selectedWalletId,
       selectedType: _isIncome ? 'income' : 'expense',
-      isInstallment: false,
-      installmentCount: 1,
-      isCreditCardWallet: false,
+      isInstallment: installmentCount > 1,
+      installmentCount: installmentCount,
+      isCreditCardWallet: isCreditCard,
     );
     if (error != null) {
       ErrorHandler.showError(context, error);
@@ -194,7 +204,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       final totalAmount = double.parse(cleanAmountText);
 
       // Check if this is a credit card transaction
-      if (_selectedWalletId.startsWith('cc_')) {
+      if (isCreditCard) {
         // This is a credit card transaction
         final cardId = _selectedWalletId.substring(3); // Remove 'cc_' prefix
 
@@ -205,7 +215,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           description: _descriptionController.text,
           transactionDate: _selectedDate,
           category: _selectedCategory,
-          installmentCount: 1,
+          installmentCount: installmentCount,
           installmentsPaid: 0,
           createdAt: DateTime.now(),
           images: _selectedImage != null ? [_selectedImage!] : null,
@@ -228,6 +238,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           amount: totalAmount,
           description: _descriptionController.text,
           category: _selectedCategory,
+          subCategory: _selectedSubCategory,
           walletId: _selectedWalletId,
           date: _selectedDate,
           memo: null,
@@ -351,7 +362,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 20,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -362,6 +376,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       _buildCategoryField(),
                       const SizedBox(height: 20),
                       _buildWalletField(),
+                      // Show installment field only for credit card expenses
+                      if (_selectedWalletId.startsWith('cc_') &&
+                          !_isIncome) ...[
+                        const SizedBox(height: 20),
+                        _buildInstallmentField(),
+                      ],
                       const SizedBox(height: 20),
                       _buildDateField(),
                       const SizedBox(height: 20),
@@ -383,20 +403,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).appBarTheme.backgroundColor,
-        border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1)),
+        border: Border(
+          bottom: BorderSide(color: Theme.of(context).dividerColor, width: 1),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: FaIcon(FontAwesomeIcons.arrowLeft, color: Theme.of(context).appBarTheme.foregroundColor, size: 20),
+            icon: FaIcon(
+              FontAwesomeIcons.arrowLeft,
+              color: Theme.of(context).appBarTheme.foregroundColor,
+              size: 20,
+            ),
             onPressed: () => Navigator.pop(context),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
-            style: IconButton.styleFrom(tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+            style: IconButton.styleFrom(
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
           ),
           Text(
-            _isIncome ? AppLocalizations.of(context)!.income : AppLocalizations.of(context)!.expense,
+            _isIncome
+                ? AppLocalizations.of(context)!.income
+                : AppLocalizations.of(context)!.expense,
             style: TextStyle(
               color: Theme.of(context).appBarTheme.foregroundColor,
               fontSize: 18,
@@ -428,7 +458,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppLocalizations.of(context)!.amount, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          AppLocalizations.of(context)!.amount,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _amountController,
@@ -436,22 +469,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           decoration: InputDecoration(
             hintText: '0,00',
             border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Theme.of(context).primaryColor)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.zero,
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.zero,
+              borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            ),
             filled: true,
             fillColor: Theme.of(context).inputDecorationTheme.fillColor,
           ),
           onChanged: (value) {
             if (value.isEmpty) return;
-            
-            final locale = Localizations.localeOf(context).toString() == 'tr' ? 'tr_TR' : 'en_US';
+
+            final locale = Localizations.localeOf(context).toString() == 'tr'
+                ? 'tr_TR'
+                : 'en_US';
             final separator = locale == 'tr_TR' ? ',' : '.';
             final thousandsSeparator = locale == 'tr_TR' ? '.' : ',';
 
             // Remove thousands separator and anything not numeric or the decimal separator
             String cleanValue = value.replaceAll(thousandsSeparator, '');
             cleanValue = cleanValue.replaceAll(RegExp('[^0-9$separator]'), '');
-            
+
             int firstSeparatorIndex = cleanValue.indexOf(separator);
             if (firstSeparatorIndex != -1) {
               String integerPart = cleanValue.substring(0, firstSeparatorIndex);
@@ -460,7 +501,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   .replaceAll(separator, ''); // Only one separator allowed
               cleanValue = '$integerPart$separator$decimalPart';
             }
-            
+
             final parts = cleanValue.split(separator);
             String formattedValue;
 
@@ -535,7 +576,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.categorySuggestionApplied(_suggestion!.category)),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.categorySuggestionApplied(_suggestion!.category),
+          ),
           duration: const Duration(seconds: 2),
           backgroundColor: Colors.green,
         ),
@@ -547,7 +592,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppLocalizations.of(context)!.description, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          AppLocalizations.of(context)!.description,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 8),
         TextField(
           controller: _descriptionController,
@@ -555,13 +603,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           decoration: InputDecoration(
             hintText: 'Örn: Market alışverişi',
             border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Theme.of(context).primaryColor)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.zero,
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.zero,
+              borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            ),
             filled: true,
             fillColor: Theme.of(context).inputDecorationTheme.fillColor,
             suffixIcon: _suggestion != null
                 ? IconButton(
-                    icon: FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber, size: 16),
+                    icon: FaIcon(
+                      FontAwesomeIcons.lightbulb,
+                      color: Colors.amber,
+                      size: 16,
+                    ),
                     onPressed: _applySuggestion,
                     tooltip: AppLocalizations.of(context)!.applySuggestion,
                   )
@@ -582,14 +640,20 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               children: [
                 Row(
                   children: [
-                    FaIcon(FontAwesomeIcons.lightbulb, color: Colors.amber, size: 20),
+                    FaIcon(
+                      FontAwesomeIcons.lightbulb,
+                      color: Colors.amber,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            AppLocalizations.of(context)!.suggested(_suggestion!.category),
+                            AppLocalizations.of(
+                              context,
+                            )!.suggested(_suggestion!.category),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -597,7 +661,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           Text(
                             '${_suggestion!.reason} • ${AppLocalizations.of(context)!.confidence((_suggestion!.confidence * 100).toInt().toString())}',
-                            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
                           ),
                         ],
                       ),
@@ -616,7 +683,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   ],
                 ),
                 // Ek öneriler: tutar ve cüzdan
-                if (_suggestion!.suggestedAmount != null || 
+                if (_suggestion!.suggestedAmount != null ||
                     _suggestion!.suggestedWalletName != null ||
                     _suggestion!.transactionCount > 0) ...[
                   const SizedBox(height: 8),
@@ -630,26 +697,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         _buildSuggestionChip(
                           icon: FontAwesomeIcons.clockRotateLeft,
                           label: '${_suggestion!.transactionCount} kez',
-                          tooltip: 'Bu işlem daha önce ${_suggestion!.transactionCount} kez girilmiş',
+                          tooltip:
+                              'Bu işlem daha önce ${_suggestion!.transactionCount} kez girilmiş',
                         ),
                       if (_suggestion!.suggestedAmount != null)
                         _buildSuggestionChip(
                           icon: FontAwesomeIcons.coins,
-                          label: '₺${NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount)}',
+                          label:
+                              '₺${NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount)}',
                           tooltip: 'Ortalama tutar',
                           onTap: () {
-                            _amountController.text = NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount);
+                            _amountController.text = NumberFormat(
+                              '#,##0.00',
+                              'tr_TR',
+                            ).format(_suggestion!.suggestedAmount);
                           },
                         ),
                       if (_suggestion!.suggestedWalletName != null)
                         _buildSuggestionChip(
                           icon: FontAwesomeIcons.wallet,
-                          label: _cleanWalletName(_suggestion!.suggestedWalletName!),
+                          label: _cleanWalletName(
+                            _suggestion!.suggestedWalletName!,
+                          ),
                           tooltip: 'Sık kullanılan cüzdan',
                           onTap: () {
                             if (_suggestion!.suggestedWalletId != null) {
                               setState(() {
-                                _selectedWalletId = _suggestion!.suggestedWalletId!;
+                                _selectedWalletId =
+                                    _suggestion!.suggestedWalletId!;
                               });
                             }
                           },
@@ -731,7 +806,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         (widget.categories != null || _categories.isNotEmpty) &&
         !_isValidCategory(_selectedCategory, deduplicatedCategories)) {
       _selectedCategory = deduplicatedCategories.first.name;
+      _selectedSubCategory = null;
     }
+
+    // Find currently selected category object
+    Category? selectedCategoryObj;
+    try {
+      selectedCategoryObj = deduplicatedCategories.firstWhere(
+        (c) => c.name == _selectedCategory,
+      );
+    } catch (_) {}
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,25 +839,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               items: deduplicatedCategories
                   .map(
                     (cat) => DropdownMenuItem(
-                      value: cat!.name,
+                      value: cat.name,
                       child: Row(
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: cat!.color.withValues(alpha: 0.2),
+                              color: cat.color.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(cat!.icon, color: cat!.color, size: 20),
+                            child: Icon(cat.icon, color: cat.color, size: 20),
                           ),
                           const SizedBox(width: 12),
-                          Text(cat!.name, style: const TextStyle(fontSize: 16)),
+                          Text(cat.name, style: const TextStyle(fontSize: 16)),
                         ],
                       ),
                     ),
                   )
                   .toList(),
-              onChanged: (value) => setState(() => _selectedCategory = value!),
+              onChanged: (value) => setState(() {
+                _selectedCategory = value!;
+                _selectedSubCategory = null;
+              }),
               selectedItemBuilder: (context) {
                 return deduplicatedCategories.map<Widget>((cat) {
                   return Row(
@@ -781,13 +868,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: cat!.color.withValues(alpha: 0.2),
+                          color: cat.color.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Icon(cat!.icon, color: cat!.color, size: 16),
+                        child: Icon(cat.icon, color: cat.color, size: 16),
                       ),
                       const SizedBox(width: 8),
-                      Text(cat!.name, style: const TextStyle(fontSize: 16)),
+                      Text(cat.name, style: const TextStyle(fontSize: 16)),
                     ],
                   );
                 }).toList();
@@ -796,6 +883,41 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
           ),
         ),
+        if (selectedCategoryObj != null &&
+            selectedCategoryObj.subCategories.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Text(
+            'Alt Kategori',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.zero,
+              color: Theme.of(context).inputDecorationTheme.fillColor,
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedSubCategory,
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                hint: const Text('Alt kategori seçin'),
+                items: selectedCategoryObj.subCategories
+                    .map(
+                      (sub) => DropdownMenuItem(value: sub, child: Text(sub)),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSubCategory = value;
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -811,31 +933,195 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       children: [
         const Text('Cüzdan', style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          initialValue: _selectedWalletId,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).dividerColor),
+            borderRadius: BorderRadius.zero,
+            color: Theme.of(context).inputDecorationTheme.fillColor,
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: _selectedWalletId.isNotEmpty ? _selectedWalletId : null,
+              isExpanded: true,
+              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              items: widget.wallets.map((wallet) {
+                final isCreditCard = wallet.id.startsWith('cc_');
+                return DropdownMenuItem(
+                  value: wallet.id,
+                  child: Row(
+                    children: [
+                      Icon(
+                        isCreditCard
+                            ? Icons.credit_card
+                            : _getWalletIcon(wallet.type),
+                        size: 20,
+                        color: isCreditCard ? Colors.purple : Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _cleanWalletName(wallet.name),
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            Text(
+                              isCreditCard ? 'Kredi Kartı' : 'Hesap',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (!isCreditCard)
+                        Text(
+                          NumberFormat.currency(
+                            locale: 'tr_TR',
+                            symbol: '₺',
+                            decimalDigits: 0,
+                          ).format(wallet.balance),
+                          style: TextStyle(
+                            color: wallet.balance >= 0
+                                ? Colors.green
+                                : Colors.red,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12,
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedWalletId = value;
+                  });
+                }
+              },
+              selectedItemBuilder: (context) {
+                return widget.wallets.map((wallet) {
+                  final isCreditCard = wallet.id.startsWith('cc_');
+                  return Row(
+                    children: [
+                      Icon(
+                        isCreditCard
+                            ? Icons.credit_card
+                            : _getWalletIcon(wallet.type),
+                        size: 18,
+                        color: isCreditCard ? Colors.purple : Colors.blue,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _cleanWalletName(wallet.name),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList();
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  IconData _getWalletIcon(String type) {
+    switch (type) {
+      case 'bank':
+        return Icons.account_balance;
+      case 'cash':
+        return Icons.money;
+      case 'savings':
+        return Icons.savings;
+      case 'investment':
+        return Icons.trending_up;
+      default:
+        return Icons.wallet;
+    }
+  }
+
+  Widget _buildInstallmentField() {
+    final installmentCount =
+        int.tryParse(_installmentCountController.text) ?? 1;
+    final amountText = _amountController.text
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
+    final totalAmount = double.tryParse(amountText) ?? 0;
+    final installmentAmount = installmentCount > 0
+        ? totalAmount / installmentCount
+        : 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Taksit Sayısı',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _installmentCountController,
+          keyboardType: TextInputType.number,
           decoration: InputDecoration(
+            hintText: '1',
+            helperText: '1 = Peşin, 2+ = Taksitli',
+            suffixText: 'taksit',
             border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.zero, borderSide: BorderSide(color: Theme.of(context).primaryColor)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.zero,
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.zero,
+              borderSide: BorderSide(color: Theme.of(context).primaryColor),
+            ),
             filled: true,
             fillColor: Theme.of(context).inputDecorationTheme.fillColor,
           ),
-          items: widget.wallets
-              .map(
-                (wallet) => DropdownMenuItem(
-                  value: wallet.id,
-                  child: Text(
-                    '${_cleanWalletName(wallet.name)} • ${NumberFormat('#,##0', 'tr_TR').format(wallet.balance)}',
-                  ),
-                ),
-              )
-              .toList(),
           onChanged: (value) {
             setState(() {
-              _selectedWalletId = value ?? '';
+              _installmentCount = int.tryParse(value) ?? 1;
+              if (_installmentCount < 1) _installmentCount = 1;
+              if (_installmentCount > 36) _installmentCount = 36;
             });
           },
         ),
+        if (installmentCount > 1 && totalAmount > 0) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Aylık taksit: ${NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(installmentAmount)}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -979,7 +1265,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
-                child: FaIcon(FontAwesomeIcons.xmark, color: Colors.white, size: 14),
+                child: FaIcon(
+                  FontAwesomeIcons.xmark,
+                  color: Colors.white,
+                  size: 14,
+                ),
               ),
             ),
           ),
@@ -1017,7 +1307,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: Theme.of(context).dividerColor),
+                            bottom: BorderSide(
+                              color: Theme.of(context).dividerColor,
+                            ),
                           ),
                         ),
                         child: Row(
@@ -1120,7 +1412,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   _formatDateTurkish(_selectedDate),
                   style: const TextStyle(fontSize: 16),
                 ),
-                FaIcon(AppIcons.calendar, color: Theme.of(context).primaryColor, size: 20),
+                FaIcon(
+                  AppIcons.calendar,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
               ],
             ),
           ),
@@ -1129,5 +1425,3 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 }
-
-

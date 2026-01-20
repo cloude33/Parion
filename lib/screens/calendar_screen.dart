@@ -8,12 +8,14 @@ import '../models/credit_card_transaction.dart';
 import '../models/credit_card.dart';
 import '../models/bill_payment.dart';
 import '../models/bill_template.dart';
+import '../models/loan.dart';
 import '../services/data_service.dart';
 import '../services/credit_card_service.dart';
 import '../services/bill_payment_service.dart';
 import '../services/bill_template_service.dart';
 import '../utils/currency_helper.dart';
 import 'edit_bill_payment_screen.dart';
+import 'loan_detail_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
   final List<Transaction> transactions;
@@ -42,6 +44,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   Map<String, CreditCard> _creditCards = {};
   List<BillPayment> _billPayments = [];
   Map<String, BillTemplate> _billTemplates = {};
+  List<Loan> _loans = [];
   late PageController _pageController;
   final int _initialPage = 1200;
 
@@ -81,6 +84,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
       templateMap[template.id] = template;
     }
 
+    // Load loans
+    final loans = await _dataService.getLoans();
+
     setState(() {
       _currentUser = user;
       _categories = categories;
@@ -88,6 +94,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
       _creditCards = cardMap;
       _billPayments = billPayments;
       _billTemplates = templateMap;
+      _loans = loans;
     });
   }
 
@@ -112,8 +119,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
           b.dueDate.month == date.month &&
           b.dueDate.day == date.day;
     }).toList();
-    
-    return [...normalTransactions, ...ccTransactions, ...billPayments];
+
+    final loanInstallments = <Map<String, dynamic>>[];
+    for (var loan in _loans) {
+      for (var installment in loan.installments) {
+        if (installment.dueDate.year == date.year &&
+            installment.dueDate.month == date.month &&
+            installment.dueDate.day == date.day) {
+          loanInstallments.add({
+            'type': 'loan_installment',
+            'loan': loan,
+            'installment': installment,
+          });
+        }
+      }
+    }
+
+    return [
+      ...normalTransactions,
+      ...ccTransactions,
+      ...billPayments,
+      ...loanInstallments,
+    ];
   }
 
   // Removed unused method _getDayTotal to resolve analyzer warning
@@ -138,6 +165,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
     expense += dayTransactions
         .where((t) => t is BillPayment && !t.isPaid)
         .fold(0.0, (sum, t) => sum + (t as BillPayment).amount);
+
+    expense += dayTransactions
+        .where(
+          (t) => t is Map<String, dynamic> && t['type'] == 'loan_installment',
+        )
+        .fold(
+          0.0,
+          (sum, t) => sum + (t['installment'] as LoanInstallment).amount,
+        );
 
     return expense;
   }
@@ -170,7 +206,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
         )
         .fold(0.0, (sum, t) => sum + t.amount);
 
-    return normalExpense + ccExpense;
+    double loanExpense = 0;
+    for (var loan in _loans) {
+      for (var installment in loan.installments) {
+        if (installment.dueDate.month == _selectedMonth.month &&
+            installment.dueDate.year == _selectedMonth.year) {
+          loanExpense += installment.amount;
+        }
+      }
+    }
+
+    return normalExpense + ccExpense + loanExpense;
   }
 
   double get _monthTotal {
@@ -202,7 +248,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   _selectedMonth.month,
                   _selectedDate.day.clamp(
                     1,
-                    DateTime(_selectedMonth.year, _selectedMonth.month + 1, 0).day,
+                    DateTime(
+                      _selectedMonth.year,
+                      _selectedMonth.month + 1,
+                      0,
+                    ).day,
                   ),
                 );
               });
@@ -233,9 +283,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F6F8),
-      body: SafeArea(
-        child: content,
-      ),
+      body: SafeArea(child: content),
     );
   }
 
@@ -385,6 +433,12 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         return _buildCreditCardTransactionItem(transaction);
                       } else if (transaction is BillPayment) {
                         return _buildBillPaymentItem(transaction);
+                      } else if (transaction is Map<String, dynamic> &&
+                          transaction['type'] == 'loan_installment') {
+                        return _buildLoanInstallmentItem(
+                          transaction['loan'] as Loan,
+                          transaction['installment'] as LoanInstallment,
+                        );
                       }
                       return const SizedBox.shrink();
                     },
@@ -441,6 +495,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                Text(
+                  transaction.subCategory != null
+                      ? '${transaction.category} > ${transaction.subCategory}'
+                      : transaction.category,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
                 if (transaction.installments != null)
                   Text(
                     '${transaction.currentInstallment}/${transaction.installments} ${AppLocalizations.of(context)!.installment}',
@@ -482,13 +545,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
     Color categoryColor;
     IconData iconData;
-    
+
     if (category != null) {
-        categoryColor = category.color;
-        iconData = category.icon;
+      categoryColor = category.color;
+      iconData = category.icon;
     } else {
-        categoryColor = card?.color ?? Colors.blue;
-        iconData = Icons.credit_card;
+      categoryColor = card?.color ?? Colors.blue;
+      iconData = Icons.credit_card;
     }
 
     return Container(
@@ -509,11 +572,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               color: categoryColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(
-              iconData,
-              color: categoryColor,
-              size: 20,
-            ),
+            child: Icon(iconData, color: categoryColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -697,7 +756,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   const Color(0xFFFF3B30),
                 ),
               ),
-               Flexible(
+              Flexible(
                 child: _buildSummaryItem(
                   'Toplam',
                   _monthTotal,
@@ -826,10 +885,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ? Border.all(color: const Color(0xFF007AFF), width: 2)
               : null,
         ),
-        constraints: const BoxConstraints(
-          minHeight: 60,
-          minWidth: 44,
-        ),
+        constraints: const BoxConstraints(minHeight: 60, minWidth: 44),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
@@ -880,8 +936,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final color = billPayment.isPaid
         ? const Color(0xFF34C759)
         : billPayment.isOverdue
-            ? const Color(0xFFFF3B30)
-            : const Color(0xFFFF9500);
+        ? const Color(0xFFFF3B30)
+        : const Color(0xFFFF9500);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -904,142 +960,252 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ? const Color(0xFF2C2C2E)
                 : const Color(0xFFF2F2F7),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withValues(alpha: 0.5),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(Icons.receipt_long, color: color, size: 20),
+            border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  template?.name ?? 'Fatura',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey[200]
-                        : const Color(0xFF1C1C1E),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                Row(
+                child: Icon(Icons.receipt_long, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      billPayment.statusDisplayName,
+                      template?.name ?? 'Fatura',
                       style: TextStyle(
-                        fontSize: 11,
-                        color: color,
-                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[200]
+                            : const Color(0xFF1C1C1E),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    if (template != null) ...[
-                      const Text(
-                        ' • ',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF8E8E93),
+                    Row(
+                      children: [
+                        Text(
+                          billPayment.statusDisplayName,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: color,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                      Text(
-                        template.categoryDisplayName,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Color(0xFF8E8E93),
-                        ),
-                      ),
-                    ],
+                        if (template != null) ...[
+                          const Text(
+                            ' • ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                          Text(
+                            template.categoryDisplayName,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF8E8E93),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          Text(
-            '-${CurrencyHelper.formatAmountCompact(billPayment.amount, _currentUser)}',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'edit') {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        EditBillPaymentScreen(payment: billPayment),
-                  ),
-                );
-                if (result == true) {
-                  await _loadData();
-                }
-              } else if (value == 'delete') {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Faturayı Sil'),
-                    content: const Text(
-                      'Bu fatura kaydını silmek istediğinizden emin misiniz?',
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('İptal'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
-                        child: const Text('Sil'),
-                      ),
-                    ],
-                  ),
-                );
-                if (confirm == true) {
-                  await _billPaymentService.deletePayment(billPayment.id);
-                  await _loadData();
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Fatura silindi'),
-                        backgroundColor: Colors.green,
+              ),
+              Text(
+                '-${CurrencyHelper.formatAmountCompact(billPayment.amount, _currentUser)}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              PopupMenuButton<String>(
+                onSelected: (value) async {
+                  if (value == 'edit') {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            EditBillPaymentScreen(payment: billPayment),
                       ),
                     );
+                    if (result == true) {
+                      await _loadData();
+                    }
+                  } else if (value == 'delete') {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Faturayı Sil'),
+                        content: const Text(
+                          'Bu fatura kaydını silmek istediğinizden emin misiniz?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, false),
+                            child: const Text('İptal'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context, true),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.red,
+                            ),
+                            child: const Text('Sil'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      await _billPaymentService.deletePayment(billPayment.id);
+                      await _loadData();
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Fatura silindi'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    }
                   }
-                }
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'edit',
-                child: Text('Düzenle'),
-              ),
-              const PopupMenuItem(
-                value: 'delete',
-                child: Text('Sil'),
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'edit', child: Text('Düzenle')),
+                  const PopupMenuItem(value: 'delete', child: Text('Sil')),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildLoanInstallmentItem(Loan loan, LoanInstallment installment) {
+    final color = installment.isPaid
+        ? const Color(0xFF34C759)
+        : const Color(0xFFFF3B30);
+    final bankName = loan.bankName;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2C2C2E)
+            : const Color(0xFFF2F2F7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF5E5CE6).withValues(alpha: 0.3),
+          width: 1.0,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => LoanDetailScreen(loan: loan),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5E5CE6).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.account_balance,
+                  color: Color(0xFF5E5CE6),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loan.name,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[200]
+                            : const Color(0xFF1C1C1E),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          bankName,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF8E8E93),
+                          ),
+                        ),
+                        const Text(
+                          ' • ',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF8E8E93),
+                          ),
+                        ),
+                        Text(
+                          '${installment.installmentNumber}/${loan.totalInstallments} Taksit',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF8E8E93),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '-${CurrencyHelper.formatAmountCompact(installment.amount, _currentUser)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                  if (installment.isPaid)
+                    const Text(
+                      'Ödendi',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFF34C759),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-

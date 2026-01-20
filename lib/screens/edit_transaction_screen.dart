@@ -35,6 +35,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _memoController = TextEditingController();
   late String? _selectedCategory;
+  String? _selectedSubCategory;
   late String? _selectedWalletId;
   final List<String> _images = [];
   bool _isInstallment = false;
@@ -99,6 +100,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     ).format(widget.transaction.amount);
     _descriptionController.text = widget.transaction.description;
     _selectedCategory = widget.transaction.category;
+    _selectedSubCategory = widget.transaction.subCategory;
     _selectedWalletId = widget.transaction.walletId;
     _selectedDate = widget.transaction.date;
 
@@ -192,6 +194,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         amount: totalAmount,
         description: _descriptionController.text,
         category: _selectedCategory ?? '',
+        subCategory: _selectedSubCategory,
         walletId: _selectedWalletId ?? '',
         date: _selectedDate,
         memo: _memoController.text.isEmpty ? null : _memoController.text,
@@ -315,7 +318,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                icon: Icon(Icons.arrow_back, color: Theme.of(context).appBarTheme.foregroundColor),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Theme.of(context).appBarTheme.foregroundColor,
+                ),
                 onPressed: () => Navigator.pop(context),
               ),
               Text(
@@ -581,6 +587,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       return Container();
     }
 
+    Category? selectedCategoryObj;
+    try {
+      if (_selectedCategory != null) {
+        selectedCategoryObj = _categories.firstWhere(
+          (c) => c.name == _selectedCategory,
+        );
+      }
+    } catch (_) {}
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -618,7 +633,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (value) => setState(() => _selectedCategory = value!),
+              onChanged: (value) => setState(() {
+                _selectedCategory = value!;
+                _selectedSubCategory = null;
+              }),
               selectedItemBuilder: (context) {
                 return filteredCategories.map<Widget>((cat) {
                   return Row(
@@ -640,6 +658,40 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             ),
           ),
         ),
+        if (selectedCategoryObj != null &&
+            selectedCategoryObj.subCategories.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          const Text(
+            'Alt Kategori',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedSubCategory,
+                isExpanded: true,
+                icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                hint: const Text('Alt kategori seçin'),
+                items: selectedCategoryObj.subCategories
+                    .map(
+                      (sub) => DropdownMenuItem(value: sub, child: Text(sub)),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSubCategory = value;
+                  });
+                },
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -720,7 +772,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     ? Colors.grey.shade800
                     : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerColor, width: 2),
+                border: Border.all(
+                  color: Theme.of(context).dividerColor,
+                  width: 2,
+                ),
               ),
               child: Column(
                 children: [
@@ -972,7 +1027,10 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                   _formatDateTurkish(_selectedDate),
                   style: const TextStyle(fontSize: 16),
                 ),
-                Icon(Icons.calendar_today, color: Theme.of(context).primaryColor),
+                Icon(
+                  Icons.calendar_today,
+                  color: Theme.of(context).primaryColor,
+                ),
               ],
             ),
           ),
@@ -997,5 +1055,3 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     );
   }
 }
-
-

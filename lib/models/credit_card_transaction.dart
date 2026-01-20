@@ -46,6 +46,9 @@ class CreditCardTransaction extends HiveObject {
   @HiveField(13)
   double? pointsEarned;
 
+  @HiveField(14)
+  String? subCategory;
+
   CreditCardTransaction({
     required this.id,
     required this.cardId,
@@ -61,6 +64,7 @@ class CreditCardTransaction extends HiveObject {
     this.installmentStartDate,
     this.isCashAdvance = false,
     this.pointsEarned,
+    this.subCategory,
   }) : images = images ?? [];
   double get installmentAmount => amount / installmentCount;
 
@@ -116,6 +120,7 @@ class CreditCardTransaction extends HiveObject {
     DateTime? installmentStartDate,
     bool? isCashAdvance,
     double? pointsEarned,
+    String? subCategory,
   }) {
     return CreditCardTransaction(
       id: id ?? this.id,
@@ -132,6 +137,7 @@ class CreditCardTransaction extends HiveObject {
       installmentStartDate: installmentStartDate ?? this.installmentStartDate,
       isCashAdvance: isCashAdvance ?? this.isCashAdvance,
       pointsEarned: pointsEarned ?? this.pointsEarned,
+      subCategory: subCategory ?? this.subCategory,
     );
   }
 
@@ -151,6 +157,7 @@ class CreditCardTransaction extends HiveObject {
       'installmentStartDate': installmentStartDate?.toIso8601String(),
       'isCashAdvance': isCashAdvance,
       'pointsEarned': pointsEarned,
+      'subCategory': subCategory,
     };
   }
 
@@ -174,6 +181,7 @@ class CreditCardTransaction extends HiveObject {
           : null,
       isCashAdvance: json['isCashAdvance'] as bool? ?? false,
       pointsEarned: (json['pointsEarned'] as num?)?.toDouble(),
+      subCategory: json['subCategory'] as String?,
     );
   }
 
