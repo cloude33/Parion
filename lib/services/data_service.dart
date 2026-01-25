@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../models/wallet.dart';
 import '../models/transaction.dart';
+import 'package:uuid/uuid.dart';
 import '../models/goal.dart';
 import '../models/loan.dart';
 import '../models/category.dart';
@@ -675,7 +676,7 @@ class DataService {
       }
 
       // Kullanıcıları ve profil resimlerini geri yükle
-      if (backupData.containsKey('users')) {
+      if (backupData.containsKey('users') && backupData['users'] is List) {
         var usersList = (backupData['users'] as List)
             .map((u) => User.fromJson(u))
             .toList();
@@ -729,6 +730,20 @@ class DataService {
         } else if (usersList.isNotEmpty) {
           await saveUser(usersList.first);
         }
+      }
+
+      // If no users were restored (e.g. legacy backup or error), create a default user
+      final currentUsers = await getAllUsers();
+      if (currentUsers.isEmpty) {
+        final defaultUser = User(
+          id: const Uuid().v4(),
+          name: 'Kullanıcı',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        );
+        await saveAllUsers([defaultUser]);
+        await saveUser(defaultUser);
+        debugPrint('Legacy backup restored: Created default user');
       }
 
       // Restore credit card data

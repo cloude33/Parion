@@ -243,6 +243,14 @@ final List<Category> _defaultCategories = [
     icon: Icons.receipt_long,
     color: Colors.cyan,
     type: 'expense',
+    subCategories: [
+      'Elektrik',
+      'Su',
+      'Doğalgaz',
+      'İnternet',
+      'Telefon',
+      'Aidat',
+    ],
   ),
   Category(
     id: 'e2',
@@ -278,6 +286,13 @@ final List<Category> _defaultCategories = [
     icon: Icons.restaurant,
     color: Colors.yellow,
     type: 'expense',
+    subCategories: [
+      'Market',
+      'Restoran',
+      'Kafe',
+      'Fast Food',
+      'Yemek Siparişi',
+    ],
   ),
   Category(
     id: 'e7',
@@ -292,6 +307,14 @@ final List<Category> _defaultCategories = [
     icon: Icons.local_hospital,
     color: Colors.red,
     type: 'expense',
+    subCategories: [
+      'İlaç',
+      'Doktor',
+      'Hastane',
+      'Diş',
+      'Göz',
+      'Vitamin',
+    ],
   ),
   Category(
     id: 'e9',
@@ -365,6 +388,14 @@ final List<Category> _defaultCategories = [
     icon: Icons.subscriptions,
     color: const Color(0xFFE91E63),
     type: 'expense',
+    subCategories: [
+      'Netflix',
+      'Spotify',
+      'YouTube Premium',
+      'Amazon Prime',
+      'Apple Music',
+      'Dergi/Gazete',
+    ],
   ),
   Category(
     id: 'e18',
@@ -386,6 +417,13 @@ final List<Category> _defaultCategories = [
     icon: Icons.home_repair_service,
     color: const Color(0xFF8D6E63),
     type: 'expense',
+    subCategories: [
+      'Temizlik',
+      'Tamir',
+      'Dekorasyon',
+      'Bahçe',
+      'Mutfak Eşyaları',
+    ],
   ),
   Category(
     id: 'e21',

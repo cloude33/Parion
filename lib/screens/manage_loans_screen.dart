@@ -4,6 +4,7 @@ import '../models/loan.dart';
 import '../models/wallet.dart';
 import '../services/data_service.dart';
 import 'add_loan_screen.dart';
+import 'add_custom_loan_screen.dart';
 import 'loan_detail_screen.dart';
 
 class ManageLoansScreen extends StatefulWidget {
@@ -38,10 +39,69 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
   }
 
   Future<void> _addLoan() async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Ödeme Planı Ekle',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5E5CE6).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.account_balance, color: Color(0xFF5E5CE6)),
+              ),
+              title: const Text('Banka Kredisi'),
+              subtitle: const Text('Faiz oranları ve otomatik hesaplama'),
+              onTap: () => Navigator.pop(context, 'bank'),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.edit_note, color: Colors.orange),
+              ),
+              title: const Text('Manuel/Elden Ödeme Planı'),
+              subtitle: const Text('Özel tarihler ve tutarlar (Okul, Senet vb.)'),
+              onTap: () => Navigator.pop(context, 'custom'),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+
+    if (choice == null) return;
+
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddLoanScreen(wallets: _wallets)),
+      MaterialPageRoute(
+        builder: (context) => choice == 'bank'
+            ? AddLoanScreen(wallets: _wallets)
+            : AddCustomLoanScreen(wallets: _wallets),
+      ),
     );
+
     if (result == true) {
       _loadData();
     }

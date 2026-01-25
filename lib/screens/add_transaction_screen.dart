@@ -104,17 +104,27 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _selectedWalletId = widget.wallets.isNotEmpty
         ? widget.wallets.first.id
         : '';
-    if (widget.categories == null) {
-      _loadCategories();
-    }
+    // Always load fresh categories from data service
+    _loadCategories();
   }
 
   Future<void> _loadCategories() async {
     try {
+      // Always load fresh categories from data service
       final categories = (await _dataService.getCategories()).cast<Category>();
+      // Sort categories alphabetically
+      categories.sort((a, b) => a.name.compareTo(b.name));
       if (mounted) {
         setState(() {
           _categories = categories;
+          // Update selected category if current one is not valid
+          final filteredCategories = categories
+              .where((c) => c.type == (_isIncome ? 'income' : 'expense'))
+              .toList();
+          if (filteredCategories.isNotEmpty &&
+              !filteredCategories.any((c) => c.name == _selectedCategory)) {
+            _selectedCategory = filteredCategories.first.name;
+          }
         });
       }
     } catch (e) {
@@ -793,7 +803,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildCategoryField() {
-    final allCategories = widget.categories ?? _categories;
+    // Always use fresh categories from data service
+    final allCategories = _categories;
     final filteredCategories = allCategories
         .where((c) => c.type == (_isIncome ? 'income' : 'expense'))
         .toList();
@@ -802,8 +813,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       uniqueCategories[cat.name] = cat;
     }
     final deduplicatedCategories = uniqueCategories.values.toList();
+    // Sort alphabetically
+    deduplicatedCategories.sort((a, b) => a.name.compareTo(b.name));
     if (deduplicatedCategories.isNotEmpty &&
-        (widget.categories != null || _categories.isNotEmpty) &&
+        _categories.isNotEmpty &&
         !_isValidCategory(_selectedCategory, deduplicatedCategories)) {
       _selectedCategory = deduplicatedCategories.first.name;
       _selectedSubCategory = null;

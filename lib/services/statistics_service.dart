@@ -134,6 +134,26 @@ class StatisticsService {
 
         double monthIncome = 0;
         double monthExpense = 0;
+        
+        // Get regular transactions from data service
+        final regularTransactions = await _dataService.getTransactions();
+        final monthlyRegularTransactions = regularTransactions.where((t) {
+          final isInRange = t.date.isAfter(monthStart.subtract(const Duration(seconds: 1))) &&
+              t.date.isBefore(monthEnd.add(const Duration(seconds: 1)));
+          final matchesWallet = walletId == null || t.walletId == walletId;
+          final matchesCategory = category == null || t.category == category;
+          return isInRange && matchesWallet && matchesCategory;
+        }).toList();
+        
+        for (var transaction in monthlyRegularTransactions) {
+          if (transaction.type == 'income') {
+            monthIncome += transaction.amount;
+          } else if (transaction.type == 'expense') {
+            monthExpense += transaction.amount;
+          }
+        }
+        
+        // Get credit card transactions
         final allTransactions = <CreditCardTransaction>[];
         final creditCards = await _creditCardService.getActiveCards();
         for (var card in creditCards) {
@@ -153,6 +173,8 @@ class StatisticsService {
         for (var transaction in filteredCCTransactions) {
           monthExpense += transaction.amount;
         }
+        
+        // Get KMH transactions
         for (var wallet in wallets) {
           if (wallet.isKmhAccount) {
             if (walletId != null && wallet.id != walletId) continue;

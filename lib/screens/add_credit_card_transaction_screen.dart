@@ -67,6 +67,8 @@ class _AddCreditCardTransactionScreenState
   Future<void> _loadCategories() async {
     try {
       final categories = await _dataService.getCategories();
+      // Sort categories alphabetically
+      categories.sort((a, b) => a.name.compareTo(b.name));
       if (mounted) {
         setState(() {
           _categories = categories;
