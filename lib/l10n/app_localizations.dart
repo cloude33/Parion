@@ -1417,6 +1417,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ödeme Tarihi'**
   String get paymentDate;
+
+  /// No description provided for @noTransactionsThisMonth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ay için işlem bulunamadı'**
+  String get noTransactionsThisMonth;
 }
 
 class _AppLocalizationsDelegate

@@ -225,5 +225,6 @@
   "billPaymentDeleted": "Fatura ödemesi silindi",
   "confirmDeleteBillPayment": "Bu fatura ödemesini silmek istediğinize emin misiniz?",
   "update": "Güncelle",
-  "paymentDate": "Ödeme Tarihi"
+  "paymentDate": "Ödeme Tarihi",
+  "noTransactionsThisMonth": "Bu ay için işlem bulunamadı"
 }

@@ -6,6 +6,7 @@ import '../services/sensitive_data_handler.dart';
 import 'add_wallet_screen.dart';
 import 'kmh_account_detail_screen.dart';
 import 'kmh_comparison_screen.dart';
+
 class KmhListScreen extends StatefulWidget {
   const KmhListScreen({super.key});
 
@@ -70,9 +71,9 @@ class _KmhListScreenState extends State<KmhListScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     }
   }
@@ -121,9 +122,7 @@ class _KmhListScreenState extends State<KmhListScreen> {
   Future<void> _navigateToComparison() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const KmhComparisonScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const KmhComparisonScreen()),
     );
 
     if (result == true) {
@@ -134,7 +133,7 @@ class _KmhListScreenState extends State<KmhListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('KMH Hesaplarım'),
         actions: [
@@ -191,10 +190,7 @@ class _KmhListScreenState extends State<KmhListScreen> {
                 const SizedBox(width: 12),
                 const Text(
                   'Toplam KMH Durumu',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -251,7 +247,11 @@ class _KmhListScreenState extends State<KmhListScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                    const Icon(
+                      Icons.info_outline,
+                      color: Colors.blue,
+                      size: 20,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       '${_allKmhAccounts.length} KMH Hesabı',
@@ -286,10 +286,7 @@ class _KmhListScreenState extends State<KmhListScreen> {
             const SizedBox(width: 4),
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
           ],
         ),
@@ -321,11 +318,11 @@ class _KmhListScreenState extends State<KmhListScreen> {
                   },
                 )
               : null,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF2C2C2E)
+              : Colors.grey[100],
         ),
         onChanged: _filterAccounts,
       ),
@@ -407,8 +404,9 @@ class _KmhListScreenState extends State<KmhListScreen> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Color(int.parse(account.color))
-                          .withValues(alpha: 0.2),
+                      color: Color(
+                        int.parse(account.color),
+                      ).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -503,10 +501,7 @@ class _KmhListScreenState extends State<KmhListScreen> {
                       const SizedBox(width: 4),
                       Text(
                         'Kullanılabilir: ${_currencyFormat.format(account.availableCredit)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
+                        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
                   ),
@@ -537,13 +532,7 @@ class _KmhListScreenState extends State<KmhListScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
         const SizedBox(height: 4),
         Text(
           value,
@@ -571,10 +560,10 @@ class _KmhListScreenState extends State<KmhListScreen> {
     if (accountNumber == null || accountNumber.isEmpty) {
       return null;
     }
-    
+
     final masked = SensitiveDataHandler.maskAccountNumber(accountNumber);
-    return masked != null ? SensitiveDataHandler.formatMaskedNumber(masked) : null;
+    return masked != null
+        ? SensitiveDataHandler.formatMaskedNumber(masked)
+        : null;
   }
 }
-
-

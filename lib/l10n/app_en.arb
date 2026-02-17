@@ -225,5 +225,6 @@
   "billPaymentDeleted": "Bill payment deleted",
   "confirmDeleteBillPayment": "Are you sure you want to delete this bill payment?",
   "update": "Update",
-  "paymentDate": "Payment Date"
+  "paymentDate": "Payment Date",
+  "noTransactionsThisMonth": "No transactions found for this month"
 }

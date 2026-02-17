@@ -150,16 +150,7 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
       );
 
       // Filter transactions for this period
-      // Include start date for transactions that might fall exactly on the cut-off
       final periodTransactions = transactions.where((t) {
-        // Handle boundary conditions carefully
-        // Period is (Start, End] usually, but let's be inclusive for safety or follow strict logic
-        // If statement day is 10th. Period is 11th prev - 10th curr.
-        // Start (10th prev). End (10th curr).
-        // Transaction > Start && Transaction <= End
-
-        // Fix: Use inclusive/exclusive correctly
-        // We want transactions AFTER the previous statement day, up to AND INCLUDING current statement day
         final isAfterStart = t.transactionDate.isAfter(periodStart);
         final isBeforeOrEqualEnd = t.transactionDate.isBefore(
           periodEnd.add(const Duration(days: 1)),
@@ -167,6 +158,41 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
 
         return isAfterStart && isBeforeOrEqualEnd;
       }).toList();
+
+      // Add virtual transactions for active installments that apply to this period
+      // Only for the current active period (where periodEnd >= today)
+      final today = DateTime.now();
+      final isCurrentPeriod =
+          periodEnd.isAfter(today) ||
+          (today.year == periodEnd.year &&
+              today.month == periodEnd.month &&
+              today.day == periodEnd.day);
+
+      if (isCurrentPeriod) {
+        for (var inst in installments) {
+          // If it's an active installment and was made before or during this period
+          if (!inst.isCompleted &&
+              inst.transactionDate.isBefore(
+                periodEnd.add(const Duration(days: 1)),
+              )) {
+            // Create a virtual transaction for the installment payment
+            final currentInstallmentNum = inst.installmentsPaid + 1;
+            final virtualInst = CreditCardTransaction(
+              id: 'virtual_${inst.id}_$currentInstallmentNum',
+              cardId: inst.cardId,
+              amount: inst.installmentAmount,
+              description:
+                  '${inst.description} (Taksit $currentInstallmentNum/${inst.installmentCount})',
+              transactionDate: inst.transactionDate, // Keep original date or use a period date
+              category: inst.category,
+              subCategory: inst.subCategory,
+              installmentCount: 1, // Show as single payment in this list
+              createdAt: inst.createdAt,
+            );
+            periodTransactions.add(virtualInst);
+          }
+        }
+      }
 
       periodTransactions.sort(
         (a, b) => b.transactionDate.compareTo(a.transactionDate),
@@ -1015,9 +1041,7 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
               ListView.separated(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: _activeInstallments.length > 5
-                    ? 5
-                    : _activeInstallments.length,
+                itemCount: _activeInstallments.length,
                 separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final transaction = _activeInstallments[index];
@@ -1027,11 +1051,6 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
             ],
           ),
         ),
-        if (_activeInstallments.length > 5)
-          TextButton(
-            onPressed: _navigateToInstallments,
-            child: const Text('Tümünü Gör'),
-          ),
       ],
     );
   }
@@ -1217,15 +1236,20 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
   }
 
   Widget _buildTransactionItem(CreditCardTransaction transaction) {
+    final isVirtual = transaction.id.startsWith('virtual_');
     final isInstallment = transaction.installmentCount > 1;
 
     return ListTile(
-      onTap: () => _navigateToEditTransaction(transaction),
+      onTap: isVirtual ? null : () => _navigateToEditTransaction(transaction),
       leading: CircleAvatar(
-        backgroundColor: widget.card.color.withValues(alpha: 0.2),
+        backgroundColor: isVirtual
+            ? Colors.grey.withValues(alpha: 0.2)
+            : widget.card.color.withValues(alpha: 0.2),
         child: Icon(
-          isInstallment ? Icons.schedule : Icons.shopping_bag,
-          color: widget.card.color,
+          isVirtual
+              ? Icons.receipt_long
+              : (isInstallment ? Icons.schedule : Icons.shopping_bag),
+          color: isVirtual ? Colors.grey : widget.card.color,
           size: 20,
         ),
       ),
@@ -1233,6 +1257,10 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
         transaction.description,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          color: isVirtual ? Colors.grey[700] : null,
+          fontStyle: isVirtual ? FontStyle.italic : null,
+        ),
       ),
       subtitle: Text(
         '${DateFormat('dd MMM yyyy', 'tr_TR').format(transaction.transactionDate)} • ${transaction.category}${transaction.subCategory != null ? ' > ${transaction.subCategory}' : ''}',
@@ -1244,12 +1272,21 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
         children: [
           Text(
             _currencyFormat.format(transaction.amount),
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              color: isVirtual ? Colors.grey[700] : null,
+            ),
           ),
-          if (isInstallment)
+          if (isInstallment && !isVirtual)
             Text(
               '${transaction.installmentCount}x',
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          if (isVirtual)
+            const Text(
+              'Taksit Ödemesi',
+              style: TextStyle(fontSize: 10, color: Colors.blue),
             ),
         ],
       ),

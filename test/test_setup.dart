@@ -298,18 +298,40 @@ class TestSetup {
       }
     }
 
-    // Initialize services
+    // Initialize services in correct order
     try {
-      await CreditCardBoxService.init();
-      await DataService().init();
+      // Initialize CreditCardBoxService first
+      try {
+        await CreditCardBoxService.init();
+        print('TestSetup: CreditCardBoxService initialized');
+      } catch (e) {
+        print('CreditCardBoxService already initialized or error: $e');
+      }
 
-      // Initialize KMH and Recurring Transaction services
-      print('TestSetup: Initializing KMH Box Service');
-      await KmhBoxService.init();
-      print('TestSetup: KMH Box Service initialized');
+      // Initialize KMH Box Service
+      try {
+        await KmhBoxService.init();
+        print('TestSetup: KMH Box Service initialized');
+      } catch (e) {
+        print('KMH Box Service already initialized or error: $e');
+      }
 
-      final recurringRepo = RecurringTransactionRepository();
-      await recurringRepo.init();
+      // Initialize DataService (depends on other services)
+      try {
+        await DataService().init();
+        print('TestSetup: DataService initialized');
+      } catch (e) {
+        print('DataService already initialized or error: $e');
+      }
+
+      // Initialize Recurring Transaction Repository
+      try {
+        final recurringRepo = RecurringTransactionRepository();
+        await recurringRepo.init();
+        print('TestSetup: RecurringTransactionRepository initialized');
+      } catch (e) {
+        print('RecurringTransactionRepository already initialized or error: $e');
+      }
     } catch (e) {
       // Services might already be initialized
       print('Service initialization warning: $e');

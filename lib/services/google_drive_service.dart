@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
+import 'package:http/http.dart' as http;
 
 class GoogleDriveService {
   static final GoogleDriveService _instance = GoogleDriveService._internal();
@@ -10,7 +12,7 @@ class GoogleDriveService {
   GoogleDriveService._internal();
 
   bool _isTestMode = false;
-  
+
   @visibleForTesting
   void setTestMode(bool value) {
     _isTestMode = value;
@@ -22,6 +24,20 @@ class GoogleDriveService {
 
   drive.DriveApi? _driveApi;
 
+  /// Checks if we can actually reach Google services (not just WiFi connected)
+  Future<bool> checkGoogleConnectivity() async {
+    if (_isTestMode) return true;
+    try {
+      final response = await http
+          .get(Uri.parse('https://www.googleapis.com/'))
+          .timeout(const Duration(seconds: 10));
+      return response.statusCode == 404 || response.statusCode == 200;
+    } catch (e) {
+      debugPrint('⚠️ Google API connectivity check failed: $e');
+      return false;
+    }
+  }
+
   Future<bool> isAuthenticated() async {
     if (_isTestMode) return true;
     return await _googleSignIn.isSignedIn();
@@ -31,6 +47,14 @@ class GoogleDriveService {
     if (_isTestMode) return;
     try {
       _driveApi = null;
+
+      // 0. First check if we can actually reach Google services
+      final hasConnectivity = await checkGoogleConnectivity();
+      if (!hasConnectivity) {
+        throw Exception(
+          'network_error: Google servislerine erişilemiyor. İnternet bağlantınızı kontrol edin veya farklı bir ağ deneyin.',
+        );
+      }
 
       // 1. Try silent sign-in first
       try {
@@ -150,9 +174,9 @@ class GoogleDriveService {
 
   Future<File?> downloadBackup(String fileId, String savePath) async {
     if (_isTestMode) {
-       final file = File(savePath);
-       await file.writeAsString('test backup content');
-       return file;
+      final file = File(savePath);
+      await file.writeAsString('test backup content');
+      return file;
     }
     if (_driveApi == null) await signIn();
     if (_driveApi == null) throw Exception('Google Drive API not initialized');

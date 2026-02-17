@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
 import '../../models/cash_flow_data.dart';
 import '../../services/statistics_service.dart';
 import 'summary_card.dart';
@@ -117,7 +116,6 @@ class _CashFlowTabState extends State<CashFlowTab> {
       child: ResponsiveStatisticsLayout(
         children: [
           _buildSummaryCards(),
-          _buildLineChartCard(),
           _buildDetailedTable(),
         ],
       ),
@@ -305,338 +303,6 @@ class _CashFlowTabState extends State<CashFlowTab> {
     );
   }
 
-  Widget _buildLineChartCard() {
-    final data = _cashFlowData!;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    if (data.monthlyData.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Center(
-            child: Text(
-              'Bu dönem için veri bulunmamaktadır',
-              style: TextStyle(
-                color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-    final incomeSpots = <FlSpot>[];
-    final expenseSpots = <FlSpot>[];
-
-    for (int i = 0; i < data.monthlyData.length; i++) {
-      final monthData = data.monthlyData[i];
-      incomeSpots.add(FlSpot(i.toDouble(), monthData.income));
-      expenseSpots.add(FlSpot(i.toDouble(), monthData.expense));
-    }
-    double maxY = 0;
-    for (var monthData in data.monthlyData) {
-      if (monthData.income > maxY) maxY = monthData.income;
-      if (monthData.expense > maxY) maxY = monthData.expense;
-    }
-    maxY = maxY * 1.2;
-    if (maxY == 0) maxY = 1000;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Gelir vs Gider',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                if (_selectedMonthIndex != null)
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _selectedMonthIndex = null;
-                      });
-                    },
-                    child: const Text('Temizle'),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _buildLegendItem('Gelir', Colors.green),
-                const SizedBox(width: 16),
-                _buildLegendItem('Gider', Colors.red),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 250,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    horizontalInterval: maxY / 5,
-                    verticalInterval: 1,
-                    getDrawingHorizontalLine: (value) {
-                      return FlLine(
-                        color: (isDark ? Colors.white : Colors.grey).withValues(
-                          alpha: 0.1,
-                        ),
-                        strokeWidth: 1,
-                      );
-                    },
-                    getDrawingVerticalLine: (value) {
-                      return FlLine(
-                        color: (isDark ? Colors.white : Colors.grey).withValues(
-                          alpha: 0.1,
-                        ),
-                        strokeWidth: 1,
-                      );
-                    },
-                  ),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 30,
-                        interval: 1,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < data.monthlyData.length) {
-                            final month = data.monthlyData[index].month;
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                DateFormat('MMM', 'tr_TR').format(month),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: isDark ? Colors.white70 : Colors.grey,
-                                ),
-                              ),
-                            );
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: maxY / 5,
-                        reservedSize: 50,
-                        getTitlesWidget: (value, meta) {
-                          return Text(
-                            _formatCompactCurrency(value),
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: isDark ? Colors.white70 : Colors.grey,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(
-                    show: true,
-                    border: Border.all(
-                      color: (isDark ? Colors.white : Colors.grey).withValues(
-                        alpha: 0.2,
-                      ),
-                    ),
-                  ),
-                  minX: 0,
-                  maxX: (data.monthlyData.length - 1).toDouble(),
-                  minY: 0,
-                  maxY: maxY,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: incomeSpots,
-                      isCurved: true,
-                      color: Colors.green,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) {
-                          return FlDotCirclePainter(
-                            radius: _selectedMonthIndex == index ? 6 : 4,
-                            color: Colors.green,
-                            strokeWidth: 2,
-                            strokeColor: isDark ? Colors.black : Colors.white,
-                          );
-                        },
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Colors.green.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    LineChartBarData(
-                      spots: expenseSpots,
-                      isCurved: true,
-                      color: Colors.red,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) {
-                          return FlDotCirclePainter(
-                            radius: _selectedMonthIndex == index ? 6 : 4,
-                            color: Colors.red,
-                            strokeWidth: 2,
-                            strokeColor: isDark ? Colors.black : Colors.white,
-                          );
-                        },
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Colors.red.withValues(alpha: 0.2),
-                      ),
-                    ),
-                  ],
-                  lineTouchData: LineTouchData(
-                    enabled: true,
-                    touchCallback:
-                        (FlTouchEvent event, LineTouchResponse? touchResponse) {
-                          if (touchResponse == null ||
-                              touchResponse.lineBarSpots == null ||
-                              touchResponse.lineBarSpots!.isEmpty) {
-                            return;
-                          }
-
-                          if (event is FlTapUpEvent) {
-                            setState(() {
-                              _selectedMonthIndex =
-                                  touchResponse.lineBarSpots!.first.spotIndex;
-                            });
-                          }
-                        },
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) =>
-                          isDark ? Colors.grey[850]! : Colors.black87,
-                      tooltipBorderRadius: BorderRadius.circular(8),
-                      tooltipPadding: const EdgeInsets.all(8),
-                      getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
-                        return touchedBarSpots.map((barSpot) {
-                          final isIncome = barSpot.barIndex == 0;
-                          final label = isIncome ? 'Gelir' : 'Gider';
-                          return LineTooltipItem(
-                            '$label\n${_formatCurrency(barSpot.y)}',
-                            TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          );
-                        }).toList();
-                      },
-                    ),
-                    handleBuiltInTouches: true,
-                  ),
-                ),
-              ),
-            ),
-            if (_selectedMonthIndex != null &&
-                _selectedMonthIndex! < data.monthlyData.length) ...[
-              const SizedBox(height: 16),
-              _buildSelectedMonthDetails(
-                data.monthlyData[_selectedMonthIndex!],
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 16,
-          height: 3,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: const TextStyle(fontSize: 12)),
-      ],
-    );
-  }
-
-  Widget _buildSelectedMonthDetails(MonthlyData monthData) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            DateFormat('MMMM yyyy', 'tr_TR').format(monthData.month),
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildDetailItem('Gelir', monthData.income, Colors.green),
-              _buildDetailItem('Gider', monthData.expense, Colors.red),
-              _buildDetailItem(
-                'Net',
-                monthData.netFlow,
-                monthData.netFlow >= 0 ? Colors.green : Colors.red,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailItem(String label, double value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-        const SizedBox(height: 2),
-        Text(
-          _formatCurrency(value),
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildDetailedTable() {
     final data = _cashFlowData!;
     final theme = Theme.of(context);
@@ -659,8 +325,9 @@ class _CashFlowTabState extends State<CashFlowTab> {
               ),
             ),
             const SizedBox(height: 16),
+            // Header
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[850] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -668,38 +335,48 @@ class _CashFlowTabState extends State<CashFlowTab> {
               child: Row(
                 children: [
                   Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: Text(
                       'Ay',
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Expanded(
+                    flex: 2,
                     child: Text(
                       'Gelir',
                       textAlign: TextAlign.right,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Expanded(
+                    flex: 2,
                     child: Text(
                       'Gider',
                       textAlign: TextAlign.right,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Expanded(
+                    flex: 2,
                     child: Text(
                       'Net',
                       textAlign: TextAlign.right,
                       style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
                     ),
                   ),
@@ -707,6 +384,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
               ),
             ),
             const SizedBox(height: 8),
+            // Data rows
             ...data.monthlyData.asMap().entries.map((entry) {
               final index = entry.key;
               final monthData = entry.value;
@@ -720,8 +398,8 @@ class _CashFlowTabState extends State<CashFlowTab> {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    vertical: 12,
-                    horizontal: 12,
+                    vertical: 10,
+                    horizontal: 8,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
@@ -734,43 +412,55 @@ class _CashFlowTabState extends State<CashFlowTab> {
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 2,
+                        flex: 3,
                         child: Text(
-                          DateFormat(
-                            'MMM yyyy',
-                            'tr_TR',
-                          ).format(monthData.month),
-                          style: theme.textTheme.bodyMedium,
+                          DateFormat('MMM yy', 'tr_TR').format(monthData.month),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 4),
                       Expanded(
+                        flex: 2,
                         child: Text(
                           _formatCompactCurrency(monthData.income),
                           textAlign: TextAlign.right,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.green,
+                            fontSize: 11,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 4),
                       Expanded(
+                        flex: 2,
                         child: Text(
                           _formatCompactCurrency(monthData.expense),
                           textAlign: TextAlign.right,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.red,
+                            fontSize: 11,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      const SizedBox(width: 4),
                       Expanded(
+                        flex: 2,
                         child: Text(
                           _formatCompactCurrency(monthData.netFlow),
                           textAlign: TextAlign.right,
-                          style: theme.textTheme.bodyMedium?.copyWith(
+                          style: theme.textTheme.bodySmall?.copyWith(
                             color: monthData.netFlow >= 0
                                 ? Colors.green
                                 : Colors.red,
                             fontWeight: FontWeight.bold,
+                            fontSize: 11,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -778,10 +468,10 @@ class _CashFlowTabState extends State<CashFlowTab> {
                 ),
               );
             }),
-
             const SizedBox(height: 16),
+            // Total row
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[850] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -789,44 +479,57 @@ class _CashFlowTabState extends State<CashFlowTab> {
               child: Row(
                 children: [
                   Expanded(
-                    flex: 2,
+                    flex: 3,
                     child: Text(
                       'TOPLAM',
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Expanded(
+                    flex: 2,
                     child: Text(
                       _formatCompactCurrency(data.totalIncome),
                       textAlign: TextAlign.right,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: Colors.green,
                         fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Expanded(
+                    flex: 2,
                     child: Text(
                       _formatCompactCurrency(data.totalExpense),
                       textAlign: TextAlign.right,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: Colors.red,
                         fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Expanded(
+                    flex: 2,
                     child: Text(
                       _formatCompactCurrency(data.netCashFlow),
                       textAlign: TextAlign.right,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: data.netCashFlow >= 0
                             ? Colors.green
                             : Colors.red,
                         fontWeight: FontWeight.bold,
+                        fontSize: 11,
                       ),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],

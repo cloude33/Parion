@@ -697,4 +697,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get paymentDate => 'Ödeme Tarihi';
+
+  @override
+  String get noTransactionsThisMonth => 'Bu ay için işlem bulunamadı';
 }

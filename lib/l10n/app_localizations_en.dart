@@ -696,4 +696,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentDate => 'Payment Date';
+
+  @override
+  String get noTransactionsThisMonth => 'No transactions found for this month';
 }

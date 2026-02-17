@@ -76,6 +76,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   late PageController _pageController;
   int _currentPage = 0;
   int _homeViewMode = 0; // 0: List, 1: Calendar
+  DateTime _selectedMonth = DateTime.now();
+  bool _showAllHistory = false;
 
   @override
   void initState() {
@@ -269,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           }
         },
         child: Scaffold(
-          backgroundColor: const Color(0xFFF4F6F8),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: _selectedIndex == 0
               ? AppBar(
                   automaticallyImplyLeading: false,
@@ -460,6 +462,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         'date': ccTransaction.transactionDate,
       });
     }
+
+    if (!_showAllHistory) {
+      allTransactions = allTransactions.where((item) {
+        final date = item['date'] as DateTime;
+        return date.year == _selectedMonth.year &&
+            date.month == _selectedMonth.month;
+      }).toList();
+    }
+
     allTransactions.sort(
       (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime),
     );
@@ -509,6 +520,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   onPressed: _showFilterDialog,
                 ),
             ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: _buildDateFilter(),
           ),
           if (_isFilterActive) ...[
             const SizedBox(height: 8),
@@ -701,9 +716,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       },
       child: Container(
-        margin: EdgeInsets.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-        decoration: const BoxDecoration(color: Colors.transparent),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           children: [
             Row(
@@ -830,12 +855,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Divider(
-              height: 1,
-              indent: 64, // Ikon genişliği + boşluk kadar içeriden başla
-              color: Colors.grey.withValues(alpha: 0.5), // Daha koyu çizgi
-            ),
           ],
         ),
       ),
@@ -893,9 +912,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         }
       },
       child: Container(
-        margin: EdgeInsets.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-        decoration: const BoxDecoration(color: Colors.transparent),
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
         child: Column(
           children: [
             Row(
@@ -1033,12 +1062,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ],
                 ),
               ],
-            ),
-            const SizedBox(height: 12),
-            Divider(
-              height: 1,
-              indent: 64, // Ikon genişliği + boşluk kadar içeriden başla
-              color: Colors.grey.withValues(alpha: 0.5), // Daha koyu çizgi
             ),
           ],
         ),
@@ -1699,6 +1722,85 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildDateFilter() {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.withAlpha(30)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (!_showAllHistory) ...[
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left),
+                  onPressed: () => setState(() {
+                    _selectedMonth = DateTime(
+                      _selectedMonth.year,
+                      _selectedMonth.month - 1,
+                    );
+                  }),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  DateFormat('MMMM yyyy', 'tr_TR').format(_selectedMonth),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  onPressed: () => setState(() {
+                    _selectedMonth = DateTime(
+                      _selectedMonth.year,
+                      _selectedMonth.month + 1,
+                    );
+                  }),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 20,
+                ),
+              ],
+            ),
+          ] else ...[
+            Text(
+              'Tüm Zamanlar',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 15,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
+            ),
+          ],
+          TextButton.icon(
+            onPressed: () => setState(() => _showAllHistory = !_showAllHistory),
+            icon: Icon(
+              _showAllHistory ? Icons.calendar_month : Icons.history,
+              size: 18,
+            ),
+            label: Text(_showAllHistory ? 'Bu Ay' : 'Tümü'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFilterChips() {
     return Wrap(
       spacing: 8,
@@ -1944,7 +2046,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(

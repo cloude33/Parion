@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
@@ -6,6 +7,8 @@ import '../models/credit_card.dart';
 import '../models/credit_card_statement.dart';
 import '../models/credit_card_payment.dart';
 import '../services/credit_card_service.dart';
+import '../services/data_service.dart';
+import '../models/wallet.dart';
 import '../repositories/credit_card_statement_repository.dart';
 
 class MakeCreditCardPaymentScreen extends StatefulWidget {
@@ -35,6 +38,8 @@ class _MakeCreditCardPaymentScreenState
 
   DateTime _selectedDate = DateTime.now();
   String _selectedPaymentMethod = 'bank_transfer';
+  String? _selectedWalletId; // Wallet to pay from
+  List<Wallet> _availableWallets = [];
   bool _isLoading = true;
   CreditCardStatement? _currentStatement;
   double _remainingDebtAfterPayment = 0;
@@ -70,8 +75,19 @@ class _MakeCreditCardPaymentScreenState
         widget.card.id,
       );
 
+      // Load available wallets (excluding credit cards)
+      final dataService = DataService();
+      final allWallets = await dataService.getWallets();
+      final regularWallets = allWallets
+          .where((w) => !w.id.startsWith('cc_'))
+          .toList();
+
       setState(() {
         _currentStatement = statement;
+        _availableWallets = regularWallets;
+        if (regularWallets.isNotEmpty) {
+          _selectedWalletId = regularWallets.first.id;
+        }
         _isLoading = false;
       });
     } catch (e) {
@@ -194,6 +210,8 @@ class _MakeCreditCardPaymentScreenState
           _buildDateField(),
           const SizedBox(height: 16),
           _buildPaymentMethodField(),
+          const SizedBox(height: 16),
+          _buildWalletField(),
           const SizedBox(height: 16),
           _buildNoteField(),
           const SizedBox(height: 24),
@@ -441,6 +459,60 @@ class _MakeCreditCardPaymentScreenState
     );
   }
 
+  Widget _buildWalletField() {
+    if (_availableWallets.isEmpty) {
+      return Card(
+        color: Colors.orange.withValues(alpha: 0.1),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Icon(Icons.warning, color: Colors.orange),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Ödeme yapmak için bir cüzdan oluşturmalısınız',
+                  style: TextStyle(color: Colors.orange[900]),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<String>(
+      initialValue: _selectedWalletId,
+      decoration: const InputDecoration(
+        labelText: 'Ödeme Yapılacak Cüzdan',
+        prefixIcon: Icon(Icons.account_balance_wallet),
+        border: OutlineInputBorder(),
+        helperText: 'Ödeme bu cüzdandan düşülecek',
+      ),
+      items: _availableWallets.map<DropdownMenuItem<String>>((wallet) {
+        return DropdownMenuItem<String>(
+          value: wallet.id,
+          child: Text(
+            '${wallet.name} (${_currencyFormat.format(wallet.balance)})',
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        if (value != null) {
+          setState(() {
+            _selectedWalletId = value;
+          });
+        }
+      },
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Cüzdan seçimi gerekli';
+        }
+        return null;
+      },
+    );
+  }
+
   Widget _buildNoteField() {
     return TextFormField(
       controller: _noteController,
@@ -543,10 +615,41 @@ class _MakeCreditCardPaymentScreenState
       return;
     }
 
+    if (_selectedWalletId == null || _selectedWalletId!.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Lütfen bir cüzdan seçin')));
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       final paymentAmount = double.parse(_amountController.text);
+      
+      // Check if wallet has sufficient balance
+      final dataService = DataService();
+      final wallets = await dataService.getWallets();
+      final selectedWallet = wallets.firstWhere(
+        (w) => w.id == _selectedWalletId,
+        orElse: () => throw Exception('Seçilen cüzdan bulunamadı'),
+      );
+
+      if (selectedWallet.balance < paymentAmount) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Yetersiz bakiye! Cüzdan bakiyesi: ${_currencyFormat.format(selectedWallet.balance)}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
       final currentDebt = _currentStatement!.remainingDebt;
       String paymentType;
       if (paymentAmount >= currentDebt) {
@@ -573,6 +676,26 @@ class _MakeCreditCardPaymentScreenState
 
       final result = await _cardService.recordPayment(payment);
       final hasOverpayment = result['hasOverpayment'] as bool;
+
+      // Deduct payment from wallet balance
+      final updatedWallet = Wallet(
+        id: selectedWallet.id,
+        name: selectedWallet.name,
+        balance: selectedWallet.balance - paymentAmount,
+        type: selectedWallet.type,
+        color: selectedWallet.color,
+        icon: selectedWallet.icon,
+        cutOffDay: selectedWallet.cutOffDay,
+        paymentDay: selectedWallet.paymentDay,
+        installment: selectedWallet.installment,
+        creditLimit: selectedWallet.creditLimit,
+      );
+
+      final walletIndex = wallets.indexWhere((w) => w.id == _selectedWalletId);
+      if (walletIndex != -1) {
+        wallets[walletIndex] = updatedWallet;
+        await dataService.saveWallets(wallets);
+      }
 
       if (mounted) {
         String message = 'Ödeme başarıyla kaydedildi';
@@ -632,6 +755,8 @@ class _ManualPaymentDialogState extends State<_ManualPaymentDialog> {
 
   DateTime _selectedDate = DateTime.now();
   String _selectedPaymentMethod = 'bank_transfer';
+  String? _selectedWalletId;
+  List<Wallet> _availableWallets = [];
   bool _isLoading = false;
 
   final Map<String, String> _paymentMethods = {
@@ -646,6 +771,26 @@ class _ManualPaymentDialogState extends State<_ManualPaymentDialog> {
     super.initState();
     _amountController = TextEditingController();
     _noteController = TextEditingController();
+    _loadWallets();
+  }
+
+  Future<void> _loadWallets() async {
+    try {
+      final dataService = DataService();
+      final allWallets = await dataService.getWallets();
+      final regularWallets = allWallets
+          .where((w) => !w.id.startsWith('cc_'))
+          .toList();
+
+      setState(() {
+        _availableWallets = regularWallets;
+        if (regularWallets.isNotEmpty) {
+          _selectedWalletId = regularWallets.first.id;
+        }
+      });
+    } catch (e) {
+      debugPrint('Error loading wallets: $e');
+    }
   }
 
   @override
@@ -732,6 +877,58 @@ class _ManualPaymentDialogState extends State<_ManualPaymentDialog> {
                 },
               ),
               const SizedBox(height: 16),
+              if (_availableWallets.isNotEmpty)
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedWalletId,
+                  decoration: const InputDecoration(
+                    labelText: 'Ödeme Yapılacak Cüzdan',
+                    prefixIcon: Icon(Icons.account_balance_wallet),
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _availableWallets.map<DropdownMenuItem<String>>((wallet) {
+                    return DropdownMenuItem<String>(
+                      value: wallet.id,
+                      child: Text(
+                        '${wallet.name} (${_currencyFormat.format(wallet.balance)})',
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedWalletId = value;
+                      });
+                    }
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Cüzdan seçimi gerekli';
+                    }
+                    return null;
+                  },
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.warning, color: Colors.orange),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Ödeme yapmak için bir cüzdan oluşturmalısınız',
+                          style: TextStyle(color: Colors.orange[900]),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              const SizedBox(height: 16),
               TextFormField(
                 controller: _noteController,
                 decoration: const InputDecoration(
@@ -787,10 +984,40 @@ class _ManualPaymentDialogState extends State<_ManualPaymentDialog> {
       return;
     }
 
+    if (_selectedWalletId == null || _selectedWalletId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen bir cüzdan seçin')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
       final paymentAmount = double.parse(_amountController.text);
+      
+      // Check wallet balance
+      final dataService = DataService();
+      final wallets = await dataService.getWallets();
+      final selectedWallet = wallets.firstWhere(
+        (w) => w.id == _selectedWalletId,
+        orElse: () => throw Exception('Seçilen cüzdan bulunamadı'),
+      );
+
+      if (selectedWallet.balance < paymentAmount) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Yetersiz bakiye! Cüzdan bakiyesi: ${_currencyFormat.format(selectedWallet.balance)}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
       
       // Create a manual payment record
       final payment = CreditCardPayment(
@@ -810,6 +1037,26 @@ class _ManualPaymentDialogState extends State<_ManualPaymentDialog> {
 
       // Save the payment - this will reduce the current debt
       await _cardService.recordPayment(payment);
+
+      // Deduct payment from wallet balance
+      final updatedWallet = Wallet(
+        id: selectedWallet.id,
+        name: selectedWallet.name,
+        balance: selectedWallet.balance - paymentAmount,
+        type: selectedWallet.type,
+        color: selectedWallet.color,
+        icon: selectedWallet.icon,
+        cutOffDay: selectedWallet.cutOffDay,
+        paymentDay: selectedWallet.paymentDay,
+        installment: selectedWallet.installment,
+        creditLimit: selectedWallet.creditLimit,
+      );
+
+      final walletIndex = wallets.indexWhere((w) => w.id == _selectedWalletId);
+      if (walletIndex != -1) {
+        wallets[walletIndex] = updatedWallet;
+        await dataService.saveWallets(wallets);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -143,10 +143,16 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(_selectedTab == 0 ? 'Kredi Kartlarım' : _selectedTab == 1 ? 'KMH Hesaplarım' : 'Taksit Takibi'),
+        title: Text(
+          _selectedTab == 0
+              ? 'Kredi Kartlarım'
+              : _selectedTab == 1
+              ? 'KMH Hesaplarım'
+              : 'Taksit Takibi',
+        ),
         actions: [
           if (_selectedTab == 0)
             IconButton(
@@ -188,10 +194,10 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                   child: _selectedTab == 0
                       ? (_cards.isEmpty ? _buildEmptyState() : _buildCardList())
                       : _selectedTab == 1
-                          ? (_kmhAccounts.isEmpty
-                              ? _buildKmhEmptyState()
-                              : _buildKmhAccountList())
-                          : const InstallmentTrackingScreen(),
+                      ? (_kmhAccounts.isEmpty
+                            ? _buildKmhEmptyState()
+                            : _buildKmhAccountList())
+                      : const InstallmentTrackingScreen(),
                 ),
               ],
             ),
@@ -211,7 +217,9 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     return Container(
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF2C2C2E)
+            : Colors.grey[200],
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -451,7 +459,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
           final item = _cards.removeAt(oldIndex);
           _cards.insert(newIndex, item);
         });
-        
+
         // Save the new order
         await _cardService.reorderCards(_cards);
       },
@@ -459,7 +467,9 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
         return AnimatedBuilder(
           animation: animation,
           builder: (BuildContext context, Widget? child) {
-            final double animValue = Curves.easeInOut.transform(animation.value);
+            final double animValue = Curves.easeInOut.transform(
+              animation.value,
+            );
             final double elevation = lerpDouble(0, 6, animValue)!;
             return Material(
               elevation: elevation,
@@ -506,7 +516,11 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
         children: [
           ReorderableDragStartListener(
             index: _cards.indexOf(card),
-            child: const Icon(Icons.drag_handle, color: Colors.white70, size: 24),
+            child: const Icon(
+              Icons.drag_handle,
+              color: Colors.white70,
+              size: 24,
+            ),
           ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.white),
@@ -521,16 +535,9 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                   value: 'delete',
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.delete,
-                        color: Colors.red,
-                        size: 20,
-                      ),
+                      Icon(Icons.delete, color: Colors.red, size: 20),
                       SizedBox(width: 8),
-                      Text(
-                        'Sil',
-                        style: TextStyle(color: Colors.red),
-                      ),
+                      Text('Sil', style: TextStyle(color: Colors.red)),
                     ],
                   ),
                 ),
@@ -541,7 +548,6 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
       ),
     );
   }
-
 
   Widget _buildInfoColumn(String label, String value, Color color) {
     return Column(
@@ -874,5 +880,3 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     }
   }
 }
-
-

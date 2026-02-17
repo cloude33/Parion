@@ -427,6 +427,9 @@ class MockGoogleDriveService implements GoogleDriveService {
 
   @override
   Future<void> deleteBackup(String fileId) async {}
+
+  @override
+  Future<bool> checkGoogleConnectivity() async => true;
 }
 
 /// Mock Network Monitor for testing

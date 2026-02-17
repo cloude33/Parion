@@ -5,7 +5,7 @@ import '../../services/statistics_service.dart';
 import 'package:get_it/get_it.dart';
 
 import 'interactive_pie_chart.dart';
-import 'spending_trend_chart.dart';
+
 import 'period_comparison_card.dart';
 import 'budget_tracker_card.dart';
 import 'spending_habits_card.dart';
@@ -161,8 +161,7 @@ class _SpendingTabState extends State<SpendingTab> {
               budgetComparisons: _spendingData!.budgetComparisons,
             ),
           _buildPieChartCard(),
-          if (_spendingData!.categoryTrends.isNotEmpty)
-            _buildCategoryTrendCard(),
+
           if (_spendingData!.budgetComparisons.isNotEmpty)
             BudgetTrackerCard(
               budgetComparisons: _spendingData!.budgetComparisons,
@@ -945,45 +944,6 @@ class _SpendingTabState extends State<SpendingTab> {
     ];
 
     return PeriodComparisonList(comparisons: comparisons);
-  }
-
-  Widget _buildCategoryTrendCard() {
-    final theme = Theme.of(context);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Kategori Trendleri',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Icon(Icons.trending_up, size: 20, color: Colors.blue),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Kategorilerin zaman içindeki harcama değişimini görün',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 16),
-            SpendingTrendChart(
-              categoryTrends: _spendingData!.categoryTrends,
-              categoryColors: categoryColors,
-              showLegend: true,
-              height: 300,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   String _formatCurrency(double value) {

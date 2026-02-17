@@ -54,8 +54,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   final String _selectedCategory = 'all';
   final String _selectedTransactionType = 'all';
 
-  final DataService _dataService = GetIt.I<DataService>();
-  final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
+  late final DataService _dataService;
+  late final StatisticsService _statisticsService;
   List<Category> _categories = [];
   final Set<String> _expandedCategories = {};
 
@@ -109,6 +109,17 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   @override
   void initState() {
     super.initState();
+    
+    // Initialize services with GetIt if available, otherwise create new instances
+    try {
+      _dataService = GetIt.I<DataService>();
+      _statisticsService = GetIt.I<StatisticsService>();
+    } catch (e) {
+      // If GetIt is not configured (e.g., in tests), create new instances
+      _dataService = DataService();
+      _statisticsService = StatisticsService();
+    }
+    
     _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       setState(() {});

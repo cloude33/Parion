@@ -52,10 +52,7 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
           children: [
             const Text(
               'Ödeme Planı Ekle',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
             ListTile(
@@ -65,7 +62,10 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
                   color: const Color(0xFF5E5CE6).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.account_balance, color: Color(0xFF5E5CE6)),
+                child: const Icon(
+                  Icons.account_balance,
+                  color: Color(0xFF5E5CE6),
+                ),
               ),
               title: const Text('Banka Kredisi'),
               subtitle: const Text('Faiz oranları ve otomatik hesaplama'),
@@ -82,7 +82,9 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
                 child: const Icon(Icons.edit_note, color: Colors.orange),
               ),
               title: const Text('Manuel/Elden Ödeme Planı'),
-              subtitle: const Text('Özel tarihler ve tutarlar (Okul, Senet vb.)'),
+              subtitle: const Text(
+                'Özel tarihler ve tutarlar (Okul, Senet vb.)',
+              ),
               onTap: () => Navigator.pop(context, 'custom'),
             ),
             const SizedBox(height: 24),
@@ -92,6 +94,7 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
     );
 
     if (choice == null) return;
+    if (!mounted) return;
 
     final result = await Navigator.push(
       context,
@@ -253,158 +256,160 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
         : 0.0;
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => LoanDetailScreen(loan: loan),
-          ),
+          MaterialPageRoute(builder: (context) => LoanDetailScreen(loan: loan)),
         );
+        _loadData();
       },
       child: Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 3,
-      shadowColor: Colors.grey.withValues(alpha: 0.2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              const Color(0xFF5E5CE6),
-              const Color(0xFF5E5CE6).withValues(alpha: 0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 3,
+        shadowColor: Colors.grey.withValues(alpha: 0.2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF5E5CE6),
+                const Color(0xFF5E5CE6).withValues(alpha: 0.8),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.account_balance,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          loan.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          loan.bankName,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
-                    onSelected: (value) {
-                      if (value == 'delete') {
-                        _deleteLoan(loan.id);
-                      }
-                    },
-                    itemBuilder: (BuildContext context) {
-                      return [
-                        const PopupMenuItem(
-                          value: 'delete',
-                          child: Row(
-                            children: [
-                              Icon(Icons.delete, size: 20),
-                              SizedBox(width: 8),
-                              Text('Sil'),
-                            ],
-                          ),
-                        ),
-                      ];
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildInfoItem(
-                    'Toplam Tutar',
-                    '₺${NumberFormat('#,##0.00', 'tr_TR').format(loan.totalAmount)}',
-                  ),
-                  const SizedBox(width: 16),
-                  _buildInfoItem(
-                    'Kalan Tutar',
-                    '₺${NumberFormat('#,##0.00', 'tr_TR').format(loan.remainingAmount)}',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildInfoItem('Toplam Taksit', '${loan.totalInstallments}'),
-                  const SizedBox(width: 16),
-                  _buildInfoItem(
-                    'Kalan Taksit',
-                    '${loan.remainingInstallments}',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Bitiş Tarihi: ${DateFormat('dd MMMM yyyy', 'tr_TR').format(loan.endDate)}',
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              const SizedBox(height: 12),
-              LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.white38,
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${(progress * 100).toStringAsFixed(1)}% Tamamlandı',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Cüzdan: ${_getWalletName(loan.walletId)}',
-                style: const TextStyle(color: Colors.white70, fontSize: 12),
+            borderRadius: BorderRadius.circular(15),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withValues(alpha: 0.1),
+                spreadRadius: 1,
+                blurRadius: 5,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(
+                        Icons.account_balance,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loan.name,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            loan.bankName,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Colors.white),
+                      onSelected: (value) {
+                        if (value == 'delete') {
+                          _deleteLoan(loan.id);
+                        }
+                      },
+                      itemBuilder: (BuildContext context) {
+                        return [
+                          const PopupMenuItem(
+                            value: 'delete',
+                            child: Row(
+                              children: [
+                                Icon(Icons.delete, size: 20),
+                                SizedBox(width: 8),
+                                Text('Sil'),
+                              ],
+                            ),
+                          ),
+                        ];
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _buildInfoItem(
+                      'Toplam Tutar',
+                      '₺${NumberFormat('#,##0.00', 'tr_TR').format(loan.totalAmount)}',
+                    ),
+                    const SizedBox(width: 16),
+                    _buildInfoItem(
+                      'Kalan Tutar',
+                      '₺${NumberFormat('#,##0.00', 'tr_TR').format(loan.remainingAmount)}',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    _buildInfoItem(
+                      'Toplam Taksit',
+                      '${loan.totalInstallments}',
+                    ),
+                    const SizedBox(width: 16),
+                    _buildInfoItem(
+                      'Kalan Taksit',
+                      '${loan.remainingInstallments}',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Bitiş Tarihi: ${DateFormat('dd MMMM yyyy', 'tr_TR').format(loan.endDate)}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.white38,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${(progress * 100).toStringAsFixed(1)}% Tamamlandı',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Cüzdan: ${_getWalletName(loan.walletId)}',
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
         ),
-      ),
       ),
     );
   }
@@ -432,5 +437,3 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
     );
   }
 }
-
-

@@ -26,6 +26,7 @@ class StatementGeneratorService {
 
     return generatedStatements;
   }
+
   Future<CreditCardStatement?> _checkAndGenerateForCard(CreditCard card) async {
     final now = DateTime.now();
     var statementDate = DateTime(now.year, now.month, card.statementDay);
@@ -48,6 +49,7 @@ class StatementGeneratorService {
     }
     return await generateStatement(card);
   }
+
   Future<CreditCardStatement> generateStatement(CreditCard card) async {
     final now = DateTime.now();
     var periodEnd = DateTime(now.year, now.month, card.statementDay);
@@ -77,7 +79,15 @@ class StatementGeneratorService {
     double previousBalance = 0;
     double interestCharged = 0;
 
-    if (previousStatement != null && previousStatement.remainingDebt > 0) {
+    // If this is the first statement, include card's initial debt
+    if (previousStatement == null && card.initialDebt > 0) {
+      previousBalance = card.initialDebt;
+      
+      // Reset card's initial debt as it is now moved to statement
+      card.initialDebt = 0;
+      await _cardRepo.update(card);
+    } else if (previousStatement != null &&
+        previousStatement.remainingDebt > 0) {
       previousBalance = previousStatement.remainingDebt;
       final isOverdue = previousStatement.isOverdue;
       final daysOverdue = previousStatement.daysOverdue;
@@ -124,6 +134,7 @@ class StatementGeneratorService {
 
     return statement;
   }
+
   Future<double> calculateNewPurchases(
     String cardId,
     DateTime start,
@@ -140,6 +151,7 @@ class StatementGeneratorService {
 
     return cashPurchases;
   }
+
   Future<double> calculateInstallmentPayments(
     String cardId,
     DateTime start,
@@ -161,6 +173,7 @@ class StatementGeneratorService {
 
     return totalInstallmentPayments;
   }
+
   double calculateMinimumPayment(double totalDebt, double minimumRate) {
     if (totalDebt <= 0) {
       return 0;
@@ -170,6 +183,7 @@ class StatementGeneratorService {
 
     return minimum < minimumFloor ? minimumFloor : minimum;
   }
+
   Future<void> updateInstallmentCounters(
     String cardId,
     DateTime statementDate,
@@ -192,15 +206,19 @@ class StatementGeneratorService {
       await _transactionRepo.update(updatedTransaction);
     }
   }
+
   Future<List<CreditCardStatement>> getCardStatements(String cardId) async {
     return await _statementRepo.findByCardId(cardId);
   }
+
   Future<CreditCardStatement?> getCurrentStatement(String cardId) async {
     return await _statementRepo.findCurrentStatement(cardId);
   }
+
   Future<CreditCardStatement?> getPreviousStatement(String cardId) async {
     return await _statementRepo.findPreviousStatement(cardId);
   }
+
   Future<double> getAvailableCredit(String cardId) async {
     final statements = await _statementRepo.findByCardId(cardId);
     double totalCredit = 0;
@@ -212,6 +230,7 @@ class StatementGeneratorService {
 
     return totalCredit;
   }
+
   Future<double> applyPaymentToStatement(
     String statementId,
     double amount,
@@ -238,6 +257,7 @@ class StatementGeneratorService {
 
     return overpayment;
   }
+
   Future<void> updateStatementStatus(String statementId) async {
     final statement = await _statementRepo.findById(statementId);
     if (statement == null) {
@@ -261,12 +281,14 @@ class StatementGeneratorService {
       await _statementRepo.update(updatedStatement);
     }
   }
+
   Future<void> processInstallmentsForStatement(
     String cardId,
     DateTime statementDate,
   ) async {
     await updateInstallmentCounters(cardId, statementDate);
   }
+
   Future<Map<String, dynamic>> getStatementSummary(String cardId) async {
     final statements = await _statementRepo.findByCardId(cardId);
 
@@ -309,11 +331,13 @@ class StatementGeneratorService {
       'totalInterest': totalInterest,
     };
   }
+
   Future<List<Map<String, dynamic>>> getStatementPaymentHistory(
     String statementId,
   ) async {
     return [];
   }
+
   Future<Map<String, dynamic>> calculateNextStatementPreview(
     String cardId,
   ) async {

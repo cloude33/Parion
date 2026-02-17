@@ -28,6 +28,7 @@ class CreditCardService {
     await _cardRepo.save(card);
     return card;
   }
+
   Future<void> updateCard(CreditCard card) async {
     final error = card.validate();
     if (error != null) {
@@ -38,8 +39,56 @@ class CreditCardService {
       throw Exception('Kart bulunamadı');
     }
 
+    // Get old card to check if initialDebt changed
+    final oldCard = await _cardRepo.findById(card.id);
+
     await _cardRepo.update(card);
+
+    // If initialDebt changed, recalculate all statements
+    if (oldCard != null && oldCard.initialDebt != card.initialDebt) {
+      await _recalculateStatements(card.id, card.initialDebt);
+    }
   }
+
+  Future<void> _recalculateStatements(
+    String cardId,
+    double newInitialDebt,
+  ) async {
+    final statements = await _statementRepo.findByCardId(cardId);
+    if (statements.isEmpty) return;
+
+    // Sort by period start date
+    statements.sort((a, b) => a.periodStart.compareTo(b.periodStart));
+
+    double previousBalance = newInitialDebt;
+
+    for (int i = 0; i < statements.length; i++) {
+      final statement = statements[i];
+
+      // Recalculate this statement
+      final newTotalDebt =
+          previousBalance +
+          statement.interestCharged +
+          statement.newPurchases +
+          statement.installmentPayments;
+
+      final newRemainingDebt = newTotalDebt - statement.paidAmount;
+      final newMinimumPayment = newTotalDebt > 0 ? (newTotalDebt * 0.33) : 0.0;
+
+      final updatedStatement = statement.copyWith(
+        previousBalance: previousBalance,
+        totalDebt: newTotalDebt,
+        remainingDebt: newRemainingDebt > 0 ? newRemainingDebt : 0,
+        minimumPayment: newMinimumPayment < 50 ? 50.0 : newMinimumPayment,
+      );
+
+      await _statementRepo.update(updatedStatement);
+
+      // Next statement's previous balance is this statement's remaining debt
+      previousBalance = newRemainingDebt > 0 ? newRemainingDebt : 0;
+    }
+  }
+
   Future<void> deleteCard(String cardId) async {
     final exists = await _cardRepo.exists(cardId);
     if (!exists) {
@@ -52,23 +101,28 @@ class CreditCardService {
 
     await _cardRepo.delete(cardId);
   }
+
   Future<CreditCard?> getCard(String cardId) async {
     return await _cardRepo.findById(cardId);
   }
+
   Future<List<CreditCard>> getAllCards() async {
     return await _cardRepo.findAll();
   }
+
   Future<List<CreditCard>> getActiveCards() async {
     final cards = await _cardRepo.findActive();
     cards.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     return cards;
   }
+
   Future<void> reorderCards(List<CreditCard> cards) async {
     for (int i = 0; i < cards.length; i++) {
       final updatedCard = cards[i].copyWith(sortOrder: i);
       await _cardRepo.update(updatedCard);
     }
   }
+
   Future<CreditCardTransaction> addTransaction(
     CreditCardTransaction transaction,
   ) async {
@@ -95,7 +149,7 @@ class CreditCardService {
         transaction.cardId,
         transaction.amount,
       );
-      
+
       if (points > 0 && !transaction.isCashAdvance) {
         await rewardPointsService.addPoints(
           transaction.cardId,
@@ -115,6 +169,7 @@ class CreditCardService {
 
     return transaction;
   }
+
   Future<void> updateTransaction(CreditCardTransaction transaction) async {
     final error = transaction.validate();
     if (error != null) {
@@ -127,6 +182,7 @@ class CreditCardService {
 
     await _transactionRepo.update(transaction);
   }
+
   Future<void> deleteTransaction(String transactionId) async {
     final transaction = await _transactionRepo.findById(transactionId);
     if (transaction == null) {
@@ -138,6 +194,7 @@ class CreditCardService {
 
     await _transactionRepo.delete(transactionId);
   }
+
   Future<List<CreditCardTransaction>> getCardTransactions(String cardId) async {
     // Sadece son ekstre kesim tarihinden sonraki işlemleri göster
     // Veya bekleyen ekstre dönemindeki işlemleri
@@ -153,20 +210,28 @@ class CreditCardService {
     }
 
     if (lastStatementDate != null) {
-      return allTransactions.where((t) => t.transactionDate.isAfter(lastStatementDate!)).toList();
+      return allTransactions
+          .where((t) => t.transactionDate.isAfter(lastStatementDate!))
+          .toList();
     }
 
     return allTransactions;
   }
-  
-  Future<List<CreditCardTransaction>> getTransactionsByPeriod(String cardId, DateTime start, DateTime end) async {
-     return await _transactionRepo.findByDateRange(cardId, start, end);
+
+  Future<List<CreditCardTransaction>> getTransactionsByPeriod(
+    String cardId,
+    DateTime start,
+    DateTime end,
+  ) async {
+    return await _transactionRepo.findByDateRange(cardId, start, end);
   }
+
   Future<List<CreditCardTransaction>> getActiveInstallments(
     String cardId,
   ) async {
     return await _transactionRepo.findActiveInstallments(cardId);
   }
+
   Future<Map<String, dynamic>> recordPayment(CreditCardPayment payment) async {
     final error = payment.validate();
     if (error != null) {
@@ -176,11 +241,11 @@ class CreditCardService {
     if (card == null) {
       throw Exception('Kart bulunamadı');
     }
-    
+
     // Check if this is a manual payment (without statement)
     final isManualPayment = payment.statementId == 'manual';
     double overpayment = 0;
-    
+
     if (!isManualPayment) {
       // Normal payment with statement
       final statement = await _statementRepo.findById(payment.statementId);
@@ -196,11 +261,14 @@ class CreditCardService {
     } else {
       // Manual payment - reduce initial debt directly
       await _paymentRepo.save(payment);
-      
+
       // Update card's initial debt
       final currentDebt = await getCurrentDebt(payment.cardId);
-      final newInitialDebt = (card.initialDebt - payment.amount).clamp(0.0, double.infinity);
-      
+      final newInitialDebt = (card.initialDebt - payment.amount).clamp(
+        0.0,
+        double.infinity,
+      );
+
       // Update the card with reduced initial debt
       final updatedCard = CreditCard(
         id: card.id,
@@ -226,15 +294,15 @@ class CreditCardService {
         cashAdvanceOverdueInterestRate: card.cashAdvanceOverdueInterestRate,
         minimumPaymentRate: card.minimumPaymentRate,
       );
-      
+
       await _cardRepo.update(updatedCard);
-      
+
       // Check if there's overpayment
       if (payment.amount > currentDebt) {
         overpayment = payment.amount - currentDebt;
       }
     }
-    
+
     try {
       final limitAlertService = LimitAlertService();
       await limitAlertService.resetAlertsAfterPayment(payment.cardId);
@@ -248,9 +316,11 @@ class CreditCardService {
       'hasOverpayment': overpayment > 0,
     };
   }
+
   Future<List<CreditCardPayment>> getCardPayments(String cardId) async {
     return await _paymentRepo.findByCardId(cardId);
   }
+
   Future<double> getCurrentDebt(String cardId) async {
     final card = await _cardRepo.findById(cardId);
     if (card == null) {
@@ -286,6 +356,7 @@ class CreditCardService {
 
     return statementDebt + pendingTransactionDebt + initialDebtAmount;
   }
+
   Future<double> getAvailableCredit(String cardId) async {
     final card = await _cardRepo.findById(cardId);
     if (card == null) {
@@ -295,6 +366,7 @@ class CreditCardService {
     final currentDebt = await getCurrentDebt(cardId);
     return card.creditLimit - currentDebt;
   }
+
   Future<Map<String, double>> getAllCardsDebtSummary() async {
     final cards = await _cardRepo.findActive();
     final summary = <String, double>{};
@@ -306,10 +378,12 @@ class CreditCardService {
 
     return summary;
   }
+
   Future<double> getTotalDebtAllCards() async {
     final summary = await getAllCardsDebtSummary();
     return summary.values.fold<double>(0, (sum, debt) => sum + debt);
   }
+
   Future<double> getTotalDueThisMonth() async {
     final now = DateTime.now();
     final startOfMonth = DateTime(now.year, now.month, 1);
@@ -337,9 +411,11 @@ class CreditCardService {
 
     return totalDue;
   }
+
   Future<double> getTotalOverdueDebt() async {
     return await _statementRepo.getTotalOverdueDebt();
   }
+
   Future<DateTime> getNextStatementDate(String cardId) async {
     final card = await _cardRepo.findById(cardId);
     if (card == null) {
@@ -366,6 +442,7 @@ class CreditCardService {
 
     return nextDate;
   }
+
   Future<DateTime> getNextDueDate(String cardId) async {
     final nextStatementDate = await getNextStatementDate(cardId);
     final card = await _cardRepo.findById(cardId);
@@ -375,6 +452,7 @@ class CreditCardService {
 
     return nextStatementDate.add(Duration(days: card.dueDateOffset));
   }
+
   Future<double> getCreditUtilization(String cardId) async {
     final card = await _cardRepo.findById(cardId);
     if (card == null) {
@@ -388,6 +466,7 @@ class CreditCardService {
     final currentDebt = await getCurrentDebt(cardId);
     return (currentDebt / card.creditLimit) * 100;
   }
+
   Future<double> getTotalAvailableCredit() async {
     final cards = await _cardRepo.findActive();
     double totalAvailable = 0;
@@ -399,6 +478,7 @@ class CreditCardService {
 
     return totalAvailable;
   }
+
   Future<Map<DateTime, double>> getFuturePaymentProjection(int months) async {
     final cards = await _cardRepo.findActive();
     final projection = <DateTime, double>{};
@@ -427,6 +507,7 @@ class CreditCardService {
 
     return projection;
   }
+
   Future<Map<String, dynamic>> getCardWithDetails(String cardId) async {
     final card = await _cardRepo.findById(cardId);
     if (card == null) {
@@ -450,6 +531,7 @@ class CreditCardService {
       'activeInstallmentCount': activeInstallments.length,
     };
   }
+
   Future<void> clearAllData() async {
     await _cardRepo.clear();
     await _transactionRepo.clear();

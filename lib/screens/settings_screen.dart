@@ -35,7 +35,6 @@ import 'backup_and_export_screen.dart';
 import '../widgets/theme_toggle_button.dart';
 import '../widgets/debug_background_lock_widget.dart';
 
-
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -101,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F8),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -135,7 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1C1C1E),
+                color: Theme.of(context).textTheme.displayLarge?.color,
               ),
             ),
           ),
@@ -196,7 +195,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: TextButton(
             onPressed: _changeProfilePicture,
             child: Text(
-              AppLocalizations.of(context)!.profile, // Profil Resmini Değiştir yerine Profil kullanalım veya arb ekleyip
+              AppLocalizations.of(
+                context,
+              )!.profile, // Profil Resmini Değiştir yerine Profil kullanalım veya arb ekleyip
               style: const TextStyle(
                 color: Color(0xFF00BFA5),
                 fontWeight: FontWeight.w600,
@@ -210,7 +211,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildEditableSettingItem(
             icon: Icons.person_outline,
             title: AppLocalizations.of(context)!.profile,
-            subtitle: _currentUser?.name ?? AppLocalizations.of(context)!.userDefault,
+            subtitle:
+                _currentUser?.name ?? AppLocalizations.of(context)!.userDefault,
             isEditing: _isEditingProfile,
             controller: _nameController,
             onSave: _saveProfile,
@@ -220,7 +222,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildEditableSettingItem(
             icon: Icons.email_outlined,
             title: AppLocalizations.of(context)!.email,
-            subtitle: _currentUser?.email ?? AppLocalizations.of(context)!.notSpecified,
+            subtitle:
+                _currentUser?.email ??
+                AppLocalizations.of(context)!.notSpecified,
             isEditing: _isEditingEmail,
             controller: _emailController,
             onSave: _saveEmail,
@@ -338,7 +342,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onTap: () async {
               await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ManageLoansScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const ManageLoansScreen(),
+                ),
               );
               _loadUser();
             },
@@ -388,8 +394,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildSettingItem(
             icon: Icons.language,
             title: AppLocalizations.of(context)!.language,
-            subtitle: Localizations.localeOf(context).languageCode == 'tr' 
-                ? AppLocalizations.of(context)!.turkish 
+            subtitle: Localizations.localeOf(context).languageCode == 'tr'
+                ? AppLocalizations.of(context)!.turkish
                 : AppLocalizations.of(context)!.english,
             iconColor: Colors.teal,
             trailing: const Icon(
@@ -468,13 +474,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
               subtitle: AppLocalizations.of(context)!.biometricDesc,
               iconColor: Colors.blue,
               trailing: FutureBuilder<bool>(
-                future: BiometricAuthServiceSingleton.instance.isBiometricEnabled(),
+                future: BiometricAuthServiceSingleton.instance
+                    .isBiometricEnabled(),
                 builder: (context, snapshot) {
                   final isEnabled = snapshot.data ?? false;
                   return Switch(
                     value: isEnabled,
                     onChanged: (value) async {
-                      final biometricService = BiometricAuthServiceSingleton.instance;
+                      final biometricService =
+                          BiometricAuthServiceSingleton.instance;
                       await biometricService.initialize();
                       if (value) {
                         await biometricService.enableBiometric();
@@ -555,9 +563,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(height: 20),
         // Debug widget (sadece debug modda göster)
         if (kDebugMode) ...[
-          _buildSection('DEBUG', [
-            const DebugBackgroundLockWidget(),
-          ]),
+          _buildSection('DEBUG', [const DebugBackgroundLockWidget()]),
           const SizedBox(height: 20),
         ],
       ],
@@ -607,8 +613,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Color? iconColor,
     VoidCallback? onTap,
   }) {
-    final effectiveIconColor = iconColor ?? titleColor ?? const Color(0xFF5E5CE6);
-    
+    final effectiveIconColor =
+        iconColor ?? titleColor ?? const Color(0xFF5E5CE6);
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Container(
@@ -617,18 +624,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
           color: effectiveIconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Icon(
-          icon,
-          color: effectiveIconColor,
-          size: 24,
-        ),
+        child: Icon(icon, color: effectiveIconColor, size: 24),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: titleColor ?? const Color(0xFF1C1C1E),
+          color: titleColor ?? Theme.of(context).textTheme.bodyLarge?.color,
         ),
       ),
       subtitle: Text(
@@ -668,10 +671,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           title: Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1C1C1E),
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
           ),
           subtitle: isEditing
@@ -721,7 +724,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    TextButton(onPressed: onCancel, child: Text(AppLocalizations.of(context)!.cancel)),
+                    TextButton(
+                      onPressed: onCancel,
+                      child: Text(AppLocalizations.of(context)!.cancel),
+                    ),
                     const SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: onSave,
@@ -739,6 +745,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ],
     );
   }
+
   void _startProfileEdit() {
     setState(() {
       _isEditingProfile = true;
@@ -765,7 +772,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         currencySymbol: _currentUser!.currencySymbol,
       );
       await _dataService.updateUser(updatedUser);
-      
+
       // Keep UserService in sync for LoginScreen name display
       try {
         final userService = UserService();
@@ -790,12 +797,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isEditingProfile = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.profileUpdated)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.profileUpdated)),
+        );
       }
     }
   }
+
   void _startEmailEdit() {
     setState(() {
       _isEditingEmail = true;
@@ -827,9 +835,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _isEditingEmail = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.emailUpdated)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context)!.emailUpdated)),
+        );
       }
     }
   }
@@ -865,7 +873,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(AppLocalizations.of(context)!.profilePictureChanged),
+              content: Text(
+                AppLocalizations.of(context)!.profilePictureChanged,
+              ),
               backgroundColor: const Color(0xFF00BFA5),
             ),
           );
@@ -873,9 +883,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(AppLocalizations.of(context)!.failedToPickImage)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.failedToPickImage),
+          ),
+        );
       }
     }
   }
@@ -953,7 +965,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         this.setState(() {});
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(AppLocalizations.of(context)!.successMessage),
+                            content: Text(
+                              AppLocalizations.of(context)!.successMessage,
+                            ),
                             backgroundColor: Colors.green,
                           ),
                         );
@@ -975,9 +989,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.resetWarningTitle),
-        content: Text(
-          AppLocalizations.of(context)!.resetWarningDesc,
-        ),
+        content: Text(AppLocalizations.of(context)!.resetWarningDesc),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1012,7 +1024,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(AppLocalizations.of(context)!.cancel, style: const TextStyle(color: Colors.white)),
+            child: Text(
+              AppLocalizations.of(context)!.cancel,
+              style: const TextStyle(color: Colors.white),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -1077,7 +1092,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _showLanguageDialog() async {
     final languageService = LanguageService();
-    
+
     await showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -1128,5 +1143,3 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
-
-
