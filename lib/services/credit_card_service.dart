@@ -232,6 +232,18 @@ class CreditCardService {
     return await _transactionRepo.findActiveInstallments(cardId);
   }
 
+  /// Taksit takip ekranı için: son ekstre tarihine bakılmaksızın
+  /// kartın TÜM taksitli işlemlerini (aktif + tamamlanmış) döndürür.
+  Future<List<CreditCardTransaction>> getAllInstallmentsForCard(
+    String cardId,
+  ) async {
+    final allTransactions = await _transactionRepo.findByCardId(cardId);
+    return allTransactions
+        .where((t) => t.installmentCount > 1)
+        .toList()
+      ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
+  }
+
   Future<Map<String, dynamic>> recordPayment(CreditCardPayment payment) async {
     final error = payment.validate();
     if (error != null) {

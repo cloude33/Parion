@@ -40,20 +40,22 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      
+
       // Make error message more user-friendly
       String errorMessage;
       final errorStr = e.toString();
-      if (errorStr.contains('network_error') || 
-          errorStr.contains('NetworkException') ||
+      if (errorStr.contains('network_error')) {
+        // Use the detailed message from the exception
+        errorMessage = errorStr.replaceAll('Exception: ', '');
+      } else if (errorStr.contains('NetworkException') ||
           errorStr.contains('SocketException') ||
           errorStr.contains('Failed host lookup') ||
           errorStr.contains('PlatformException')) {
-        errorMessage = 'İnternet bağlantınızı kontrol edin';
+        errorMessage = 'İnternet bağlantınızı kontrol edin ($errorStr)';
       } else {
         errorMessage = 'Yedekler yüklenirken hata oluştu: $e';
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
@@ -125,8 +127,8 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _backups.isEmpty
-                  ? _buildEmptyState()
-                  : _buildBackupList(),
+              ? _buildEmptyState()
+              : _buildBackupList(),
         ),
       ],
     );
@@ -258,10 +260,14 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _backupService.lastError.value != null && 
-            (_backupService.lastError.value!.contains('network') ||
-             _backupService.lastError.value!.contains('NetworkException') ||
-             _backupService.lastError.value!.contains('PlatformException'))
+            _backupService.lastError.value != null &&
+                    (_backupService.lastError.value!.contains('network') ||
+                        _backupService.lastError.value!.contains(
+                          'NetworkException',
+                        ) ||
+                        _backupService.lastError.value!.contains(
+                          'PlatformException',
+                        ))
                 ? 'İnternet bağlantınızı kontrol edin'
                 : 'Henüz bulut yedeğiniz yok',
             style: const TextStyle(fontSize: 16, color: Colors.grey),
@@ -269,8 +275,12 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
           ),
           if (_backupService.lastError.value != null &&
               (_backupService.lastError.value!.contains('network') ||
-               _backupService.lastError.value!.contains('NetworkException') ||
-               _backupService.lastError.value!.contains('PlatformException'))) ...[
+                  _backupService.lastError.value!.contains(
+                    'NetworkException',
+                  ) ||
+                  _backupService.lastError.value!.contains(
+                    'PlatformException',
+                  ))) ...[
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _loadCloudBackups,
@@ -315,20 +325,20 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
               (platform.toString().toLowerCase() == 'android'
                       ? Colors.green
                       : (platform.toString().toLowerCase() == 'ios'
-                          ? Colors.blue
-                          : Colors.grey))
+                            ? Colors.blue
+                            : Colors.grey))
                   .withValues(alpha: 0.1),
           child: Icon(
             platform.toString().toLowerCase() == 'android'
                 ? Icons.android
                 : (platform.toString().toLowerCase() == 'ios'
-                    ? Icons.apple
-                    : Icons.cloud),
+                      ? Icons.apple
+                      : Icons.cloud),
             color: platform.toString().toLowerCase() == 'android'
                 ? Colors.green
                 : (platform.toString().toLowerCase() == 'ios'
-                    ? Colors.blue
-                    : Colors.grey),
+                      ? Colors.blue
+                      : Colors.grey),
           ),
         ),
         title: Text(
@@ -390,9 +400,9 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
 
     final success = await _backupService.uploadToCloud();
     if (!mounted) return;
-    
+
     final errorMessage = _backupService.lastError.value;
-    
+
     // Make error messages more user-friendly
     String displayMessage;
     if (success) {
@@ -400,11 +410,13 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
     } else {
       // Check for common error types
       if (errorMessage != null) {
-        if (errorMessage.contains('network_error') || 
-            errorMessage.contains('NetworkException') ||
+        if (errorMessage.contains('network_error')) {
+          displayMessage = '❌ ${errorMessage.replaceAll('Exception: ', '')}';
+        } else if (errorMessage.contains('NetworkException') ||
             errorMessage.contains('SocketException') ||
             errorMessage.contains('Failed host lookup')) {
-          displayMessage = '❌ İnternet bağlantınızı kontrol edin';
+          displayMessage =
+              '❌ İnternet bağlantınızı kontrol edin ($errorMessage)';
         } else if (errorMessage.contains('PlatformException')) {
           displayMessage = '❌ İnternet bağlantınızı kontrol edin';
         } else {
@@ -414,7 +426,7 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
         displayMessage = '❌ Yedekleme başarısız';
       }
     }
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(displayMessage),
@@ -465,12 +477,10 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
 
         await Future.delayed(const Duration(seconds: 1));
         if (!mounted) return;
-        
+
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(
-            builder: (context) => const UserSelectionScreen(),
-          ),
+          MaterialPageRoute(builder: (context) => const UserSelectionScreen()),
           (route) => false,
         );
       } else {
@@ -515,7 +525,7 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
     try {
       final success = await _backupService.deleteCloudBackup(backupId);
       if (!mounted) return;
-      
+
       if (success) _loadCloudBackups();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -544,5 +554,3 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
     return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
   }
 }
-
-

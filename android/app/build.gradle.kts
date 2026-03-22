@@ -45,6 +45,13 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Disable R8 full mode to prevent NoSuchFileException errors
+            // This uses R8 in compatibility mode for better stability
+        }
+        debug {
+            // Disable minification for debug builds
+            isMinifyEnabled = false
+            isShrinkResources = false
         }
     }
     

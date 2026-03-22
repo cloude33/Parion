@@ -48,7 +48,7 @@ class ThemeService extends ChangeNotifier {
       useMaterial3: true,
       brightness: Brightness.light,
       primaryColor: const Color(0xFF2C6BED),
-      scaffoldBackgroundColor: const Color(0xFFF4F6F8),
+      scaffoldBackgroundColor: const Color(0xFFCAE3CA),
       colorScheme: const ColorScheme.light(
         primary: Color(0xFF2C6BED),
         secondary: Color(0xFFFFD60A),

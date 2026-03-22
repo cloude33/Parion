@@ -45,11 +45,10 @@ class _InstallmentTrackingScreenState extends State<InstallmentTrackingScreen> {
       final installmentsByCard = <String, List<CreditCardTransaction>>{};
 
       for (var card in cards) {
-        final transactions = await _cardService.getCardTransactions(card.id);
-        // Sadece taksitli işlemleri filtrele (installmentCount > 1)
-        final installments = transactions
-            .where((t) => t.installmentCount > 1)
-            .toList();
+        // getCardTransactions yerine getAllInstallmentsForCard kullan:
+        // getCardTransactions sadece son ekstre sonrası işlemleri döndürür,
+        // bu yüzden eski ekstre dönemlerindeki taksitler gözükmez.
+        final installments = await _cardService.getAllInstallmentsForCard(card.id);
 
         if (installments.isNotEmpty) {
           installmentsByCard[card.id] = installments;

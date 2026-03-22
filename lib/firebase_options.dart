@@ -17,7 +17,10 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -25,9 +28,15 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -40,54 +49,20 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBuqCY5iKdFuXS5npOp-j-l-gxHudYrKYs',
-    appId: '1:195092382674:web:6b0e72c8e2e5f8a73a3e0b',
-    messagingSenderId: '195092382674',
-    projectId: 'walletapp-ece89',
-    authDomain: 'walletapp-ece89.firebaseapp.com',
-    storageBucket: 'walletapp-ece89.firebasestorage.app',
-    measurementId: 'G-3D1F6DQ4BF',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAI1UmlIB4EHWhy-eEB1BdCMsRILeEk6l0',
-    appId: '1:195092382674:android:dbac2b1620ade1b93a3e0b',
+    appId: '1:195092382674:android:ca4f6949ea2b76273a3e0b',
     messagingSenderId: '195092382674',
     projectId: 'walletapp-ece89',
     storageBucket: 'walletapp-ece89.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBJxSF3oJBT98XRSqhhzsTrbt1Qygv3Xak',
+    apiKey: 'AIzaSyAI1UmlIB4EHWhy-eEB1BdCMsRILeEk6l0', 
     appId: '1:195092382674:ios:a869e4942b428e283a3e0b',
     messagingSenderId: '195092382674',
     projectId: 'walletapp-ece89',
     storageBucket: 'walletapp-ece89.firebasestorage.app',
-    androidClientId: '195092382674-pnj540auubdc5kqe8hhhf00t8rf4ejqs.apps.googleusercontent.com',
-    iosClientId: '195092382674-m5t5v6dqta3tf72vrbmtumre0lq6hnfr.apps.googleusercontent.com',
     iosBundleId: 'com.bulut.wallet',
   );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBJxSF3oJBT98XRSqhhzsTrbt1Qygv3Xak',
-    appId: '1:195092382674:ios:8b5a4aefe90706f33a3e0b',
-    messagingSenderId: '195092382674',
-    projectId: 'walletapp-ece89',
-    storageBucket: 'walletapp-ece89.firebasestorage.app',
-    androidClientId: '195092382674-pnj540auubdc5kqe8hhhf00t8rf4ejqs.apps.googleusercontent.com',
-    iosClientId: '195092382674-bjrfeii11bo447tjp3vmouv4rskndisn.apps.googleusercontent.com',
-    iosBundleId: 'com.bulut.wallet',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBuqCY5iKdFuXS5npOp-j-l-gxHudYrKYs',
-    appId: '1:195092382674:web:8d3cff1e5ba8666d3a3e0b',
-    messagingSenderId: '195092382674',
-    projectId: 'walletapp-ece89',
-    authDomain: 'walletapp-ece89.firebaseapp.com',
-    storageBucket: 'walletapp-ece89.firebasestorage.app',
-    measurementId: 'G-0VDQBF1N3J',
-  );
-
 }

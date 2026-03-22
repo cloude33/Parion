@@ -422,7 +422,7 @@ class _AddLoanScreenState extends State<AddLoanScreen> {
     return Scaffold(
       backgroundColor: isDark
           ? const Color(0xFF1C1C1E)
-          : const Color(0xFFF4F6F8),
+          : const Color(0xFFCAE3CA),
       appBar: AppBar(
         title: Text(
           widget.existingLoan != null ? 'Kredi Düzenle' : 'Yeni Kredi Ekle',

@@ -364,7 +364,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF2F2F7),
       body: SafeArea(
         child: Column(
           children: [
@@ -373,30 +373,45 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 20,
+                    horizontal: 16,
+                    vertical: 16,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildAmountField(),
-                      const SizedBox(height: 20),
-                      _buildDescriptionField(),
-                      const SizedBox(height: 20),
-                      _buildCategoryField(),
-                      const SizedBox(height: 20),
-                      _buildWalletField(),
-                      // Show installment field only for credit card expenses
+                      _buildAmountCard(),
+                      const SizedBox(height: 16),
+                      _buildIOSSection(
+                        title: 'Detaylar',
+                        children: [
+                          _buildDescriptionField(),
+                          const Divider(height: 1),
+                          _buildCategoryField(),
+                          const Divider(height: 1),
+                          _buildWalletField(),
+                        ],
+                      ),
                       if (_selectedWalletId.startsWith('cc_') &&
                           !_isIncome) ...[
-                        const SizedBox(height: 20),
-                        _buildInstallmentField(),
+                        const SizedBox(height: 16),
+                        _buildIOSSection(
+                          title: 'Taksit',
+                          children: [_buildInstallmentField()],
+                        ),
                       ],
-                      const SizedBox(height: 20),
-                      _buildDateField(),
-                      const SizedBox(height: 20),
-                      _buildImageSection(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
+                      _buildIOSSection(
+                        title: 'Zaman',
+                        children: [_buildDateField()],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildIOSSection(
+                        title: 'Fotoğraflar',
+                        children: [_buildImageSection()],
+                      ),
+                      const SizedBox(height: 32),
+                      _buildSaveButton(),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -464,97 +479,297 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _buildAmountField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context)!.amount,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _amountController,
-          keyboardType: TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            hintText: '0,00',
-            border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero,
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero,
-              borderSide: BorderSide(color: Theme.of(context).primaryColor),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
+  Widget _buildAmountCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-          onChanged: (value) {
-            if (value.isEmpty) return;
-
-            final locale = Localizations.localeOf(context).toString() == 'tr'
-                ? 'tr_TR'
-                : 'en_US';
-            final separator = locale == 'tr_TR' ? ',' : '.';
-            final thousandsSeparator = locale == 'tr_TR' ? '.' : ',';
-
-            // Remove thousands separator and anything not numeric or the decimal separator
-            String cleanValue = value.replaceAll(thousandsSeparator, '');
-            cleanValue = cleanValue.replaceAll(RegExp('[^0-9$separator]'), '');
-
-            int firstSeparatorIndex = cleanValue.indexOf(separator);
-            if (firstSeparatorIndex != -1) {
-              String integerPart = cleanValue.substring(0, firstSeparatorIndex);
-              String decimalPart = cleanValue
-                  .substring(firstSeparatorIndex + 1)
-                  .replaceAll(separator, ''); // Only one separator allowed
-              cleanValue = '$integerPart$separator$decimalPart';
-            }
-
-            final parts = cleanValue.split(separator);
-            String formattedValue;
-
-            if (parts.length > 1) {
-              final integerPart = parts[0];
-              String decimalPart = parts[1];
-              if (decimalPart.length > 2) {
-                decimalPart = decimalPart.substring(0, 2);
-              }
-              final parsedInteger = integerPart.isEmpty
-                  ? 0
-                  : (int.tryParse(integerPart) ?? 0);
-              final formattedInteger = NumberFormat(
-                '#,##0',
-                locale,
-              ).format(parsedInteger);
-
-              formattedValue = '$formattedInteger$separator$decimalPart';
-            } else {
-              final numericValue = int.tryParse(cleanValue) ?? 0;
-              formattedValue = NumberFormat(
-                '#,##0',
-                locale,
-              ).format(numericValue);
-            }
-
-            if (value != formattedValue) {
-              _amountController.value = TextEditingValue(
-                text: formattedValue,
-                selection: TextSelection.collapsed(
-                  offset: formattedValue.length,
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _isIncome
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isIncome
+                                ? Icons.arrow_downward
+                                : Icons.arrow_upward,
+                            color: _isIncome ? Colors.green : Colors.red,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            _isIncome ? 'Gelir' : 'Gider',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _isIncome ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    CupertinoSlidingSegmentedControl<bool>(
+                      groupValue: _isIncome,
+                      children: {
+                        false: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            'Gider',
+                            style: TextStyle(
+                              color: !_isIncome ? Colors.white : Colors.black54,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        true: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          child: Text(
+                            'Gelir',
+                            style: TextStyle(
+                              color: _isIncome ? Colors.white : Colors.black54,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      },
+                      onValueChanged: (value) {
+                        if (value != null) {
+                          setState(() {
+                            _isIncome = value;
+                            _selectedCategory = '';
+                          });
+                          _loadCategories();
+                        }
+                      },
+                      thumbColor: _isIncome ? Colors.green : Colors.red,
+                    ),
+                  ],
                 ),
-              );
-            }
-          },
-          onTap: () {
-            if (_amountController.text == '0' ||
-                _amountController.text == '0,00') {
-              _amountController.clear();
-            }
-          },
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 40,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1C1C1E),
+                  ),
+                  decoration: InputDecoration(
+                    hintText: '₺0,00',
+                    hintStyle: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade300,
+                    ),
+                    border: InputBorder.none,
+                    filled: false,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  onChanged: (value) {
+                    if (value.isEmpty) return;
+
+                    final locale =
+                        Localizations.localeOf(context).toString() == 'tr'
+                        ? 'tr_TR'
+                        : 'en_US';
+                    final separator = locale == 'tr_TR' ? ',' : '.';
+                    final thousandsSeparator = locale == 'tr_TR' ? '.' : ',';
+
+                    String cleanValue = value.replaceAll(
+                      thousandsSeparator,
+                      '',
+                    );
+                    cleanValue = cleanValue.replaceAll(
+                      RegExp('[^0-9$separator]'),
+                      '',
+                    );
+
+                    int firstSeparatorIndex = cleanValue.indexOf(separator);
+                    if (firstSeparatorIndex != -1) {
+                      String integerPart = cleanValue.substring(
+                        0,
+                        firstSeparatorIndex,
+                      );
+                      String decimalPart = cleanValue
+                          .substring(firstSeparatorIndex + 1)
+                          .replaceAll(separator, '');
+                      cleanValue = '$integerPart$separator$decimalPart';
+                    }
+
+                    final parts = cleanValue.split(separator);
+                    String formattedValue;
+
+                    if (parts.length > 1) {
+                      final integerPart = parts[0];
+                      String decimalPart = parts[1];
+                      if (decimalPart.length > 2) {
+                        decimalPart = decimalPart.substring(0, 2);
+                      }
+                      final parsedInteger = integerPart.isEmpty
+                          ? 0
+                          : (int.tryParse(integerPart) ?? 0);
+                      final formattedInteger = NumberFormat(
+                        '#,##0',
+                        locale,
+                      ).format(parsedInteger);
+
+                      formattedValue =
+                          '$formattedInteger$separator$decimalPart';
+                    } else {
+                      final numericValue = int.tryParse(cleanValue) ?? 0;
+                      formattedValue = NumberFormat(
+                        '#,##0',
+                        locale,
+                      ).format(numericValue);
+                    }
+
+                    if (value != formattedValue) {
+                      _amountController.value = TextEditingValue(
+                        text: formattedValue,
+                        selection: TextSelection.collapsed(
+                          offset: formattedValue.length,
+                        ),
+                      );
+                    }
+                  },
+                  onTap: () {
+                    if (_amountController.text == '0' ||
+                        _amountController.text == '₺0,00') {
+                      _amountController.clear();
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildIOSSection({
+    required String title,
+    required List<Widget> children,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(
+              title,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade500,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSaveButton() {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _isIncome
+              ? [Colors.green.shade400, Colors.green.shade600]
+              : [Colors.red.shade400, Colors.red.shade600],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
         ),
-      ],
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: (_isIncome ? Colors.green : Colors.red).withValues(
+              alpha: 0.3,
+            ),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _saveTransaction,
+          borderRadius: BorderRadius.circular(16),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 24,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  AppLocalizations.of(context)!.save.toUpperCase(),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -599,154 +814,153 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildDescriptionField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          AppLocalizations.of(context)!.description,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _descriptionController,
-          onChanged: _onDescriptionChanged,
-          decoration: InputDecoration(
-            hintText: 'Örn: Market alışverişi',
-            border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero,
-              borderSide: BorderSide(color: Colors.grey.shade300),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            AppLocalizations.of(context)!.description,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade700,
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero,
-              borderSide: BorderSide(color: Theme.of(context).primaryColor),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
-            suffixIcon: _suggestion != null
-                ? IconButton(
-                    icon: FaIcon(
-                      FontAwesomeIcons.lightbulb,
-                      color: Colors.amber,
-                      size: 16,
-                    ),
-                    onPressed: _applySuggestion,
-                    tooltip: AppLocalizations.of(context)!.applySuggestion,
-                  )
-                : null,
           ),
-        ),
-        if (_suggestion != null) ...[
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.amber, width: 1.5),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    FaIcon(
-                      FontAwesomeIcons.lightbulb,
-                      color: Colors.amber,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AppLocalizations.of(
-                              context,
-                            )!.suggested(_suggestion!.category),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            '${_suggestion!.reason} • ${AppLocalizations.of(context)!.confidence((_suggestion!.confidence * 100).toInt().toString())}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
+          TextField(
+            controller: _descriptionController,
+            onChanged: _onDescriptionChanged,
+            style: const TextStyle(fontSize: 16),
+            decoration: InputDecoration(
+              hintText: 'Örn: Market alışverişi',
+              border: InputBorder.none,
+              filled: false,
+              contentPadding: EdgeInsets.zero,
+              suffixIcon: _suggestion != null
+                  ? IconButton(
+                      icon: FaIcon(
+                        FontAwesomeIcons.lightbulb,
+                        color: Colors.amber,
+                        size: 18,
                       ),
-                    ),
-                    TextButton(
                       onPressed: _applySuggestion,
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.amber[800],
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
+                      tooltip: AppLocalizations.of(context)!.applySuggestion,
+                    )
+                  : null,
+            ),
+          ),
+          if (_suggestion != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber, width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.lightbulb,
+                        color: Colors.amber,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.suggested(_suggestion!.category),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text(
+                              '${_suggestion!.reason} • ${AppLocalizations.of(context)!.confidence((_suggestion!.confidence * 100).toInt().toString())}',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: const Text('Uygula'),
-                    ),
-                  ],
-                ),
-                // Ek öneriler: tutar ve cüzdan
-                if (_suggestion!.suggestedAmount != null ||
-                    _suggestion!.suggestedWalletName != null ||
-                    _suggestion!.transactionCount > 0) ...[
-                  const SizedBox(height: 8),
-                  const Divider(height: 1),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 8,
-                    children: [
-                      if (_suggestion!.transactionCount > 0)
-                        _buildSuggestionChip(
-                          icon: FontAwesomeIcons.clockRotateLeft,
-                          label: '${_suggestion!.transactionCount} kez',
-                          tooltip:
-                              'Bu işlem daha önce ${_suggestion!.transactionCount} kez girilmiş',
-                        ),
-                      if (_suggestion!.suggestedAmount != null)
-                        _buildSuggestionChip(
-                          icon: FontAwesomeIcons.coins,
-                          label:
-                              '₺${NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount)}',
-                          tooltip: 'Ortalama tutar',
-                          onTap: () {
-                            _amountController.text = NumberFormat(
-                              '#,##0.00',
-                              'tr_TR',
-                            ).format(_suggestion!.suggestedAmount);
-                          },
-                        ),
-                      if (_suggestion!.suggestedWalletName != null)
-                        _buildSuggestionChip(
-                          icon: FontAwesomeIcons.wallet,
-                          label: _cleanWalletName(
-                            _suggestion!.suggestedWalletName!,
+                      TextButton(
+                        onPressed: _applySuggestion,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.amber[800],
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
                           ),
-                          tooltip: 'Sık kullanılan cüzdan',
-                          onTap: () {
-                            if (_suggestion!.suggestedWalletId != null) {
-                              setState(() {
-                                _selectedWalletId =
-                                    _suggestion!.suggestedWalletId!;
-                              });
-                            }
-                          },
                         ),
+                        child: const Text('Uygula'),
+                      ),
                     ],
                   ),
+                  if (_suggestion!.suggestedAmount != null ||
+                      _suggestion!.suggestedWalletName != null ||
+                      _suggestion!.transactionCount > 0) ...[
+                    const SizedBox(height: 8),
+                    const Divider(height: 1),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 8,
+                      children: [
+                        if (_suggestion!.transactionCount > 0)
+                          _buildSuggestionChip(
+                            icon: FontAwesomeIcons.clockRotateLeft,
+                            label: '${_suggestion!.transactionCount} kez',
+                            tooltip:
+                                'Bu işlem daha önce ${_suggestion!.transactionCount} kez girilmiş',
+                          ),
+                        if (_suggestion!.suggestedAmount != null)
+                          _buildSuggestionChip(
+                            icon: FontAwesomeIcons.coins,
+                            label:
+                                '₺${NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount)}',
+                            tooltip: 'Ortalama tutar',
+                            onTap: () {
+                              _amountController.text = NumberFormat(
+                                '#,##0.00',
+                                'tr_TR',
+                              ).format(_suggestion!.suggestedAmount);
+                            },
+                          ),
+                        if (_suggestion!.suggestedWalletName != null)
+                          _buildSuggestionChip(
+                            icon: FontAwesomeIcons.wallet,
+                            label: _cleanWalletName(
+                              _suggestion!.suggestedWalletName!,
+                            ),
+                            tooltip: 'Sık kullanılan cüzdan',
+                            onTap: () {
+                              if (_suggestion!.suggestedWalletId != null) {
+                                setState(() {
+                                  _selectedWalletId =
+                                      _suggestion!.suggestedWalletId!;
+                                });
+                              }
+                            },
+                          ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -830,25 +1044,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       );
     } catch (_) {}
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Kategori', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.zero,
-            color: Theme.of(context).inputDecorationTheme.fillColor,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Kategori',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF8E8E93),
+            ),
           ),
-          child: DropdownButtonHideUnderline(
+          const SizedBox(height: 8),
+          DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: deduplicatedCategories.isNotEmpty
                   ? _selectedCategory
                   : null,
               isExpanded: true,
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: Colors.grey.shade400,
+                size: 24,
+              ),
+              style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1E)),
               items: deduplicatedCategories
                   .map(
                     (cat) => DropdownMenuItem(
@@ -858,7 +1079,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: cat.color.withValues(alpha: 0.2),
+                              color: cat.color.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(cat.icon, color: cat.color, size: 20),
@@ -881,10 +1102,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: cat.color.withValues(alpha: 0.2),
+                          color: cat.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Icon(cat.icon, color: cat.color, size: 16),
+                        child: Icon(cat.icon, color: cat.color, size: 18),
                       ),
                       const SizedBox(width: 8),
                       Text(cat.name, style: const TextStyle(fontSize: 16)),
@@ -895,27 +1116,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               hint: const Text('Bir kategori seçin'),
             ),
           ),
-        ),
-        if (selectedCategoryObj != null &&
-            selectedCategoryObj.subCategories.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          const Text(
-            'Alt Kategori',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).dividerColor),
-              borderRadius: BorderRadius.zero,
-              color: Theme.of(context).inputDecorationTheme.fillColor,
+          if (selectedCategoryObj != null &&
+              selectedCategoryObj.subCategories.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            const Text(
+              'Alt Kategori',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF8E8E93),
+              ),
             ),
-            child: DropdownButtonHideUnderline(
+            const SizedBox(height: 8),
+            DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 value: _selectedSubCategory,
                 isExpanded: true,
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                icon: Icon(
+                  Icons.arrow_drop_down,
+                  color: Colors.grey.shade400,
+                  size: 24,
+                ),
+                style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1E)),
                 hint: const Text('Alt kategori seçin'),
                 items: selectedCategoryObj.subCategories
                     .map(
@@ -929,9 +1153,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 },
               ),
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -941,23 +1165,30 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildWalletField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Cüzdan', style: TextStyle(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.zero,
-            color: Theme.of(context).inputDecorationTheme.fillColor,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Cüzdan',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF8E8E93),
+            ),
           ),
-          child: DropdownButtonHideUnderline(
+          const SizedBox(height: 8),
+          DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _selectedWalletId.isNotEmpty ? _selectedWalletId : null,
               isExpanded: true,
-              icon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: Colors.grey.shade400,
+                size: 24,
+              ),
+              style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1E)),
               items: widget.wallets.map((wallet) {
                 final isCreditCard = wallet.id.startsWith('cc_');
                 return DropdownMenuItem(
@@ -980,13 +1211,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             Text(
                               _cleanWalletName(wallet.name),
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 14),
+                              style: const TextStyle(fontSize: 15),
                             ),
                             Text(
                               isCreditCard ? 'Kredi Kartı' : 'Hesap',
                               style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[600],
+                                fontSize: 12,
+                                color: Colors.grey.shade500,
                               ),
                             ),
                           ],
@@ -1003,8 +1234,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             color: wallet.balance >= 0
                                 ? Colors.green
                                 : Colors.red,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
                           ),
                         ),
                     ],
@@ -1043,8 +1274,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1074,166 +1305,167 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         ? totalAmount / installmentCount
         : 0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Taksit Sayısı',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _installmentCountController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            hintText: '1',
-            helperText: '1 = Peşin, 2+ = Taksitli',
-            suffixText: 'taksit',
-            border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero,
-              borderSide: BorderSide(color: Colors.grey.shade300),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Taksit Sayısı',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF8E8E93),
             ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.zero,
-              borderSide: BorderSide(color: Theme.of(context).primaryColor),
-            ),
-            filled: true,
-            fillColor: Theme.of(context).inputDecorationTheme.fillColor,
           ),
-          onChanged: (value) {
-            setState(() {
-              _installmentCount = int.tryParse(value) ?? 1;
-              if (_installmentCount < 1) _installmentCount = 1;
-              if (_installmentCount > 36) _installmentCount = 36;
-            });
-          },
-        ),
-        if (installmentCount > 1 && totalAmount > 0) ...[
           const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+          TextField(
+            controller: _installmentCountController,
+            keyboardType: TextInputType.number,
+            style: const TextStyle(fontSize: 16),
+            decoration: InputDecoration(
+              hintText: '1',
+              helperText: '1 = Peşin, 2+ = Taksitli',
+              helperStyle: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+              suffixText: 'taksit',
+              suffixStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              border: InputBorder.none,
+              filled: false,
+              contentPadding: EdgeInsets.zero,
             ),
-            child: Row(
-              children: [
-                const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Aylık taksit: ${NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(installmentAmount)}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildImageSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Fotoğraflar',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-        ),
-        const SizedBox(height: 12),
-        if (_selectedImage == null)
-          GestureDetector(
-            onTap: () async {
-              final imagePath = await ImageHelper.showImageSourceDialog(
-                context,
-              );
-              if (imagePath != null) {
-                setState(() {
-                  _selectedImage = imagePath;
-                });
-              }
+            onChanged: (value) {
+              setState(() {
+                _installmentCount = int.tryParse(value) ?? 1;
+                if (_installmentCount < 1) _installmentCount = 1;
+                if (_installmentCount > 36) _installmentCount = 36;
+              });
             },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(40),
+          ),
+          if (installmentCount > 1 && totalAmount > 0) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey.shade800
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.zero,
-                border: Border.all(
-                  color: Colors.grey.shade300,
-                  width: 1,
-                  style: BorderStyle.solid,
-                ),
+                color: Colors.blue.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  FaIcon(
-                    AppIcons.camera,
-                    size: 48,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey.shade600
-                        : Colors.grey.shade400,
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue.shade600,
+                    size: 20,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Fiş fotoğrafı ekle',
-                    style: TextStyle(
-                      color: Theme.of(context).brightness == Brightness.dark
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade600,
-                      fontSize: 14,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Aylık taksit: ${NumberFormat.currency(locale: 'tr_TR', symbol: '₺').format(installmentAmount)}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue.shade700,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          )
-        else
-          Column(
-            children: [
-              SizedBox(
-                height: 120,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: 1,
-                  itemBuilder: (context, index) {
-                    return _buildImagePreview(_selectedImage!, index);
-                  },
-                ),
-              ),
-              const SizedBox(height: 12),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final imagePath = await ImageHelper.showImageSourceDialog(
-                      context,
-                    );
-                    if (imagePath != null) {
-                      setState(() {
-                        _selectedImage = imagePath;
-                      });
-                    }
-                  },
-                  icon: FaIcon(AppIcons.camera, size: 16),
-                  label: const Text('Ekle'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).primaryColor,
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_selectedImage == null)
+            GestureDetector(
+              onTap: () async {
+                final imagePath = await ImageHelper.showImageSourceDialog(
+                  context,
+                );
+                if (imagePath != null) {
+                  setState(() {
+                    _selectedImage = imagePath;
+                  });
+                }
+              },
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                    width: 1.5,
+                    style: BorderStyle.solid,
                   ),
                 ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FaIcon(
+                      AppIcons.camera,
+                      size: 32,
+                      color: Colors.grey.shade400,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Fiş fotoğrafı ekle',
+                      style: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-      ],
+            )
+          else
+            Column(
+              children: [
+                SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: 1,
+                    itemBuilder: (context, index) {
+                      return _buildImagePreview(_selectedImage!, index);
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      final imagePath = await ImageHelper.showImageSourceDialog(
+                        context,
+                      );
+                      if (imagePath != null) {
+                        setState(() {
+                          _selectedImage = imagePath;
+                        });
+                      }
+                    },
+                    icon: FaIcon(AppIcons.camera, size: 16),
+                    label: const Text('Ekle'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 
@@ -1292,149 +1524,158 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Widget _buildDateField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Tarih',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () {
-            showModalBottomSheet(
-              context: context,
-              builder: (BuildContext context) {
-                return Container(
-                  height: 400,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Tarih',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF8E8E93),
+            ),
+          ),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                context: context,
+                builder: (BuildContext context) {
+                  return Container(
+                    height: 400,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Theme.of(context).dividerColor,
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                              ),
                             ),
                           ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text(
-                                'İptal',
-                                style: TextStyle(color: Colors.grey),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text(
+                                  'İptal',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
                               ),
-                            ),
-                            const Text(
-                              'Tarih ve Saat Seç',
-                              style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: Text(
-                                'Tamam',
+                              const Text(
+                                'Tarih ve Saat Seç',
                                 style: TextStyle(
-                                  color: Theme.of(context).primaryColor,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Expanded(
-                              child: CupertinoDatePicker(
-                                mode: CupertinoDatePickerMode.date,
-                                initialDateTime:
-                                    _selectedDate.isAfter(DateTime.now())
-                                    ? DateTime.now()
-                                    : _selectedDate,
-                                minimumDate: DateTime(2020),
-                                maximumDate: DateTime.now(),
-                                onDateTimeChanged: (DateTime newDate) {
-                                  setState(() {
-                                    _selectedDate = DateTime(
-                                      newDate.year,
-                                      newDate.month,
-                                      newDate.day,
-                                      _selectedDate.hour,
-                                      _selectedDate.minute,
-                                    );
-                                  });
-                                },
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: Text(
+                                  'Tamam',
+                                  style: TextStyle(
+                                    color: Theme.of(context).primaryColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
                               ),
-                            ),
-                            SizedBox(
-                              height: 100,
-                              child: CupertinoDatePicker(
-                                mode: CupertinoDatePickerMode.time,
-                                initialDateTime:
-                                    _selectedDate.isAfter(DateTime.now())
-                                    ? DateTime.now()
-                                    : _selectedDate,
-                                use24hFormat: true,
-                                onDateTimeChanged: (DateTime newTime) {
-                                  setState(() {
-                                    _selectedDate = DateTime(
-                                      _selectedDate.year,
-                                      _selectedDate.month,
-                                      _selectedDate.day,
-                                      newTime.hour,
-                                      newTime.minute,
-                                    );
-                                  });
-                                },
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: CupertinoDatePicker(
+                                  mode: CupertinoDatePickerMode.date,
+                                  initialDateTime:
+                                      _selectedDate.isAfter(DateTime.now())
+                                      ? DateTime.now()
+                                      : _selectedDate,
+                                  minimumDate: DateTime(2020),
+                                  maximumDate: DateTime.now(),
+                                  onDateTimeChanged: (DateTime newDate) {
+                                    setState(() {
+                                      _selectedDate = DateTime(
+                                        newDate.year,
+                                        newDate.month,
+                                        newDate.day,
+                                        _selectedDate.hour,
+                                        _selectedDate.minute,
+                                      );
+                                    });
+                                  },
+                                ),
+                              ),
+                              SizedBox(
+                                height: 100,
+                                child: CupertinoDatePicker(
+                                  mode: CupertinoDatePickerMode.time,
+                                  initialDateTime:
+                                      _selectedDate.isAfter(DateTime.now())
+                                      ? DateTime.now()
+                                      : _selectedDate,
+                                  use24hFormat: true,
+                                  onDateTimeChanged: (DateTime newTime) {
+                                    setState(() {
+                                      _selectedDate = DateTime(
+                                        _selectedDate.year,
+                                        _selectedDate.month,
+                                        _selectedDate.day,
+                                        newTime.hour,
+                                        newTime.minute,
+                                      );
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _formatDateTurkish(_selectedDate),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF1C1C1E),
+                    ),
                   ),
-                );
-              },
-            );
-          },
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border.all(color: Theme.of(context).dividerColor),
-              borderRadius: BorderRadius.zero,
-              color: Theme.of(context).inputDecorationTheme.fillColor,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _formatDateTurkish(_selectedDate),
-                  style: const TextStyle(fontSize: 16),
-                ),
-                FaIcon(
-                  AppIcons.calendar,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
-                ),
-              ],
+                  FaIcon(
+                    AppIcons.calendar,
+                    color: Theme.of(context).primaryColor,
+                    size: 20,
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

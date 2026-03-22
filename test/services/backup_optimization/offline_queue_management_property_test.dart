@@ -430,6 +430,12 @@ class MockGoogleDriveService implements GoogleDriveService {
 
   @override
   Future<bool> checkGoogleConnectivity() async => true;
+
+  @override
+  Future<bool> isOnline() async => true;
+
+  @override
+  String? get lastConnectionError => null;
 }
 
 /// Mock Network Monitor for testing

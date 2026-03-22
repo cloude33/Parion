@@ -396,6 +396,27 @@ class DataService {
     }
     final List<dynamic> categoriesList = json.decode(categoriesJson);
     final categories = categoriesList.map((c) => Category.fromJson(c)).toList();
+
+    // Check for new default categories that might be missing (e.g. after an app update)
+    bool changed = false;
+    for (final defaultCat in defaultCategories) {
+      // Check if this default category exists in user's list (by ID)
+      final exists = categories.any((c) => c.id == defaultCat.id);
+      if (!exists) {
+        // Also check by name to avoid duplicates if user manually added something similar
+        // but with a different ID, though relying on ID is standard for defaults.
+        // For now, we will add it if the ID is missing.
+        // To respect user deletions, we could maybe only do this for IDs > e22
+        // but simple merge is robust for "I just updated and want new features".
+        categories.add(defaultCat);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await saveCategories(categories);
+    }
+
     _categories = categories;
     return categories;
   }

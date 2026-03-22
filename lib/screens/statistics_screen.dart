@@ -181,7 +181,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return Scaffold(
       backgroundColor: isDark
           ? const Color(0xFF000000)
-          : const Color(0xFFF4F6F8),
+          : const Color(0xFFCAE3CA),
       body: SafeArea(
         child: Column(
           children: [

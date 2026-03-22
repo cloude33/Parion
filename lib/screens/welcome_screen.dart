@@ -17,8 +17,6 @@ class WelcomeScreen extends StatefulWidget {
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
-
-  
   bool _isLoading = false;
   String? _errorMessage;
   UserProfile? _userProfile;
@@ -29,8 +27,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     _initializeAuthServices();
   }
 
-
-
   Future<void> _initializeAuthServices() async {
     setState(() {
       _isLoading = true;
@@ -39,7 +35,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 
     try {
       final authOrchestrator = getIt<IAuthOrchestrator>();
-      
+
       // Check if user is already authenticated
       final isAuthenticated = await authOrchestrator.isAuthenticated();
       if (isAuthenticated && mounted) {
@@ -69,32 +65,41 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
   }
 
-
-
   Widget _buildContent() {
     final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.height < 640;
     final isTablet = screenSize.width > 600;
     final horizontalPadding = isTablet ? 48.0 : 24.0;
-    
+
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-        child: Column(
-          children: [
-            Expanded(
-              flex: 3,
-              child: _buildHeader(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                  child: Column(
+                    children: [
+                      SizedBox(height: isSmallScreen ? 24 : 48),
+                      _buildHeader(isSmallScreen),
+                      if (!isSmallScreen) const Spacer(),
+                      _buildActionButtons(context),
+                      const SizedBox(height: 16),
+                      _buildFooter(),
+                      SizedBox(height: isSmallScreen ? 16 : 24),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            Expanded(
-              flex: 2,
-              child: _buildActionButtons(context),
-            ),
-            _buildFooter(),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,11 +108,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0f2027),
-              Color(0xFF203a43),
-              Color(0xFF2c5364),
-            ],
+            colors: [Color(0xFF0f2027), Color(0xFF203a43), Color(0xFF2c5364)],
             stops: [0.0, 0.5, 1.0],
           ),
         ),
@@ -122,23 +123,27 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(bool isSmallScreen) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        _buildLogo(),
-        const SizedBox(height: 32),
-        _buildTitle(),
-        const SizedBox(height: 16),
-        _buildSubtitle(),
+        _buildLogo(isSmallScreen),
+        SizedBox(height: isSmallScreen ? 20 : 32),
+        _buildTitle(isSmallScreen),
+        SizedBox(height: isSmallScreen ? 12 : 16),
+        _buildSubtitle(isSmallScreen),
       ],
     );
   }
 
-  Widget _buildLogo() {
+  Widget _buildLogo(bool isSmallScreen) {
+    final logoSize = isSmallScreen ? 100.0 : 140.0;
+    final iconSize = isSmallScreen ? 70.0 : 90.0;
+
     return Container(
-      width: 140,
-      height: 140,
+      width: logoSize,
+      height: logoSize,
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
@@ -157,14 +162,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
       child: ClipOval(
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(isSmallScreen ? 8 : 12),
           child: Image.asset(
             'assets/images/logo.png',
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(
+              return Icon(
                 Icons.account_balance_wallet,
-                size: 90,
+                size: iconSize,
                 color: Color(0xFFFDB32A),
               );
             },
@@ -174,11 +179,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildTitle() {
-    return const Text(
+  Widget _buildTitle(bool isSmallScreen) {
+    final fontSize = isSmallScreen ? 32.0 : 42.0;
+
+    return Text(
       'Parion',
       style: TextStyle(
-        fontSize: 42,
+        fontSize: fontSize,
         fontWeight: FontWeight.bold,
         color: Colors.white,
         letterSpacing: 1.2,
@@ -188,14 +195,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildSubtitle() {
+  Widget _buildSubtitle(bool isSmallScreen) {
+    final titleSize = isSmallScreen ? 16.0 : 20.0;
+    final nameSize = isSmallScreen ? 20.0 : 24.0;
+
     if (_userProfile != null && _userProfile!.name.isNotEmpty) {
       return Column(
         children: [
           Text(
             'Hoş Geldin,',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: titleSize,
               color: Colors.white.withValues(alpha: 0.95),
               height: 1.2,
               fontWeight: FontWeight.w400,
@@ -206,7 +216,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           Text(
             _userProfile!.name,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: nameSize,
               color: const Color(0xFFFDB32A),
               height: 1.2,
               fontWeight: FontWeight.bold,
@@ -220,7 +230,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return Text(
       'Finansal özgürlüğünüze giden yolda\nyardımcınız',
       style: TextStyle(
-        fontSize: 18,
+        fontSize: isSmallScreen ? 16 : 18,
         color: Colors.white.withValues(alpha: 0.9),
         height: 1.6,
         fontWeight: FontWeight.w300,
@@ -244,8 +254,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
           const SizedBox(height: 16),
         ],
-        
-
 
         _buildPrimaryButton(
           context,
@@ -263,8 +271,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ],
     );
   }
-
-
 
   Widget _buildPrimaryButton(
     BuildContext context, {
@@ -301,15 +307,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1E3A3A)),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Color(0xFF1E3A3A),
+                      ),
                     ),
                   )
                 else
-                  Icon(
-                    icon,
-                    color: const Color(0xFF1E3A3A),
-                    size: 24,
-                  ),
+                  Icon(icon, color: const Color(0xFF1E3A3A), size: 24),
                 const SizedBox(width: 12),
                 Text(
                   text,
@@ -353,11 +357,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  icon,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                Icon(icon, color: Colors.white, size: 24),
                 const SizedBox(width: 12),
                 Text(
                   text,
@@ -416,7 +416,4 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       ),
     );
   }
-
 }
-
-

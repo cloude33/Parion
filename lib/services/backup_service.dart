@@ -416,32 +416,66 @@ class BackupService {
   // Bulut yedekleme fonksiyonları - DRIVE Implementation
   Future<bool> uploadToCloud() async {
     lastError.value = null;
+    debugPrint('CLOUD_BACKUP: 🔄 Starting Google Drive backup process...');
     try {
-      debugPrint('🔄 Google Drive yedekleme başlatılıyor...');
+      debugPrint('CLOUD_BACKUP: 🔄 Google Drive yedekleme başlatılıyor...');
+
+      // Check connectivity first
+      debugPrint('CLOUD_BACKUP: 🔍 Checking connectivity before backup...');
+      final hasConnectivity = await _driveService.isOnline();
+      debugPrint(
+        'CLOUD_BACKUP: 🔍 Connectivity check result: $hasConnectivity',
+      );
+      if (!hasConnectivity) {
+        final errorMsg =
+            _driveService.lastConnectionError ??
+            'İnternet bağlantınızı kontrol edin';
+        lastError.value = 'network_error: $errorMsg';
+        debugPrint('❌ Connectivity check failed before backup: $errorMsg');
+        throw Exception('network_error: $errorMsg');
+      }
+      debugPrint(
+        'CLOUD_BACKUP: ✅ Connectivity verified, proceeding with backup',
+      );
 
       // Auth Check
+      debugPrint('CLOUD_BACKUP: 🔍 Checking authentication status...');
       if (!await _driveService.isAuthenticated()) {
+        debugPrint(
+          'CLOUD_BACKUP: 🔍 User not authenticated, starting sign-in process...',
+        );
         await _driveService.signIn();
+        debugPrint('CLOUD_BACKUP: ✅ Sign-in completed successfully');
+      } else {
+        debugPrint('CLOUD_BACKUP: ✅ User already authenticated');
       }
 
       cloudBackupStatus.value = CloudBackupStatus.uploading;
+      debugPrint('CLOUD_BACKUP: 📤 Setting backup status to uploading');
 
       // 1. Dosyayı Oluştur (Create Local File)
-      debugPrint('📦 Yedek verisi ve dosyası hazırlanıyor...');
+      debugPrint('CLOUD_BACKUP: 📦 Preparing backup data and file...');
       File? backupFile;
       if (kIsWeb) {
         throw UnsupportedError(
           'Web upload not fully implemented for direct file IO in this method yet.',
         );
       } else {
+        debugPrint('CLOUD_BACKUP: 💾 Creating local backup file...');
         backupFile = await createBackup();
+        debugPrint(
+          'CLOUD_BACKUP: ✅ Local backup file created: ${backupFile.path}',
+        );
       }
 
       // 2. Drive'a Yükle
       final timestamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
       final fileName = 'money_backup_$timestamp.mbk';
 
-      debugPrint('☁️ Google Drive\'a yükleniyor...');
+      debugPrint('CLOUD_BACKUP: ☁️ Uploading to Google Drive: $fileName');
+      debugPrint(
+        'CLOUD_BACKUP: 📁 File size: ${await backupFile!.length()} bytes',
+      );
 
       final result = await _driveService.uploadBackup(
         backupFile,
@@ -455,10 +489,16 @@ class BackupService {
       );
 
       if (result == null) {
+        debugPrint('CLOUD_BACKUP: ❌ Google Drive upload returned null result');
         throw Exception('Google Drive upload failed');
       }
 
-      debugPrint('✅ Google Drive yükleme başarılı: ${result.id}');
+      debugPrint(
+        'CLOUD_BACKUP: ✅ Google Drive upload successful: ${result.id}',
+      );
+      debugPrint(
+        'CLOUD_BACKUP: ✅ File uploaded: ${result.name} (${result.size} bytes)',
+      );
 
       final now = DateTime.now();
       lastCloudBackupDate.value = DateFormat('dd/MM/yyyy HH:mm').format(now);
@@ -470,19 +510,33 @@ class BackupService {
         lastCloudBackupDate.value!,
       );
 
+      debugPrint('CLOUD_BACKUP: ✅ Backup process completed successfully');
       return true;
     } catch (e, stackTrace) {
       lastError.value = 'Hata: ${e.toString()}';
-      debugPrint('❌ Bulut yedekleme hatası: $e');
-      debugPrint('📍 Stack trace: $stackTrace');
+      debugPrint('CLOUD_BACKUP: ❌ Bulut yedekleme hatası: $e');
+      debugPrint('CLOUD_BACKUP: 📍 Stack trace: $stackTrace');
       cloudBackupStatus.value = CloudBackupStatus.error;
+      debugPrint('CLOUD_BACKUP: ❌ Setting backup status to error');
       return false;
     }
   }
 
   Future<bool> downloadFromCloud([String? backupId]) async {
+    lastError.value = null;
     try {
-      debugPrint('🔄 Google Drive geri yükleme başlatılıyor...');
+      debugPrint('CLOUD_BACKUP: 🔄 Google Drive geri yükleme başlatılıyor...');
+
+      // Check connectivity first
+      final hasConnectivity = await _driveService.isOnline();
+      if (!hasConnectivity) {
+        final errorMsg =
+            _driveService.lastConnectionError ??
+            'İnternet bağlantınızı kontrol edin';
+        lastError.value = 'network_error: $errorMsg';
+        throw Exception('network_error: $errorMsg');
+      }
+
       cloudBackupStatus.value = CloudBackupStatus.downloading;
 
       // Auth Check
@@ -497,7 +551,7 @@ class BackupService {
       if (fileId == null) {
         final backups = await _driveService.listBackups();
         if (backups.isEmpty) {
-          debugPrint('❌ Hiç yedek bulunamadı.');
+          debugPrint('CLOUD_BACKUP: ❌ Hiç yedek bulunamadı.');
           cloudBackupStatus.value = CloudBackupStatus.error;
           return false;
         }
@@ -507,7 +561,7 @@ class BackupService {
 
       if (fileId == null) return false;
 
-      debugPrint('📥 İndiriliyor: $fileId');
+      debugPrint('CLOUD_BACKUP: 📥 İndiriliyor: $fileId');
 
       final tempDir = await getTemporaryDirectory();
       final tempPath = path.join(
@@ -529,10 +583,18 @@ class BackupService {
       await downloadedFile.delete(); // Cleanup
 
       cloudBackupStatus.value = CloudBackupStatus.idle;
-      debugPrint('✅ Geri yükleme başarılı');
+      debugPrint('CLOUD_BACKUP: ✅ Geri yükleme başarılı');
       return true;
     } catch (e) {
-      debugPrint('❌ Bulut geri yükleme hatası: $e');
+      debugPrint('CLOUD_BACKUP: ❌ Bulut geri yükleme hatası: $e');
+      // Store error for UI
+      if (e.toString().contains('network') ||
+          e.toString().contains('SocketException') ||
+          e.toString().contains('Failed host lookup')) {
+        lastError.value = 'network_error: İnternet bağlantınızı kontrol edin';
+      } else {
+        lastError.value = e.toString();
+      }
       cloudBackupStatus.value = CloudBackupStatus.error;
       return false;
     }
@@ -540,9 +602,20 @@ class BackupService {
 
   // Listeleme (Firestore yerine Drive'dan)
   Future<List<Map<String, dynamic>>> getCloudBackups() async {
+    lastError.value = null;
     try {
       if (!await _driveService.isAuthenticated()) {
         return [];
+      }
+
+      // Check connectivity before listing
+      final hasConnectivity = await _driveService.isOnline();
+      if (!hasConnectivity) {
+        final errorMsg =
+            _driveService.lastConnectionError ??
+            'İnternet bağlantınızı kontrol edin';
+        lastError.value = 'network_error: $errorMsg';
+        throw Exception('network_error: $errorMsg');
       }
 
       final files = await _driveService.listBackups();
@@ -573,8 +646,16 @@ class BackupService {
           )
           .toList();
     } catch (e) {
-      debugPrint('Yedek listeleme hatası: $e');
-      return [];
+      debugPrint('CLOUD_BACKUP: Yedek listeleme hatası: $e');
+      // Store error for UI to display
+      if (e.toString().contains('network') ||
+          e.toString().contains('SocketException') ||
+          e.toString().contains('Failed host lookup')) {
+        lastError.value = 'network_error: İnternet bağlantınızı kontrol edin';
+      } else {
+        lastError.value = e.toString();
+      }
+      rethrow; // Rethrow to let UI handle it
     }
   }
 
@@ -583,7 +664,7 @@ class BackupService {
       await _driveService.deleteBackup(backupId);
       return true;
     } catch (e) {
-      debugPrint('Bulut yedek silme hatası: $e');
+      debugPrint('CLOUD_BACKUP: Bulut yedek silme hatası: $e');
       return false;
     }
   }
@@ -599,7 +680,7 @@ class BackupService {
       }
       return true;
     } catch (e) {
-      debugPrint('Bulut senkronizasyon hatası: $e');
+      debugPrint('CLOUD_BACKUP: Bulut senkronizasyon hatası: $e');
       cloudBackupStatus.value = CloudBackupStatus.error;
       return false;
     }
