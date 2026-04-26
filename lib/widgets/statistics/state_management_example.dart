@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'statistics_state_builder.dart';
 import 'statistics_loading_state.dart';
@@ -5,6 +6,7 @@ import 'statistics_error_state.dart';
 import 'statistics_empty_state.dart';
 import 'statistics_skeleton_loader.dart';
 import '../../models/cash_flow_data.dart';
+import '../../core/design/app_text_styles.dart';
 
 /// Example demonstrating various state management patterns
 class StateManagementExample extends StatefulWidget {
@@ -67,18 +69,18 @@ class _StateManagementExampleState extends State<StateManagementExample> {
         title: const Text('State Management Examples'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _buildFutureBuilderExample(),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildManualStateExample(),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildLoadingStatesExample(),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildErrorStatesExample(),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildEmptyStatesExample(),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildSkeletonLoadersExample(),
         ],
       ),
@@ -88,16 +90,13 @@ class _StateManagementExampleState extends State<StateManagementExample> {
   Widget _buildFutureBuilderExample() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Future Builder Example',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.titleLarge,
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -108,7 +107,7 @@ class _StateManagementExampleState extends State<StateManagementExample> {
                   return Center(
                     child: Text(
                       'Net Cash Flow: ${data.netCashFlow}',
-                      style: const TextStyle(fontSize: 16),
+                      style: AppTextStyles.bodyLarge,
                     ),
                   );
                 },
@@ -129,16 +128,13 @@ class _StateManagementExampleState extends State<StateManagementExample> {
   Widget _buildManualStateExample() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Manual State Example',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.titleLarge,
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -154,7 +150,7 @@ class _StateManagementExampleState extends State<StateManagementExample> {
                       children: [
                         Text(
                           'Net Cash Flow: ${data.netCashFlow}',
-                          style: const TextStyle(fontSize: 16),
+                          style: AppTextStyles.bodyLarge,
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
@@ -177,16 +173,13 @@ class _StateManagementExampleState extends State<StateManagementExample> {
   Widget _buildLoadingStatesExample() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Loading States',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.titleLarge,
             ),
             const SizedBox(height: 16),
             const SizedBox(
@@ -208,16 +201,13 @@ class _StateManagementExampleState extends State<StateManagementExample> {
   Widget _buildErrorStatesExample() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Error States',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.titleLarge,
             ),
             const SizedBox(height: 16),
             InlineErrorWidget(
@@ -258,16 +248,13 @@ class _StateManagementExampleState extends State<StateManagementExample> {
   Widget _buildEmptyStatesExample() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Empty States',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.titleLarge,
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -290,16 +277,13 @@ class _StateManagementExampleState extends State<StateManagementExample> {
   Widget _buildSkeletonLoadersExample() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Skeleton Loaders',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.titleLarge,
             ),
             const SizedBox(height: 16),
             const StatisticsSkeletonLoader(

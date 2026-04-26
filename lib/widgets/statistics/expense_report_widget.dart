@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'summary_card.dart';
 import '../../models/report_data.dart';
 import '../../models/cash_flow_data.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 class ExpenseReportWidget extends StatelessWidget {
   final ExpenseReport report;
@@ -14,7 +15,7 @@ class ExpenseReportWidget extends StatelessWidget {
     final theme = Theme.of(context);
     
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -30,7 +31,7 @@ class ExpenseReportWidget extends StatelessWidget {
           // Monthly average
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -57,7 +58,7 @@ class ExpenseReportWidget extends StatelessWidget {
           // Fixed vs Variable expense breakdown
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -129,7 +130,7 @@ class ExpenseReportWidget extends StatelessWidget {
           // Category distribution
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -153,7 +154,7 @@ class ExpenseReportWidget extends StatelessWidget {
           if (report.previousPeriodExpense != null && report.changePercentage != null)
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -212,7 +213,7 @@ class ExpenseReportWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                       decoration: BoxDecoration(
                         color: report.changePercentage! >= 0 ? Colors.red.shade100 : Colors.green.shade100,
                         borderRadius: BorderRadius.circular(8),
@@ -254,7 +255,7 @@ class ExpenseReportWidget extends StatelessWidget {
           // Trend analysis
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -285,7 +286,7 @@ class ExpenseReportWidget extends StatelessWidget {
           if (report.optimizationSuggestions.isNotEmpty)
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -297,7 +298,7 @@ class ExpenseReportWidget extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     ...report.optimizationSuggestions.map((suggestion) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -326,7 +327,7 @@ class ExpenseReportWidget extends StatelessWidget {
           // Detailed category table
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -367,7 +368,7 @@ class ExpenseReportWidget extends StatelessWidget {
     }
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -402,7 +403,7 @@ class ExpenseReportWidget extends StatelessWidget {
 
   Widget _buildCategoryItem(String category, double amount) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -417,7 +418,7 @@ class ExpenseReportWidget extends StatelessWidget {
     if (report.expenseCategories.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: EdgeInsets.all(AppSpacing.xxxl),
           child: Text('Kategori verisi bulunamadı'),
         ),
       );

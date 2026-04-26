@@ -97,3 +97,6 @@ analysis_output*.txt
 outdated*.json
 pub_get_error_temp.txt
 *.mbk
+
+# Firebase config
+lib/firebase_options.dart

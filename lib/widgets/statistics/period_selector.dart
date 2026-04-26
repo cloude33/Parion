@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 class PeriodSelector extends StatefulWidget {
@@ -25,7 +26,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -35,11 +36,11 @@ class _PeriodSelectorState extends State<PeriodSelector> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
 
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
                 _buildPeriodChip(
                   context,
@@ -75,7 +76,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
             ),
 
             if (widget.selectedPeriod == PeriodType.custom) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildCustomDateRange(context),
             ],
           ],
@@ -102,7 +103,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
             size: 16,
             color: isSelected ? Colors.white : theme.primaryColor,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSpacing.xs),
           Text(label),
         ],
       ),
@@ -124,7 +125,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.primaryColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
@@ -139,7 +140,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
 
           Row(
             children: [
@@ -151,9 +152,9 @@ class _PeriodSelectorState extends State<PeriodSelector> {
                   () => _selectDate(context, true),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.sm),
               const Icon(Icons.arrow_forward, size: 16),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _buildDateButton(
                   context,
@@ -182,7 +183,10 @@ class _PeriodSelectorState extends State<PeriodSelector> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey[300]!),
           borderRadius: BorderRadius.circular(8),
@@ -194,7 +198,7 @@ class _PeriodSelectorState extends State<PeriodSelector> {
               label,
               style: TextStyle(fontSize: 11, color: Colors.grey[600]),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               date != null ? dateFormat.format(date) : 'Seç',
               style: theme.textTheme.bodyMedium?.copyWith(

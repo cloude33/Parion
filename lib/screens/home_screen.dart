@@ -38,7 +38,7 @@ import '../services/kmh_alert_service.dart';
 import '../models/kmh_alert.dart';
 import '../services/statement_generator_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import '../widgets/custom_bottom_nav_bar.dart';
+import '../widgets/common/app_bottom_nav_bar.dart';
 import '../widgets/inactivity_monitor_widget.dart';
 import '../widgets/simple_auth_debug_widget.dart';
 
@@ -325,19 +325,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   ],
                 )
               : null,
-          body: _selectedIndex == 0
-              ? _buildHomeContent()
-              : _selectedIndex == 1
-              ? const CreditCardListScreen()
-              : _selectedIndex == 2
-              ? StatisticsScreen(
-                  transactions: transactions,
-                  wallets: wallets,
-                  loans: _loans,
-                  creditCardTransactions: _creditCardTransactions,
-                )
-              : const SettingsScreen(),
-          bottomNavigationBar: CustomBottomNavBar(
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: [
+              _buildHomeContent(),
+              const CreditCardListScreen(),
+              const KmhListScreen(),
+              StatisticsScreen(
+                transactions: transactions,
+                wallets: wallets,
+                loans: _loans,
+                creditCardTransactions: _creditCardTransactions,
+              ),
+              const SettingsScreen(),
+            ],
+          ),
+          bottomNavigationBar: AppBottomNavBar(
             currentIndex: _selectedIndex,
             onTap: (index) => setState(() {
               _selectedIndex = index;

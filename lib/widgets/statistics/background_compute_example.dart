@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../services/statistics_background_service.dart';
 import '../../models/cash_flow_data.dart';
@@ -27,7 +28,7 @@ class _BackgroundComputeExampleState extends State<BackgroundComputeExample>
         title: const Text('Background Computation Examples'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _buildExampleCard(
             title: '1. Simple Background Computation',
@@ -75,7 +76,7 @@ class _BackgroundComputeExampleState extends State<BackgroundComputeExample>
             Card(
               color: Colors.red.shade50,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -96,7 +97,7 @@ class _BackgroundComputeExampleState extends State<BackgroundComputeExample>
           if (_cashFlow != null)
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -120,7 +121,7 @@ class _BackgroundComputeExampleState extends State<BackgroundComputeExample>
           if (_spending != null)
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -152,7 +153,7 @@ class _BackgroundComputeExampleState extends State<BackgroundComputeExample>
   }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -431,7 +432,7 @@ class _BackgroundComputeContainerExampleState
         message: 'Loading cash flow data...',
         child: _data != null
             ? Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

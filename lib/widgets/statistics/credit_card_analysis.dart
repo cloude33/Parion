@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../../models/credit_analysis.dart';
 import '../../services/statistics_service.dart';
 import '../../utils/currency_helper.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class CreditCardAnalysis extends StatefulWidget {
   const CreditCardAnalysis({super.key});
 
@@ -115,7 +116,7 @@ class _CreditCardAnalysisState extends State<CreditCardAnalysis> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _buildTotalSummaryCard(),
           
@@ -148,14 +149,14 @@ class _CreditCardAnalysisState extends State<CreditCardAnalysis> {
                 : [Colors.blue[700]!, Colors.blue[500]!],
           ),
         ),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -220,7 +221,7 @@ class _CreditCardAnalysisState extends State<CreditCardAnalysis> {
     final theme = Theme.of(context);
     
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
@@ -281,13 +282,13 @@ class _CreditCardAnalysisState extends State<CreditCardAnalysis> {
     final utilizationColor = _getUtilizationColor(card.utilizationRate);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -374,7 +375,7 @@ class _CreditCardAnalysisState extends State<CreditCardAnalysis> {
               
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: isDark 
                       ? Colors.grey[850] 
@@ -479,7 +480,7 @@ class _CreditCardAnalysisState extends State<CreditCardAnalysis> {
             ] else ...[
               const SizedBox(height: 16),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),

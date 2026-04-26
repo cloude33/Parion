@@ -5,6 +5,7 @@ import '../../models/transaction.dart';
 import '../../models/credit_card_transaction.dart';
 import '../../services/transaction_filter_service.dart';
 import 'filter_bar.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 class FilterIntegrationExample extends StatefulWidget {
   final List<Transaction> transactions;
@@ -95,7 +96,7 @@ class _FilterIntegrationExampleState extends State<FilterIntegrationExample> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: FilterBar(
               selectedTimeFilter: _selectedTimeFilter,
               selectedCategories: _selectedCategories,
@@ -130,7 +131,7 @@ class _FilterIntegrationExampleState extends State<FilterIntegrationExample> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Text(
               'Showing ${_filteredTransactions.length} transactions',
               style: Theme.of(context).textTheme.bodyMedium,

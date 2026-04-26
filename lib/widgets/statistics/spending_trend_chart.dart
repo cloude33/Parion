@@ -3,6 +3,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../models/cash_flow_data.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class SpendingTrendChart extends StatefulWidget {
   final List<CategoryTrend> categoryTrends;
   final Map<String, Color> categoryColors;
@@ -55,7 +58,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
         child: Center(
           child: Text(
             'Trend verisi bulunmamaktadır',
-            style: TextStyle(
+            style: AppTextStyles.bodyMedium.copyWith(
               color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
             ),
           ),
@@ -67,14 +70,14 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildCategorySelector(theme),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         SizedBox(
           height: widget.height,
           child: _buildLineChart(theme, isDark),
         ),
 
         if (widget.showLegend) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _buildLegend(theme),
         ],
       ],
@@ -87,7 +90,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
       runSpacing: 8,
       children: widget.categoryTrends.map((trend) {
         final isSelected = _selectedCategories.contains(trend.category);
-        final color = widget.categoryColors[trend.category] ?? Colors.grey;
+        final color = widget.categoryColors[trend.category] ?? AppColors.onSurface.withValues(alpha: 0.5);
 
         return FilterChip(
           label: Text(trend.category),
@@ -103,7 +106,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
           },
           selectedColor: color.withValues(alpha: 0.3),
           checkmarkColor: color,
-          labelStyle: TextStyle(
+          labelStyle: AppTextStyles.bodySmall.copyWith(
             color: isSelected ? color : theme.textTheme.bodyMedium?.color,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
@@ -117,7 +120,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
       return Center(
         child: Text(
           'Görüntülemek için kategori seçin',
-          style: TextStyle(
+          style: AppTextStyles.bodyMedium.copyWith(
             color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
           ),
         ),
@@ -136,7 +139,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
     }
     maxY = maxY * 1.1;
     final lineBarsData = selectedTrends.map((trend) {
-      final color = widget.categoryColors[trend.category] ?? Colors.grey;
+      final color = widget.categoryColors[trend.category] ?? AppColors.onSurface.withValues(alpha: 0.5);
       final spots = <FlSpot>[];
 
       for (int i = 0; i < trend.monthlySpending.length; i++) {
@@ -159,7 +162,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
               radius: 4,
               color: color,
               strokeWidth: 2,
-              strokeColor: isDark ? Colors.black : Colors.white,
+              strokeColor: isDark ? AppColors.onSurface : AppColors.onPrimary,
             );
           },
         ),
@@ -183,8 +186,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
               getTitlesWidget: (value, meta) {
                 return Text(
                   _formatCurrency(value),
-                  style: TextStyle(
-                    fontSize: 10,
+                  style: AppTextStyles.labelSmall.copyWith(
                     color: theme.textTheme.bodySmall?.color,
                   ),
                 );
@@ -204,11 +206,10 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
 
                 final month = monthlyData[index].month;
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
                   child: Text(
                     DateFormat('MMM', 'tr_TR').format(month),
-                    style: TextStyle(
-                      fontSize: 10,
+                    style: AppTextStyles.labelSmall.copyWith(
                       color: theme.textTheme.bodySmall?.color,
                     ),
                   ),
@@ -229,7 +230,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
           horizontalInterval: maxY / 5,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: isDark ? Colors.white12 : Colors.black12,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.12) : AppColors.onSurface.withValues(alpha: 0.12),
               strokeWidth: 1,
             );
           },
@@ -238,11 +239,11 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
           show: true,
           border: Border(
             bottom: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black26,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.24) : AppColors.onSurface.withValues(alpha: 0.26),
               width: 1,
             ),
             left: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black26,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.24) : AppColors.onSurface.withValues(alpha: 0.26),
               width: 1,
             ),
           ),
@@ -264,10 +265,9 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
 
                 return LineTooltipItem(
                   '${trend.category}\n$month\n${_formatCurrency(spot.y)}',
-                  TextStyle(
-                    color: Colors.white,
+                  AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.onPrimary,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
                   ),
                 );
               }).toList();
@@ -287,7 +287,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
       spacing: 16,
       runSpacing: 8,
       children: selectedTrends.map((trend) {
-        final color = widget.categoryColors[trend.category] ?? Colors.grey;
+        final color = widget.categoryColors[trend.category] ?? AppColors.onSurface.withValues(alpha: 0.5);
         final trendIcon = trend.trend == TrendDirection.up
             ? Icons.trending_up
             : trend.trend == TrendDirection.down
@@ -297,7 +297,7 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
             ? Colors.red
             : trend.trend == TrendDirection.down
                 ? Colors.green
-                : Colors.grey;
+                : AppColors.onSurface.withValues(alpha: 0.5);
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -310,22 +310,21 @@ class _SpendingTrendChartState extends State<SpendingTrendChart> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               trend.category,
-              style: const TextStyle(fontSize: 12),
+              style: AppTextStyles.bodySmall,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSpacing.xs),
             Icon(
               trendIcon,
               size: 16,
               color: trendColor,
             ),
-            const SizedBox(width: 2),
+            const SizedBox(width: AppSpacing.xs),
             Text(
               '${trend.changePercentage.toStringAsFixed(1)}%',
-              style: TextStyle(
-                fontSize: 11,
+              style: AppTextStyles.labelSmall.copyWith(
                 color: trendColor,
                 fontWeight: FontWeight.bold,
               ),

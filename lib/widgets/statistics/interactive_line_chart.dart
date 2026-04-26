@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'accessibility_helpers.dart';
@@ -85,7 +86,7 @@ class _InteractiveLineChartState extends State<InteractiveLineChart> {
         children: [
           if (widget.title != null) ...[
             Padding(
-              padding: const EdgeInsets.only(left: 16, bottom: 8),
+              padding: const EdgeInsets.only(left: AppSpacing.lg, bottom: AppSpacing.sm),
               child: Text(
                 widget.title!,
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -105,7 +106,7 @@ class _InteractiveLineChartState extends State<InteractiveLineChart> {
                           size: 48,
                           color: Colors.grey[400],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.lg),
                         Text(
                           'Veri yok',
                           style: theme.textTheme.bodyLarge?.copyWith(
@@ -116,7 +117,11 @@ class _InteractiveLineChartState extends State<InteractiveLineChart> {
                     ),
                   )
                 : Padding(
-                    padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+                    padding: const EdgeInsets.only(
+                      right: AppSpacing.lg,
+                      top: AppSpacing.sm,
+                      bottom: AppSpacing.sm,
+                    ),
                     child: LineChart(
                       _createLineChartData(minY, maxY, isDark),
                       // Increased animation duration for smoother chart animations
@@ -256,7 +261,7 @@ class _InteractiveLineChartState extends State<InteractiveLineChart> {
           getTooltipColor: (touchedSpot) =>
               isDark ? Colors.grey[850]! : Colors.black87,
           tooltipBorderRadius: BorderRadius.circular(8),
-          tooltipPadding: const EdgeInsets.all(8),
+          tooltipPadding: const EdgeInsets.all(AppSpacing.sm),
           getTooltipItems: (List<LineBarSpot> touchedBarSpots) {
             return touchedBarSpots.map((barSpot) {
               return LineTooltipItem(

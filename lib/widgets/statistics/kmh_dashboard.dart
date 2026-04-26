@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../models/credit_analysis.dart';
@@ -68,18 +69,18 @@ class _KmhDashboardState extends State<KmhDashboard> {
               size: 48,
               color: Colors.red,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               'Veri yüklenirken hata oluştu',
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               _error!,
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             ElevatedButton(
               onPressed: _loadData,
               child: const Text('Tekrar Dene'),
@@ -99,12 +100,12 @@ class _KmhDashboardState extends State<KmhDashboard> {
               size: 64,
               color: Colors.grey[400],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               'KMH Hesabı Bulunamadı',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               'Henüz KMH hesabınız bulunmamaktadır.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -119,7 +120,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           KmhSummaryCards(
             totalDebt: _creditAnalysis!.totalKmhDebt,
@@ -128,20 +129,20 @@ class _KmhDashboardState extends State<KmhDashboard> {
             accountCount: _creditAnalysis!.kmhAccounts.length,
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           KmhInterestCard(
             dailyInterest: _creditAnalysis!.dailyInterest,
             monthlyInterest: _creditAnalysis!.monthlyInterest,
             annualInterest: _creditAnalysis!.annualInterest,
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           if (_creditAnalysis!.debtTrend.isNotEmpty) ...[
             KmhTrendCharts(
               debtTrend: _creditAnalysis!.debtTrend,
               totalLimit: _creditAnalysis!.totalKmhLimit,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
           ],
           _buildAccountsSection(),
           
@@ -175,13 +176,13 @@ class _KmhDashboardState extends State<KmhDashboard> {
     final availableCredit = account.limit - debt;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -198,7 +199,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         isInDebt ? 'Borç' : 'Bakiye',
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -219,7 +220,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                       ),
                     ),
                     if (isInDebt) ...[
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Limit: ${CurrencyHelper.formatAmountNoDecimal(account.limit)}',
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -233,7 +234,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
             ),
             
             if (isInDebt) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               KmhUtilizationIndicator(
                 utilizationRate: account.utilizationRate,
                 usedAmount: debt,
@@ -241,9 +242,9 @@ class _KmhDashboardState extends State<KmhDashboard> {
                 showLabel: true,
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: isDark 
                       ? Colors.grey[850] 
@@ -262,7 +263,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                               size: 16,
                               color: Colors.grey[600],
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Text(
                               'Faiz Oranı',
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -279,7 +280,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -290,7 +291,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                               size: 16,
                               color: Colors.grey[600],
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Text(
                               'Günlük Faiz',
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -308,7 +309,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSpacing.sm),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -319,7 +320,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                               size: 16,
                               color: Colors.grey[600],
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Text(
                               'Kullanılabilir Kredi',
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -341,9 +342,9 @@ class _KmhDashboardState extends State<KmhDashboard> {
                 ),
               ),
             ] else ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -358,7 +359,7 @@ class _KmhDashboardState extends State<KmhDashboard> {
                       color: Colors.green,
                       size: 20,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         'Bu hesapta borç bulunmamaktadır',

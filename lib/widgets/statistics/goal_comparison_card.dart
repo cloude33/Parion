@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/goal_comparison.dart';
 import '../../services/statistics_service.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class GoalComparisonCard extends StatelessWidget {
   final GoalComparisonSummary summary;
   final VoidCallback? onGoalTap;
@@ -12,7 +13,7 @@ class GoalComparisonCard extends StatelessWidget {
     return Card(
       elevation: 2,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -57,7 +58,7 @@ class GoalComparisonCard extends StatelessWidget {
 
   Widget _buildOverallSummary(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: Theme.of(
           context,
@@ -148,7 +149,7 @@ class GoalComparisonCard extends StatelessWidget {
     Color color,
   ) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -177,7 +178,7 @@ class GoalComparisonCard extends StatelessWidget {
 
   Widget _buildGoalItem(BuildContext context, GoalComparison goal) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -283,7 +284,7 @@ class GoalComparisonCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -320,7 +321,7 @@ class GoalComparisonCard extends StatelessWidget {
         const SizedBox(height: 8),
         ...summary.insights.map(
           (insight) => Padding(
-            padding: const EdgeInsets.only(bottom: 4.0),
+            padding: const EdgeInsets.only(bottom: AppSpacing.xs),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

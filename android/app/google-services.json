@@ -14,13 +14,21 @@
       },
       "oauth_client": [
         {
+          "client_id": "195092382674-o9s484sks2tp99i5672csg6l42md9gi6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bulut.wallet",
+            "certificate_hash": "19a40bad0ff912af0bcc0a90cc44e715e549c752"
+          }
+        },
+        {
           "client_id": "195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyAI1UmlIB4EHWhy-eEB1BdCMsRILeEk6l0"
+          "current_key": "AIzaSyDqpIgJitB5XPsXmj9VhF3O5josVhYPlSk"
         }
       ],
       "services": {
@@ -31,46 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "195092382674-bjrfeii11bo447tjp3vmouv4rskndisn.apps.googleusercontent.com",
+              "client_id": "195092382674-m5t5v6dqta3tf72vrbmtumre0lq6hnfr.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.money"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:195092382674:android:dbac2b1620ade1b93a3e0b",
-        "android_client_info": {
-          "package_name": "com.example.money"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAI1UmlIB4EHWhy-eEB1BdCMsRILeEk6l0"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "195092382674-bjrfeii11bo447tjp3vmouv4rskndisn.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.money"
+                "bundle_id": "com.bulut.wallet"
               }
             }
           ]

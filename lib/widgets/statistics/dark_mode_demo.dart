@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:parion/services/chart_service.dart';
@@ -41,7 +42,7 @@ class _DarkModeDemoState extends State<DarkModeDemo> {
           ],
         ),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             _buildSectionTitle('Summary Cards'),
             const SizedBox(height: 12),
@@ -157,7 +158,7 @@ class _DarkModeDemoState extends State<DarkModeDemo> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: SizedBox(
           height: 250,
           child: InteractiveLineChart(
@@ -191,7 +192,7 @@ class _DarkModeDemoState extends State<DarkModeDemo> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: SizedBox(
           height: 300,
           child: InteractivePieChart(
@@ -217,7 +218,7 @@ class _DarkModeDemoState extends State<DarkModeDemo> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: SizedBox(
           height: 250,
           child: InteractiveBarChart(
@@ -250,7 +251,7 @@ class _DarkModeDemoState extends State<DarkModeDemo> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -284,7 +285,7 @@ class _DarkModeDemoState extends State<DarkModeDemo> {
   Widget _buildCustomTooltip() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

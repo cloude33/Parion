@@ -1,5 +1,7 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../models/wallet.dart';
 class KmhAssetCard extends StatefulWidget {
   final List<Wallet> kmhAccounts;
@@ -45,7 +47,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
     if (widget.kmhAccounts.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Center(
             child: Column(
               children: [
@@ -54,10 +56,10 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                   size: 48,
                   color: Colors.grey[400],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'KMH hesabı bulunmamaktadır',
-                  style: TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withValues(
                       alpha: 0.7,
                     ),
@@ -72,14 +74,14 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: Colors.purple.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -90,7 +92,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                     size: 24,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -124,7 +126,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             _buildSummaryMetrics(
               theme: theme,
               isDark: isDark,
@@ -134,7 +136,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
               totalCreditCapacity: totalCreditCapacity,
             ),
             if (positiveKmhAccounts.isNotEmpty) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildPositiveBalanceSection(
                 theme: theme,
                 isDark: isDark,
@@ -142,7 +144,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
               ),
             ],
             if (_isExpanded) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildExpandedDetails(theme: theme, isDark: isDark),
             ],
           ],
@@ -160,7 +162,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
     required double totalCreditCapacity,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -187,7 +189,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                   Row(
                     children: [
                       Icon(Icons.water_drop, size: 16, color: Colors.blue),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSpacing.xs),
                       Text(
                         'Likidite Rezervi',
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -197,7 +199,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     _formatCurrency(liquidityReserve),
                     style: theme.textTheme.headlineSmall?.copyWith(
@@ -217,7 +219,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Colors.purple.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
@@ -230,7 +232,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
               Expanded(
@@ -246,7 +248,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                 width: 1,
                 height: 40,
                 color: isDark ? Colors.grey[700] : Colors.grey[300],
-                margin: const EdgeInsets.symmetric(horizontal: 8),
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               ),
               Expanded(
                 child: _buildMetricItem(
@@ -277,7 +279,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
         Row(
           children: [
             Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Text(
                 label,
@@ -292,7 +294,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           _formatCurrency(value),
           style: theme.textTheme.titleSmall?.copyWith(
@@ -315,16 +317,19 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
         Row(
           children: [
             Icon(Icons.trending_up, size: 16, color: Colors.green),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               'Pozitif Bakiyeli KMH Hesapları',
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+                vertical: AppSpacing.xs,
+              ),
               decoration: BoxDecoration(
                 color: Colors.green.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -340,7 +345,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         ...accounts.map(
           (wallet) => _buildKmhAccountItem(
             theme: theme,
@@ -361,14 +366,14 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Divider(color: isDark ? Colors.grey[700] : Colors.grey[300]),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           'Tüm KMH Hesapları',
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         ...widget.kmhAccounts.map(
           (wallet) => _buildKmhAccountItem(
             theme: theme,
@@ -378,9 +383,9 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
@@ -389,7 +394,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
           child: Row(
             children: [
               Icon(Icons.info_outline, size: 20, color: Colors.blue),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
                   'Pozitif bakiyeli KMH hesapları likit varlık olarak değerlendirilir ve acil durumlarda kullanılabilir.',
@@ -426,8 +431,8 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
         : 0.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
@@ -447,7 +452,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(6),
+                      padding: const EdgeInsets.all(AppSpacing.xs),
                       decoration: BoxDecoration(
                         color: isPositive
                             ? Colors.green.withValues(alpha: 0.1)
@@ -460,7 +465,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                         color: isPositive ? Colors.green : Colors.grey,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,7 +513,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
@@ -524,7 +529,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       _formatCurrency(unusedLimit),
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -548,7 +553,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       _formatCurrency(wallet.creditLimit),
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -571,7 +576,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       '${utilizationRate.toStringAsFixed(1)}%',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -584,7 +589,7 @@ class _KmhAssetCardState extends State<KmhAssetCard> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(

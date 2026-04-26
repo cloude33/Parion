@@ -8,6 +8,7 @@ import 'summary_card.dart';
 import 'metric_card.dart';
 import 'income_report_widget.dart';
 import 'export_options_widget.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class ReportsTab extends StatefulWidget {
   const ReportsTab({super.key});
 
@@ -48,7 +49,7 @@ class _ReportsTabState extends State<ReportsTab> {
   }
   Widget _buildConfigurationSection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -205,7 +206,7 @@ class _ReportsTabState extends State<ReportsTab> {
     return InkWell(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.shade300),
           borderRadius: BorderRadius.circular(8),
@@ -326,7 +327,7 @@ class _ReportsTabState extends State<ReportsTab> {
             : const Icon(Icons.assessment),
         label: Text(_isLoading ? 'Oluşturuluyor...' : 'Rapor Oluştur'),
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         ),
       ),
     );
@@ -391,7 +392,7 @@ class _ReportsTabState extends State<ReportsTab> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -411,7 +412,7 @@ class _ReportsTabState extends State<ReportsTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -543,7 +544,7 @@ class _ReportsTabState extends State<ReportsTab> {
         const SizedBox(height: 8),
         
         ...report.expenseCategories.map((category) => Card(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: category.isFixed 
@@ -567,8 +568,8 @@ class _ReportsTabState extends State<ReportsTab> {
                 if (category.isFixed)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
+                      horizontal: AppSpacing.xs,
+                      vertical: AppSpacing.xs,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade100,
@@ -605,10 +606,10 @@ class _ReportsTabState extends State<ReportsTab> {
           const SizedBox(height: 8),
           
           ...report.optimizationSuggestions.map((suggestion) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             color: Colors.amber.shade50,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -714,7 +715,7 @@ class _ReportsTabState extends State<ReportsTab> {
         if (report.billPayments.isEmpty)
           const Card(
             child: Padding(
-              padding: EdgeInsets.all(16),
+              padding: EdgeInsets.all(AppSpacing.lg),
               child: Center(
                 child: Text('Bu dönemde fatura ödemesi bulunamadı'),
               ),
@@ -722,7 +723,7 @@ class _ReportsTabState extends State<ReportsTab> {
           )
         else
           ...report.billPayments.map((bill) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: bill.onTime 
@@ -825,7 +826,7 @@ class _ReportsTabState extends State<ReportsTab> {
           const SizedBox(height: 8),
           
           ...report.categoryBreakdown.entries.map((entry) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: ListTile(
               title: Text(entry.key),
               trailing: Text(
@@ -849,7 +850,7 @@ class _ReportsTabState extends State<ReportsTab> {
           const SizedBox(height: 8),
           
           ...report.walletBreakdown.entries.map((entry) => Card(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: ListTile(
               leading: const Icon(Icons.account_balance_wallet),
               title: Text(entry.key),

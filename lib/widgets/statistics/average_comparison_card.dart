@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../services/statistics_service.dart';
@@ -16,7 +17,7 @@ class AverageComparisonCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -29,7 +30,7 @@ class AverageComparisonCard extends StatelessWidget {
                     color: theme.primaryColor,
                     size: 24,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -40,7 +41,7 @@ class AverageComparisonCard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           'Geçmiş dönem ortalamalarıyla karşılaştırma',
                           style: theme.textTheme.bodySmall?.copyWith(
@@ -52,19 +53,19 @@ class AverageComparisonCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildCurrentPeriodSummary(context),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
 
               Divider(color: isDark ? Colors.white12 : Colors.black12),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildBenchmarkSection(
                 context,
                 '3 Aylık Ortalama',
                 comparisonData.threeMonthBenchmark,
                 Colors.blue,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
 
               _buildBenchmarkSection(
                 context,
@@ -72,7 +73,7 @@ class AverageComparisonCard extends StatelessWidget {
                 comparisonData.sixMonthBenchmark,
                 Colors.purple,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
 
               _buildBenchmarkSection(
                 context,
@@ -81,9 +82,9 @@ class AverageComparisonCard extends StatelessWidget {
                 Colors.orange,
               ),
               if (comparisonData.insights.isNotEmpty) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Divider(color: isDark ? Colors.white12 : Colors.black12),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 _buildInsights(context),
               ],
             ],
@@ -97,7 +98,7 @@ class AverageComparisonCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: theme.primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -116,7 +117,7 @@ class AverageComparisonCard extends StatelessWidget {
               color: theme.primaryColor,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -160,7 +161,7 @@ class AverageComparisonCard extends StatelessWidget {
     return Column(
       children: [
         Icon(icon, size: 20, color: color),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           label,
           style: theme.textTheme.bodySmall?.copyWith(
@@ -168,7 +169,7 @@ class AverageComparisonCard extends StatelessWidget {
             fontSize: 11,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           _formatCurrency(value),
           style: theme.textTheme.bodyMedium?.copyWith(
@@ -190,7 +191,7 @@ class AverageComparisonCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: accentColor.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(10),
@@ -215,7 +216,7 @@ class AverageComparisonCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSpacing.xs),
                   Text(
                     title,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -227,7 +228,7 @@ class AverageComparisonCard extends StatelessWidget {
               _buildPerformanceBadge(context, benchmark.performanceRating),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSpacing.md),
           _buildMetricComparison(
             context,
             'Gelir',
@@ -237,7 +238,7 @@ class AverageComparisonCard extends StatelessWidget {
             Icons.trending_up,
             Colors.green,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
 
           _buildMetricComparison(
             context,
@@ -248,7 +249,7 @@ class AverageComparisonCard extends StatelessWidget {
             Icons.trending_down,
             Colors.red,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.sm),
 
           _buildMetricComparison(
             context,
@@ -301,7 +302,10 @@ class AverageComparisonCard extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
@@ -314,7 +318,7 @@ class AverageComparisonCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
-          const SizedBox(width: 5),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             label,
             style: TextStyle(
@@ -348,7 +352,7 @@ class AverageComparisonCard extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, size: 16, color: color.withValues(alpha: 0.7)),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           flex: 2,
           child: Text(
@@ -370,9 +374,12 @@ class AverageComparisonCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.xs),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.xs,
+          ),
           decoration: BoxDecoration(
             color: deviationColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(4),
@@ -385,7 +392,7 @@ class AverageComparisonCard extends StatelessWidget {
                 size: 10,
                 color: deviationColor,
               ),
-              const SizedBox(width: 3),
+              const SizedBox(width: AppSpacing.xs),
               Text(
                 '${deviation.abs().toStringAsFixed(0)}%',
                 style: TextStyle(
@@ -398,7 +405,7 @@ class AverageComparisonCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           flex: 2,
           child: Text(
@@ -423,7 +430,7 @@ class AverageComparisonCard extends StatelessWidget {
         Row(
           children: [
             Icon(Icons.lightbulb_outline, size: 18, color: Colors.amber[700]),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               'Önemli Noktalar',
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -432,15 +439,15 @@ class AverageComparisonCard extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         ...comparisonData.insights.map((insight) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  margin: const EdgeInsets.only(top: 6),
+                  margin: const EdgeInsets.only(top: AppSpacing.xs),
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
@@ -448,7 +455,7 @@ class AverageComparisonCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
                     insight,

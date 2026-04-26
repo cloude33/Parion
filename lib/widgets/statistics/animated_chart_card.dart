@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'animations/chart_animation.dart';
 import 'animations/fade_in_animation.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 /// Animated wrapper for chart widgets
 class AnimatedChartCard extends StatelessWidget {
@@ -31,7 +32,7 @@ class AnimatedChartCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

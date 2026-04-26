@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 class ChartCard extends StatelessWidget {
   final String title;
@@ -24,7 +25,7 @@ class ChartCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,

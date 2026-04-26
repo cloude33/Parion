@@ -86,13 +86,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _loadUser() async {
     final user = await _dataService.getCurrentUser();
     final themeMode = await _themeService.getThemeMode();
+
+    final userService = UserService();
+    await userService.init();
+    final userProfile = await userService.getUserProfile();
+
     setState(() {
-      _currentUser = user;
       _currentThemeMode = themeMode;
       _loading = false;
+      
       if (user != null) {
-        _nameController.text = user.name;
-        _emailController.text = user.email ?? '';
+        String displayName = user.name;
+        if ((displayName == 'Kullanıcı' || displayName.isEmpty) && 
+            userProfile != null && userProfile.name.isNotEmpty) {
+          displayName = userProfile.name;
+        }
+
+        String displayEmail = user.email ?? '';
+        if (displayEmail.isEmpty && userProfile != null && userProfile.email.isNotEmpty) {
+          displayEmail = userProfile.email;
+        }
+
+        _currentUser = User(
+          id: user.id,
+          name: displayName,
+          email: displayEmail,
+          avatar: user.avatar,
+          currencyCode: user.currencyCode,
+          currencySymbol: user.currencySymbol,
+        );
+
+        _nameController.text = displayName;
+        _emailController.text = displayEmail;
+      } else if (userProfile != null) {
+        _currentUser = User(
+          id: userProfile.id,
+          name: userProfile.name,
+          email: userProfile.email,
+          avatar: userProfile.photoUrl,
+          currencyCode: 'TRY',
+          currencySymbol: '₺',
+        );
+        _nameController.text = userProfile.name;
+        _emailController.text = userProfile.email;
+      } else {
+        _currentUser = null;
       }
     });
   }

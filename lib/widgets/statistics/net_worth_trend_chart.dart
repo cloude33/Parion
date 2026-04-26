@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../models/asset_analysis.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class NetWorthTrendChart extends StatefulWidget {
   final List<NetWorthTrendData> trendData;
   final double? targetNetWorth;
@@ -30,15 +32,15 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
     if (widget.trendData.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Center(
             child: Column(
               children: [
                 Icon(Icons.show_chart, size: 48, color: Colors.grey[400]),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Trend verisi bulunmamaktadır',
-                  style: TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withValues(
                       alpha: 0.7,
                     ),
@@ -53,24 +55,24 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(theme),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             _buildLegendToggles(theme),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             SizedBox(
               height: 300,
               child: LineChart(_buildLineChartData(theme, isDark)),
             ),
             if (_selectedIndex != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildSelectedPointDetails(theme, isDark),
             ],
             if (widget.targetNetWorth != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildTargetComparison(theme, isDark),
             ],
           ],
@@ -101,7 +103,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 'Son 12 ay',
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -112,7 +114,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
           decoration: BoxDecoration(
             color: (isPositive ? Colors.green : Colors.red).withValues(
               alpha: 0.1,
@@ -131,10 +133,10 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
                 color: isPositive ? Colors.green : Colors.red,
                 size: 20,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 '${isPositive ? '+' : ''}${changePercentage.toStringAsFixed(1)}%',
-                style: TextStyle(
+                style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isPositive ? Colors.green : Colors.red,
                 ),
@@ -187,7 +189,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
         decoration: BoxDecoration(
           color: isActive ? color.withValues(alpha: 0.1) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
@@ -207,7 +209,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
@@ -364,7 +366,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
               final monthName = DateFormat('MMM', 'tr_TR').format(date);
 
               return Padding(
-                padding: const EdgeInsets.only(top: 8.0),
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
                 child: Text(
                   monthName,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -441,10 +443,9 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
 
               return LineTooltipItem(
                 '$label\n${_formatCurrency(spot.y)}\n$date',
-                TextStyle(
+                AppTextStyles.bodySmall.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
               );
             }).toList();
@@ -482,7 +483,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
@@ -505,11 +506,10 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
                 Row(
                   children: [
                     Icon(changeIcon, size: 16, color: changeColor),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.xs),
                     Text(
                       changeText,
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.bodySmall.copyWith(
                         fontWeight: FontWeight.bold,
                         color: changeColor,
                       ),
@@ -518,7 +518,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -548,11 +548,10 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
             color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           _formatCurrency(value),
-          style: TextStyle(
-            fontSize: 14,
+          style: AppTextStyles.titleMedium.copyWith(
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -571,7 +570,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
     final isAchieved = currentNetWorth >= target;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: (isAchieved ? Colors.green : Colors.orange).withValues(
           alpha: 0.1,
@@ -596,7 +595,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
                     color: isAchieved ? Colors.green : Colors.orange,
                     size: 20,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     'Hedef Net Varlık',
                     style: theme.textTheme.titleSmall?.copyWith(
@@ -614,7 +613,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
@@ -626,7 +625,7 @@ class _NetWorthTrendChartState extends State<NetWorthTrendChart> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

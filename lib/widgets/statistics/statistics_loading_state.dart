@@ -1,4 +1,8 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
+import 'statistics_skeleton_loader.dart';
 
 /// Loading state widget for statistics screens
 class StatisticsLoadingState extends StatelessWidget {
@@ -23,16 +27,15 @@ class StatisticsLoadingState extends StatelessWidget {
               size: 64,
               color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
           ],
-          const CircularProgressIndicator(),
+          const StatisticsSkeletonLoader(),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               message!,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
@@ -65,12 +68,11 @@ class InlineLoadingIndicator extends StatelessWidget {
           child: const CircularProgressIndicator(strokeWidth: 2),
         ),
         if (message != null) ...[
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Text(
             message!,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
+            style: AppTextStyles.bodySmall.copyWith(
+              color: AppColors.onSurface.withValues(alpha: 0.6),
             ),
           ),
         ],
@@ -99,20 +101,20 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: Colors.black.withValues(alpha: 0.3),
+            color: AppColors.onSurface.withValues(alpha: 0.3),
             child: Center(
               child: Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const CircularProgressIndicator(),
                       if (message != null) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: AppSpacing.lg),
                         Text(
                           message!,
-                          style: const TextStyle(fontSize: 14),
+                          style: AppTextStyles.bodyMedium,
                         ),
                       ],
                     ],

@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:parion/models/cash_flow_data.dart';
@@ -218,7 +219,7 @@ class AccessibleProgress extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           LinearProgressIndicator(
             value: value,
             color: color,
@@ -251,7 +252,7 @@ class AccessibleCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: child,
         ),
       ),

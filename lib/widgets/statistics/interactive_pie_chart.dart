@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:parion/core/design/app_colors.dart';
+import 'package:parion/core/design/app_spacing.dart';
+import 'package:parion/core/design/app_text_styles.dart';
 class InteractivePieChart extends StatefulWidget {
   final Map<String, double> data;
   final Map<String, Color>? colors;
@@ -31,16 +34,16 @@ class InteractivePieChart extends StatefulWidget {
 class _InteractivePieChartState extends State<InteractivePieChart> {
   int? touchedIndex;
   static const List<Color> defaultColors = [
-    Color(0xFF4CAF50),
-    Color(0xFF2196F3),
-    Color(0xFFFF9800),
-    Color(0xFF9C27B0),
-    Color(0xFFF44336),
-    Color(0xFF00BCD4),
-    Color(0xFFFFEB3B),
-    Color(0xFF795548),
-    Color(0xFF607D8B),
-    Color(0xFFE91E63),
+    AppColors.success,
+    AppColors.primary,
+    AppColors.warning,
+    AppColors.primaryVariant,
+    AppColors.error,
+    AppColors.primaryDark,
+    AppColors.secondary,
+    AppColors.successDark,
+    AppColors.onSurface,
+    AppColors.expenseColor,
   ];
 
   @override
@@ -53,7 +56,7 @@ class _InteractivePieChartState extends State<InteractivePieChart> {
       children: [
         if (widget.title != null) ...[
           Padding(
-            padding: const EdgeInsets.only(left: 16, bottom: 8),
+            padding: const EdgeInsets.only(left: AppSpacing.lg, bottom: AppSpacing.sm),
             child: Text(
               widget.title!,
               style: theme.textTheme.titleMedium?.copyWith(
@@ -73,7 +76,7 @@ class _InteractivePieChartState extends State<InteractivePieChart> {
                         size: 48,
                         color: Colors.grey[400],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Text(
                         'Veri yok',
                         style: theme.textTheme.bodyLarge?.copyWith(
@@ -110,8 +113,7 @@ class _InteractivePieChartState extends State<InteractivePieChart> {
             value: 1,
             title: 'Veri Yok',
             radius: widget.radius,
-            titleStyle: TextStyle(
-              fontSize: 12,
+            titleStyle: AppTextStyles.bodySmall.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white70 : Colors.grey,
             ),
@@ -141,7 +143,7 @@ class _InteractivePieChartState extends State<InteractivePieChart> {
               ? '${percentage.toStringAsFixed(1)}%'
               : '',
           radius: isTouched ? widget.radius + 10 : widget.radius,
-          titleStyle: TextStyle(
+          titleStyle: AppTextStyles.bodySmall.copyWith(
             fontSize: isTouched ? 14 : 12,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -193,7 +195,10 @@ class _InteractivePieChartState extends State<InteractivePieChart> {
 
   Widget _buildBadge(String category, double value, Color color, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -211,17 +216,15 @@ class _InteractivePieChartState extends State<InteractivePieChart> {
         children: [
           Text(
             category,
-            style: TextStyle(
-              fontSize: 11,
+            style: AppTextStyles.labelSmall.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : Colors.black87,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             _formatValue(value),
-            style: TextStyle(
-              fontSize: 10,
+            style: AppTextStyles.labelSmall.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
             ),

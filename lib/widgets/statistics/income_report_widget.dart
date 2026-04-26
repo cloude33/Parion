@@ -5,6 +5,7 @@ import '../../models/report_data.dart';
 import '../../models/cash_flow_data.dart';
 import 'summary_card.dart';
 import 'metric_card.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class IncomeReportWidget extends StatelessWidget {
   final IncomeReport report;
 
@@ -16,7 +17,7 @@ class IncomeReportWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -93,7 +94,7 @@ class IncomeReportWidget extends StatelessWidget {
     return Card(
       color: isPositive ? Colors.green.shade50 : Colors.red.shade50,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -169,7 +170,7 @@ class IncomeReportWidget extends StatelessWidget {
             const SizedBox(height: 12),
             
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
               decoration: BoxDecoration(
                 color: isPositive ? Colors.green.shade100 : Colors.red.shade100,
                 borderRadius: BorderRadius.circular(8),
@@ -209,7 +210,7 @@ class IncomeReportWidget extends StatelessWidget {
   Widget _buildIncomeSourceDistribution(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -225,7 +226,7 @@ class IncomeReportWidget extends StatelessWidget {
             if (report.incomeSources.isEmpty)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(32),
+                  padding: EdgeInsets.all(AppSpacing.xxxl),
                   child: Text('Bu dönemde gelir kaynağı bulunamadı'),
                 ),
               )
@@ -289,7 +290,7 @@ class IncomeReportWidget extends StatelessWidget {
   }
   Widget _buildIncomeSourceItem(BuildContext context, IncomeSource source) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       elevation: 0,
       color: Colors.grey.shade50,
       child: ListTile(
@@ -328,7 +329,7 @@ class IncomeReportWidget extends StatelessWidget {
   Widget _buildTrendAnalysis(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -350,7 +351,7 @@ class IncomeReportWidget extends StatelessWidget {
             if (report.monthlyIncome.isEmpty)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(32),
+                  padding: EdgeInsets.all(AppSpacing.xxxl),
                   child: Text('Trend verisi bulunamadı'),
                 ),
               )
@@ -388,7 +389,7 @@ class IncomeReportWidget extends StatelessWidget {
     }
     
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -451,7 +452,7 @@ class IncomeReportWidget extends StatelessWidget {
                 if (value.toInt() >= 0 && value.toInt() < report.monthlyIncome.length) {
                   final month = report.monthlyIncome[value.toInt()].month;
                   return Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
                       DateFormat('MMM', 'tr_TR').format(month),
                       style: const TextStyle(
@@ -526,7 +527,7 @@ class IncomeReportWidget extends StatelessWidget {
   Widget _buildDetailedTable(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -542,7 +543,7 @@ class IncomeReportWidget extends StatelessWidget {
             if (report.monthlyIncome.isEmpty)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(32),
+                  padding: EdgeInsets.all(AppSpacing.xxxl),
                   child: Text('Veri bulunamadı'),
                 ),
               )

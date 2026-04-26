@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../models/cash_flow_data.dart';
 import '../../services/statistics_service.dart';
 import 'summary_card.dart';
 import 'metric_card.dart';
 import 'responsive_statistics_layout.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class CashFlowTab extends StatefulWidget {
   final DateTime startDate;
   final DateTime endDate;
@@ -95,7 +97,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
             Text(
               'Hata: $_error',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
+              style: AppTextStyles.bodyMedium.copyWith(color: Colors.red),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -214,7 +216,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -275,8 +277,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
+          style: AppTextStyles.labelSmall.copyWith(
             color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
           ),
         ),
@@ -291,8 +292,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
             const SizedBox(width: 4),
             Text(
               _formatCurrency(value),
-              style: TextStyle(
-                fontSize: 13,
+              style: AppTextStyles.bodySmall.copyWith(
                 fontWeight: FontWeight.bold,
                 color: color,
               ),
@@ -314,7 +314,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -327,7 +327,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
             const SizedBox(height: 16),
             // Header
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.sm),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[850] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -399,7 +399,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     vertical: 10,
-                    horizontal: 8,
+                    horizontal: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
@@ -471,7 +471,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
             const SizedBox(height: 16),
             // Total row
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: AppSpacing.sm),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[850] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),

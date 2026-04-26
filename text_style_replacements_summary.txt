@@ -1,0 +1,1232 @@
+Inline TextStyle to AppTextStyles Replacement Suggestions
+================================================================================
+
+
+============================================================
+File: accessibility_example.dart
+============================================================
+
+
+Line 160:
+  Original: style: TextStyle(color: Colors.green)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 231:
+  Original: style: TextStyle(
+                  fontSize: 12,
+                  color: hasGoodContrast ? Colors.green : Colors.orange,
+                )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 249:
+  Original: style: TextStyle(
+                color: backgroundColor,
+                fontWeight: FontWeight.bold,
+              )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+============================================================
+File: accessibility_integration_demo.dart
+============================================================
+
+
+Line 427:
+  Original: style: TextStyle(
+                        color: _foregroundColor,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      )
+  Replacement: style: AppTextStyles.headlineLarge
+  Reason: Font size 24 with weight bold matches headlineLarge
+
+
+Line 436:
+  Original: style: TextStyle(
+                        color: accessibleColor,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      )
+  Replacement: style: AppTextStyles.headlineLarge
+  Reason: Font size 24 with weight bold matches headlineLarge
+
+
+Line 475:
+  Original: style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade600,
+                      )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+============================================================
+File: average_comparison_card.dart
+============================================================
+
+
+Line 320:
+  Original: style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            )
+  Replacement: style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)
+  Reason: Font size 12 with weight w600 matches bodySmall
+
+
+Line 391:
+  Original: style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: deviationColor,
+                )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10, fontWeight: FontWeight.bold)
+  Reason: Font size 10 with weight bold matches labelSmall
+
+
+============================================================
+File: average_comparison_example.dart
+============================================================
+
+
+Line 136:
+  Original: style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.blue[900],
+                      )
+  Replacement: style: AppTextStyles.bodyMedium.copyWith(fontSize: 13)
+  Reason: Font size 13 with weight normal matches bodyMedium
+
+
+Line 234:
+  Original: style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                  fontSize: 13,
+                )
+  Replacement: style: AppTextStyles.bodyMedium.copyWith(fontSize: 13)
+  Reason: Font size 13 with weight w600 matches bodyMedium
+
+
+Line 242:
+  Original: style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[600],
+                )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.normal)
+  Reason: Font size 11 with weight normal matches labelSmall
+
+
+============================================================
+File: background_compute_example.dart
+============================================================
+
+
+Line 84:
+  Original: style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 105:
+  Original: style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 105:
+  Original: style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 169:
+  Original: style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 14,
+              )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size 14 with weight normal matches bodyMedium
+
+
+============================================================
+File: background_progress_indicator.dart
+============================================================
+
+
+Line 78:
+  Original: style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isOverlay ? Colors.white : theme.textTheme.bodyLarge?.color,
+            )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 90:
+  Original: style: TextStyle(
+              fontSize: 14,
+              color: isOverlay
+                  ? Colors.white.withValues(alpha: 0.9)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size 14 with weight normal matches bodyMedium
+
+
+============================================================
+File: chart_legend.dart
+============================================================
+
+
+Line 112:
+  Original: style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.white70 : Colors.grey[700],
+                  fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 122:
+  Original: style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  )
+  Replacement: style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)
+  Reason: Font size 12 with weight bold matches bodySmall
+
+
+Line 230:
+  Original: style: TextStyle(
+                fontSize: 10,
+                color: isDark ? Colors.white70 : Colors.grey[600],
+              )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+============================================================
+File: comparison_card.dart
+============================================================
+
+
+Line 142:
+  Original: style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+        )
+  Replacement: style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)
+  Reason: Font size 12 with weight w600 matches bodySmall
+
+
+Line 206:
+  Original: style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.normal)
+  Reason: Font size 11 with weight normal matches labelSmall
+
+
+Line 206:
+  Original: style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.normal)
+  Reason: Font size 11 with weight normal matches labelSmall
+
+
+Line 272:
+  Original: style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: changeColor,
+                  )
+  Replacement: style: AppTextStyles.bodyMedium.copyWith(fontSize: 13)
+  Reason: Font size 13 with weight bold matches bodyMedium
+
+
+Line 281:
+  Original: style: TextStyle(
+                    fontSize: 12,
+                    color: changeColor,
+                  )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+============================================================
+File: comparison_view.dart
+============================================================
+
+
+Line 191:
+  Original: style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 205:
+  Original: style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: theme.primaryColor,
+                                    )
+  Replacement: style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)
+  Reason: Font size 12 with weight w600 matches bodySmall
+
+
+Line 229:
+  Original: style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: changeColor,
+                                  )
+  Replacement: style: AppTextStyles.bodyMedium.copyWith(fontSize: 13)
+  Reason: Font size 13 with weight bold matches bodyMedium
+
+
+Line 240:
+  Original: style: TextStyle(
+                                fontSize: 11,
+                                color: changeColor,
+                              )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.normal)
+  Reason: Font size 11 with weight normal matches labelSmall
+
+
+============================================================
+File: debounced_filter_bar.dart
+============================================================
+
+
+Line 356:
+  Original: style: TextStyle(
+            color: isSelected
+                ? Colors.white
+                : (isDark ? Colors.white : Colors.black87)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 397:
+  Original: style: TextStyle(
+                color: isSelected
+                    ? Colors.white
+                    : (isDark ? Colors.white : Colors.black87)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 447:
+  Original: style: TextStyle(
+                fontSize: 12,
+                color: isActive
+                    ? const Color(0xFF00BFA5)
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 597:
+  Original: style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 597:
+  Original: style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 836:
+  Original: style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+============================================================
+File: debounce_throttle_demo.dart
+============================================================
+
+
+Line 130:
+  Original: style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 184:
+  Original: style: TextStyle(
+                        color: Colors.green[700],
+                        fontWeight: FontWeight.bold,
+                      )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 200:
+  Original: style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 223:
+  Original: style: TextStyle(
+                        color: Colors.grey[600],
+                        fontStyle: FontStyle.italic,
+                      )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 200:
+  Original: style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 291:
+  Original: style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 364:
+  Original: style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            )
+  Replacement: style: AppTextStyles.headlineMedium
+  Reason: Font size 20 with weight bold matches headlineMedium
+
+
+Line 372:
+  Original: style: TextStyle(
+              fontSize: 11,
+              color: color,
+            )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.normal)
+  Reason: Font size 11 with weight normal matches labelSmall
+
+
+============================================================
+File: example_usage.dart
+============================================================
+
+
+Line 178:
+  Original: style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 178:
+  Original: style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 178:
+  Original: style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+============================================================
+File: expense_report_widget.dart
+============================================================
+
+
+Line 231:
+  Original: style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: report.changePercentage! >= 0 ? Colors.red.shade700 : Colors.green.shade700,
+                            )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 239:
+  Original: style: TextStyle(
+                              fontSize: 12,
+                              color: report.changePercentage! >= 0 ? Colors.red.shade700 : Colors.green.shade700,
+                            )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 382:
+  Original: style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: color,
+            )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight w500 matches bodySmall
+
+
+Line 432:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 432:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 432:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 432:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+============================================================
+File: export_options_widget.dart
+============================================================
+
+
+Line 126:
+  Original: style: TextStyle(color: color)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 274:
+  Original: style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                        fontFamily: 'monospace',
+                      )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 288:
+  Original: style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight w500 matches bodySmall
+
+
+Line 297:
+  Original: style: TextStyle(
+                fontSize: 11,
+                color: Colors.grey.shade500,
+              )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.normal)
+  Reason: Font size 11 with weight normal matches labelSmall
+
+
+============================================================
+File: filter_bar.dart
+============================================================
+
+
+Line 248:
+  Original: style: TextStyle(
+            color: isSelected
+                ? AppColors.surface
+                : (isDark ? AppColors.surface : Colors.black87)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 289:
+  Original: style: TextStyle(
+                color: isSelected
+                    ? AppColors.surface
+                    : (isDark ? AppColors.surface : Colors.black87)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 339:
+  Original: style: TextStyle(
+                fontSize: 12,
+                color: isActive
+                    ? AppColors.primary
+                    : (isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6)
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 489:
+  Original: style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 489:
+  Original: style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 728:
+  Original: style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+============================================================
+File: filter_clear_demo.dart
+============================================================
+
+
+Line 270:
+  Original: style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: _hasActiveFilters
+                                ? const Color(0xFFFF9800)
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 283:
+  Original: style: TextStyle(
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 289:
+  Original: style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 300:
+  Original: style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 372:
+  Original: style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[600],
+                          )
+  Replacement: style: AppTextStyles.bodyLarge
+  Reason: Font size 16 with weight normal matches bodyLarge
+
+
+Line 414:
+  Original: style: TextStyle(
+                              color: transaction.type == 'income'
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+============================================================
+File: filter_integration_example.dart
+============================================================
+
+
+Line 155:
+  Original: style: TextStyle(
+                              color: transaction.type == 'income'
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+============================================================
+File: goal_comparison_card.dart
+============================================================
+
+
+Line 299:
+  Original: style: TextStyle(
+              fontSize: 12,
+              color: color,
+              fontWeight: FontWeight.w600,
+            )
+  Replacement: style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)
+  Reason: Font size 12 with weight w600 matches bodySmall
+
+
+============================================================
+File: income_report_widget.dart
+============================================================
+
+
+Line 188:
+  Original: style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: isPositive ? Colors.green.shade700 : Colors.red.shade700,
+                    )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 196:
+  Original: style: TextStyle(
+                      fontSize: 12,
+                      color: isPositive ? Colors.green.shade700 : Colors.red.shade700,
+                    )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 300:
+  Original: style: TextStyle(
+              color: Colors.green.shade700,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            )
+  Replacement: style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)
+  Reason: Font size 12 with weight bold matches bodySmall
+
+
+Line 313:
+  Original: style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey.shade600,
+          )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 403:
+  Original: style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: color,
+            )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight w500 matches bodySmall
+
+
+Line 558:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 558:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 558:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 558:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 602:
+  Original: style: TextStyle(
+                              color: isAboveAverage ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.w500,
+                            )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight w500 matches bodyMedium
+
+
+============================================================
+File: interactive_bar_chart.dart
+============================================================
+
+
+Line 185:
+  Original: style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.white70 : Colors.grey,
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 205:
+  Original: style: TextStyle(
+                  fontSize: 10,
+                  color: isDark ? Colors.white70 : Colors.grey,
+                )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+============================================================
+File: interactive_line_chart.dart
+============================================================
+
+
+Line 169:
+  Original: style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.white70 : Colors.grey,
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 169:
+  Original: style: TextStyle(
+                      fontSize: 10,
+                      color: isDark ? Colors.white70 : Colors.grey,
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+============================================================
+File: kmh_trend_charts.dart
+============================================================
+
+
+Line 109:
+  Original: style: TextStyle(
+                          fontSize: 10,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.white70
+                              : Colors.grey,
+                        )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 123:
+  Original: style: TextStyle(
+                      fontSize: 10,
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white70
+                          : Colors.grey,
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 109:
+  Original: style: TextStyle(
+                          fontSize: 10,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.white70
+                              : Colors.grey,
+                        )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 123:
+  Original: style: TextStyle(
+                      fontSize: 10,
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white70
+                          : Colors.grey,
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 109:
+  Original: style: TextStyle(
+                          fontSize: 10,
+                          color: theme.brightness == Brightness.dark
+                              ? Colors.white70
+                              : Colors.grey,
+                        )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 123:
+  Original: style: TextStyle(
+                      fontSize: 10,
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white70
+                          : Colors.grey,
+                    )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+============================================================
+File: paginated_list_view.dart
+============================================================
+
+
+Line 365:
+  Original: style: TextStyle(
+                            fontWeight: pageIndex == _currentPage
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: pageIndex == _currentPage
+                                ? theme.primaryColor
+                                : null,
+                          )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+============================================================
+File: pagination_example.dart
+============================================================
+
+
+Line 44:
+  Original: style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 75:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 44:
+  Original: style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 155:
+  Original: style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: (item['netFlow'] as String)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+============================================================
+File: payment_simulator.dart
+============================================================
+
+
+Line 124:
+  Original: style: TextStyle(color: Colors.grey)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 138:
+  Original: style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 207:
+  Original: style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    )
+  Replacement: style: AppTextStyles.titleLarge
+  Reason: Font size 18 with weight bold matches titleLarge
+
+
+Line 244:
+  Original: style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight normal matches bodySmall
+
+
+Line 138:
+  Original: style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 138:
+  Original: style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 363:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 363:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 363:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 363:
+  Original: style: TextStyle(fontWeight: FontWeight.bold)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 460:
+  Original: style: TextStyle(fontSize: 16, color: Colors.grey.shade600)
+  Replacement: style: AppTextStyles.bodyLarge
+  Reason: Font size 16 with weight normal matches bodyLarge
+
+
+============================================================
+File: period_selector.dart
+============================================================
+
+
+Line 195:
+  Original: style: TextStyle(fontSize: 11, color: Colors.grey[600])
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.normal)
+  Reason: Font size 11 with weight normal matches labelSmall
+
+
+============================================================
+File: reports_tab.dart
+============================================================
+
+
+Line 554:
+  Original: style: TextStyle(
+                  color: category.isFixed 
+                      ? Colors.blue.shade700 
+                      : Colors.orange.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                )
+  Replacement: style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold)
+  Reason: Font size 12 with weight bold matches bodySmall
+
+
+Line 579:
+  Original: style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.blue.shade700,
+                      )
+  Replacement: style: AppTextStyles.labelSmall.copyWith(fontSize: 10)
+  Reason: Font size 10 with weight normal matches labelSmall
+
+
+Line 626:
+  Original: style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber.shade900,
+                          )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 634:
+  Original: style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.amber.shade700,
+                          fontWeight: FontWeight.w500,
+                        )
+  Replacement: style: AppTextStyles.bodySmall
+  Reason: Font size 12 with weight w500 matches bodySmall
+
+
+Line 645:
+  Original: style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade700,
+                    )
+  Replacement: style: AppTextStyles.bodyMedium.copyWith(fontSize: 13)
+  Reason: Font size 13 with weight normal matches bodyMedium
+
+
+============================================================
+File: responsive_example.dart
+============================================================
+
+
+Line 42:
+  Original: style: TextStyle(
+              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                context,
+                mobile: 18,
+                tablet: 20,
+                desktop: 22,
+              )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 112:
+  Original: style: TextStyle(
+              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                context,
+                mobile: 18,
+              )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+Line 282:
+  Original: style: TextStyle(
+              fontSize: ResponsiveHelper.getResponsiveFontSize(
+                context,
+                mobile: 16,
+                tablet: 18,
+                desktop: 20,
+              )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+============================================================
+File: responsive_statistics_layout.dart
+============================================================
+
+
+Line 219:
+  Original: style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                        )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight bold matches bodyMedium
+
+
+Line 228:
+  Original: style: TextStyle(
+                            fontSize: fontSize * 0.75,
+                            color: AppColors.onSurface.withValues(alpha: 0.5)
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size None with weight normal matches bodyMedium
+
+
+============================================================
+File: search_integration_example.dart
+============================================================
+
+
+Line 199:
+  Original: style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            )
+  Replacement: style: AppTextStyles.titleMedium
+  Reason: Font size 16 with weight bold matches titleMedium
+
+
+Line 208:
+  Original: style: TextStyle(
+              fontSize: 14,
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            )
+  Replacement: style: AppTextStyles.bodyMedium
+  Reason: Font size 14 with weight normal matches bodyMedium
+
+
+Line 228:
+  Original: style: TextStyle(
+                        fontSize: 16,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      )
+  Replacement: style: AppTextStyles.bodyLarge
+  Reason: Font size 16 with weight normal matches bodyLarge
+

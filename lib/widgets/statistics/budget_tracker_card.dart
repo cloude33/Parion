@@ -1,5 +1,7 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../models/cash_flow_data.dart';
 class BudgetTrackerCard extends StatelessWidget {
   final Map<String, BudgetComparison> budgetComparisons;
@@ -21,7 +23,7 @@ class BudgetTrackerCard extends StatelessWidget {
     if (budgetComparisons.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Center(
             child: Column(
               children: [
@@ -30,19 +32,18 @@ class BudgetTrackerCard extends StatelessWidget {
                   size: 48,
                   color: Colors.grey[400],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Bütçe tanımlanmamış',
-                  style: TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Kategoriler için bütçe belirleyerek harcamalarınızı takip edebilirsiniz',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.grey[600],
                   ),
                 ),
@@ -63,7 +64,7 @@ class BudgetTrackerCard extends StatelessWidget {
     if (filteredComparisons.isEmpty && showOnlyExceeded) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Center(
             child: Column(
               children: [
@@ -72,10 +73,10 @@ class BudgetTrackerCard extends StatelessWidget {
                   size: 48,
                   color: Colors.green,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   'Tüm bütçeler kontrol altında!',
-                  style: TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
                   ),
@@ -89,7 +90,7 @@ class BudgetTrackerCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -105,14 +106,14 @@ class BudgetTrackerCard extends StatelessWidget {
                 _buildOverallStatus(filteredComparisons),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             ...filteredComparisons.map((entry) {
               final category = entry.key;
               final comparison = entry.value;
               final color = categoryColors[category] ?? Colors.grey;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                 child: _buildBudgetItem(
                   context,
                   theme,
@@ -135,7 +136,10 @@ class BudgetTrackerCard extends StatelessWidget {
     final onTrackCount = totalCount - exceededCount;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: exceededCount == 0
             ? Colors.green.withValues(alpha: 0.1)
@@ -150,11 +154,10 @@ class BudgetTrackerCard extends StatelessWidget {
             size: 16,
             color: exceededCount == 0 ? Colors.green : Colors.orange,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             '$onTrackCount/$totalCount Kontrol Altında',
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTextStyles.labelSmall.copyWith(
               fontWeight: FontWeight.w600,
               color: exceededCount == 0 ? Colors.green : Colors.orange,
             ),
@@ -192,7 +195,7 @@ class BudgetTrackerCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
                   category,
                   style: theme.textTheme.bodyMedium?.copyWith(
@@ -202,14 +205,17 @@ class BudgetTrackerCard extends StatelessWidget {
               ],
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+                vertical: AppSpacing.xs,
+              ),
               decoration: BoxDecoration(
                 color: statusColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 overBudget ? 'Aşıldı' : 'Kontrol Altında',
-                style: TextStyle(
+                style: AppTextStyles.labelSmall.copyWith(
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: statusColor,
@@ -218,7 +224,7 @@ class BudgetTrackerCard extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -227,16 +233,14 @@ class BudgetTrackerCard extends StatelessWidget {
               children: [
                 Text(
                   'Bütçe',
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: AppTextStyles.labelSmall.copyWith(
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   _formatCurrency(comparison.budget),
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -247,16 +251,14 @@ class BudgetTrackerCard extends StatelessWidget {
               children: [
                 Text(
                   'Harcanan',
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: AppTextStyles.labelSmall.copyWith(
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   _formatCurrency(comparison.actual),
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontWeight: FontWeight.bold,
                     color: overBudget ? Colors.red : color,
                   ),
@@ -268,16 +270,14 @@ class BudgetTrackerCard extends StatelessWidget {
               children: [
                 Text(
                   overBudget ? 'Fazla' : 'Kalan',
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: AppTextStyles.labelSmall.copyWith(
                     color: Colors.grey[600],
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   _formatCurrency(comparison.remaining.abs()),
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: AppTextStyles.bodySmall.copyWith(
                     fontWeight: FontWeight.w600,
                     color: statusColor,
                   ),
@@ -286,7 +286,7 @@ class BudgetTrackerCard extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Stack(
           children: [
             Container(
@@ -317,8 +317,7 @@ class BudgetTrackerCard extends StatelessWidget {
               alignment: Alignment.center,
               child: Text(
                 '${comparison.usagePercentage.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 11,
+                style: AppTextStyles.labelSmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: usagePercentage > 50
                       ? Colors.white
@@ -329,9 +328,9 @@ class BudgetTrackerCard extends StatelessWidget {
           ],
         ),
         if (overBudget) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xs),
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.xs),
             decoration: BoxDecoration(
               color: Colors.red.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
@@ -347,12 +346,11 @@ class BudgetTrackerCard extends StatelessWidget {
                   size: 16,
                   color: Colors.red,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     'Bütçe ${_formatCurrency(comparison.remaining.abs())} aşıldı',
-                    style: const TextStyle(
-                      fontSize: 11,
+                    style: AppTextStyles.labelSmall.copyWith(
                       color: Colors.red,
                       fontWeight: FontWeight.w600,
                     ),
@@ -403,7 +401,7 @@ class BudgetSummaryCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -413,7 +411,7 @@ class BudgetSummaryCard extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
 
             Row(
               children: [
@@ -425,7 +423,7 @@ class BudgetSummaryCard extends StatelessWidget {
                     Colors.blue,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: _buildSummaryItem(
                     'Harcanan',
@@ -436,7 +434,7 @@ class BudgetSummaryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
 
             Row(
               children: [
@@ -448,7 +446,7 @@ class BudgetSummaryCard extends StatelessWidget {
                     totalRemaining >= 0 ? Colors.green : Colors.red,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: _buildSummaryItem(
                     'Kontrol Altında',
@@ -459,7 +457,7 @@ class BudgetSummaryCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -468,22 +466,20 @@ class BudgetSummaryCard extends StatelessWidget {
                   children: [
                     Text(
                       'Genel Kullanım',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.grey[600],
                       ),
                     ),
                     Text(
                       '${overallUsage.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.bodySmall.copyWith(
                         fontWeight: FontWeight.bold,
                         color: overallUsage > 100 ? Colors.red : Colors.green,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
@@ -505,7 +501,7 @@ class BudgetSummaryCard extends StatelessWidget {
 
   Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -518,19 +514,17 @@ class BudgetSummaryCard extends StatelessWidget {
             size: 20,
             color: color,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
+            style: AppTextStyles.labelSmall.copyWith(
               color: Colors.grey[600],
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 15,
+            style: AppTextStyles.titleMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),

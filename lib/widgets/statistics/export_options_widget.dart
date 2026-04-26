@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart' show SharePlus, ShareParams, XFile;
@@ -33,7 +34,7 @@ class _ExportOptionsWidgetState extends State<ExportOptionsWidget> {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -127,7 +128,7 @@ class _ExportOptionsWidgetState extends State<ExportOptionsWidget> {
       ),
       style: OutlinedButton.styleFrom(
         side: BorderSide(color: color),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       ),
     );
   }
@@ -259,7 +260,7 @@ class _ExportOptionsWidgetState extends State<ExportOptionsWidget> {
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),

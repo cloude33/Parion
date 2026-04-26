@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../models/security/security_models.dart';
 import '../firebase_auth_service.dart';
+import 'secure_storage_service.dart';
+import '../../utils/security/encryption_helper.dart';
 import 'interfaces/auth_orchestrator_interface.dart';
 import 'interfaces/session_manager_interface.dart';
 import 'interfaces/biometric_auth_interface.dart';
@@ -20,6 +22,7 @@ class AuthOrchestrator implements IAuthOrchestrator {
   final ISecurityController _securityController;
   final DataSyncInterface _dataSyncService;
   final FirebaseAuthService _firebaseAuthService;
+  final AuthSecureStorageService _storage = AuthSecureStorageService();
   
   final StreamController<AuthState> _authStateController = 
       StreamController<AuthState>.broadcast();
@@ -472,12 +475,12 @@ class AuthOrchestrator implements IAuthOrchestrator {
   }
 
   Future<AuthResult> _authenticateWithEmailPassword(Map<String, dynamic> credentials) async {
-    try {
-      final email = credentials['email'] as String?;
-      final password = credentials['password'] as String?;
-      final isSignUp = credentials['isSignUp'] as bool? ?? false;
-      final displayName = credentials['displayName'] as String?;
+    final email = credentials['email'] as String?;
+    final password = credentials['password'] as String?;
+    final isSignUp = credentials['isSignUp'] as bool? ?? false;
+    final displayName = credentials['displayName'] as String?;
 
+    try {
       if (email == null || email.isEmpty) {
         return AuthResult.failure(
           method: AuthMethod.emailPassword,
@@ -527,6 +530,7 @@ class AuthOrchestrator implements IAuthOrchestrator {
             'email': userCredential.user!.email,
             'displayName': userCredential.user!.displayName,
             'isNewUser': isSignUp,
+            'password': password, // Pass password for local storage fallback
           },
         );
       } else {
@@ -537,6 +541,27 @@ class AuthOrchestrator implements IAuthOrchestrator {
       }
     } catch (e) {
       debugPrint('❌ Email/Password authentication error: $e');
+
+      // Fallback to local authentication if network or service availability error occurs
+      final errorStr = e.toString().toLowerCase();
+      final isServiceError = errorStr.contains('network') ||
+          errorStr.contains('connection') ||
+          errorStr.contains('timeout') ||
+          errorStr.contains('dns') ||
+          errorStr.contains('socket') ||
+          errorStr.contains('blocked') ||
+          errorStr.contains('internal error');
+
+      if (isServiceError && !isSignUp && email != null && password != null) {
+        debugPrint(
+            '🌐 Network error detected, attempting local authentication fallback...');
+        final localAuthResult = await _authenticateLocally(email, password);
+        if (localAuthResult.isSuccess) {
+          debugPrint('✅ Local authentication successful');
+          return localAuthResult;
+        }
+      }
+
       return AuthResult.failure(
         method: AuthMethod.emailPassword,
         errorMessage: _getLocalizedErrorMessage(e),
@@ -632,68 +657,81 @@ class AuthOrchestrator implements IAuthOrchestrator {
         errorString.contains('timeout') ||
         errorString.contains('dns') ||
         errorString.contains('socket')) {
-      return 'Bağlantı sorunu yaşanıyor. Lütfen internet bağlantınızı kontrol edin.';
+      return 'İnternet bağlantısı kurulamadı. Lütfen Wi-Fi veya mobil verinizi kontrol edip tekrar deneyin.';
     }
     
     // Firebase Auth errors
     if (errorString.contains('user-not-found')) {
-      return 'Bu e-posta adresi ile kayıtlı kullanıcı bulunamadı.';
+      return 'Bu e-posta adresiyle kayıtlı bir hesap bulunamadı. Lütfen bilgilerinizi kontrol edin veya yeni bir hesap oluşturun.';
     }
     if (errorString.contains('wrong-password')) {
-      return 'Hatalı şifre girdiniz.';
+      return 'Girdiğiniz şifre hatalı. Şifrenizi hatırlamıyorsanız "Şifremi Unuttum" seçeneğiyle sıfırlayabilirsiniz.';
     }
     if (errorString.contains('email-already-in-use')) {
-      return 'Bu e-posta adresi zaten kullanımda.';
+      return 'Bu e-posta adresi zaten başka bir hesap tarafından kullanılıyor. Giriş yapmayı deneyebilir veya farklı bir adres kullanabilirsiniz.';
     }
     if (errorString.contains('weak-password')) {
-      return 'Şifre çok zayıf. Lütfen daha güçlü bir şifre seçin.';
+      return 'Şifreniz çok zayıf. Güvenliğiniz için en az 6 karakterden oluşan, harf ve rakam içeren daha güçlü bir şifre belirleyin.';
     }
     if (errorString.contains('invalid-email')) {
-      return 'Geçersiz e-posta adresi.';
+      return 'Girdiğiniz e-posta adresi geçersiz görünüyor. Lütfen formatı (örneğin: ad@ornek.com) kontrol edin.';
     }
     if (errorString.contains('user-disabled')) {
-      return 'Bu kullanıcı hesabı devre dışı bırakılmış.';
+      return 'Hesabınız güvenlik veya politika ihlali nedeniyle devre dışı bırakılmış. Lütfen destek ekibiyle iletişime geçin.';
     }
     if (errorString.contains('too-many-requests') || errorString.contains('rate limit')) {
-      return 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.';
+      return 'Güvenliğiniz için çok fazla hatalı deneme yapıldığı için geçici olarak engellendiniz. Lütfen birkaç dakika bekleyip tekrar deneyin.';
+    }
+    if (errorString.contains('requests from this ios client') && errorString.contains('blocked')) {
+      return 'Uygulama kimlik doğrulaması başarısız oldu (iOS Bundle ID hatası). Lütfen Firebase konsolundaki yapılandırmayı kontrol edin.';
     }
     if (errorString.contains('invalid-credential')) {
-      return 'Geçersiz kimlik bilgileri.';
+      return 'Giriş bilgileri geçersiz veya süresi dolmuş. Lütfen bilgilerinizi kontrol edip tekrar giriş yapın.';
     }
     
     // Biometric errors
     if (errorString.contains('biometric')) {
       if (errorString.contains('not available')) {
-        return 'Biyometrik doğrulama bu cihazda mevcut değil.';
+        return 'Cihazınızda biyometrik doğrulama (parmak izi/yüz tanıma) özelliği bulunmuyor veya desteklenmiyor.';
       }
       if (errorString.contains('not enrolled')) {
-        return 'Biyometrik doğrulama ayarlanmamış. Lütfen cihaz ayarlarından biyometrik doğrulamayı etkinleştirin.';
+        return 'Cihazınızda kayıtlı bir biyometrik veri bulunamadı. Lütfen cihaz ayarlarından parmak izi veya yüz tanımayı aktif hale getirin.';
       }
       if (errorString.contains('cancelled')) {
-        return 'Biyometrik doğrulama iptal edildi.';
+        return 'Biyometrik doğrulama işlemi sizin tarafınızdan iptal edildi.';
       }
-      return 'Biyometrik doğrulama başarısız. Lütfen tekrar deneyin.';
+      if (errorString.contains('locked out')) {
+        return 'Çok fazla hatalı biyometrik deneme nedeniyle bu özellik geçici olarak kilitlendi. Lütfen cihaz şifrenizle giriş yapın.';
+      }
+      return 'Biyometrik doğrulama sırasında bir sorun oluştu. Lütfen tekrar deneyin veya alternatif giriş yöntemini kullanın.';
     }
     
     // Google Sign-In errors
     if (errorString.contains('google')) {
       if (errorString.contains('cancelled') || errorString.contains('aborted')) {
-        return 'Google girişi iptal edildi.';
+        return 'Google ile giriş işlemi iptal edildi.';
       }
       if (errorString.contains('network')) {
-        return 'Google girişi için internet bağlantısı gerekli.';
+        return 'Google sunucularına bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.';
       }
-      return 'Google girişi sırasında bir hata oluştu. Lütfen tekrar deneyin.';
+      if (errorString.contains('sign_in_failed')) {
+        return 'Google ile giriş şu anda yapılamıyor. Lütfen daha sonra tekrar deneyin veya e-posta ile giriş yapın.';
+      }
+      return 'Google girişi sırasında teknik bir hata oluştu. Lütfen uygulamayı kapatıp açarak tekrar deneyin.';
     }
     
     // Session and authentication errors
     if (errorString.contains('session') && errorString.contains('expired')) {
-      return 'Oturum süresi doldu. Lütfen tekrar giriş yapın.';
+      return 'Oturum süreniz güvenlik nedeniyle dolmuştur. Devam etmek için lütfen tekrar giriş yapın.';
+    }
+    
+    // Local fallback message for connection error
+    if (errorString.contains('local_auth_failed')) {
+      return 'İnternet bağlantısı yok ve yerel kimlik bilgileriniz doğrulanamadı. Lütfen internete bağlandığınızda tekrar giriş yapın.';
     }
     
     // Generic fallback - ensure it's user-friendly and in Turkish
     if (error is String && error.isNotEmpty && !_containsTechnicalTerms(error)) {
-      // If the error is already user-friendly, ensure it ends with punctuation
       final cleanError = error.trim();
       if (!cleanError.endsWith('.') && !cleanError.endsWith('!') && !cleanError.endsWith('?')) {
         return '$cleanError.';
@@ -701,21 +739,21 @@ class AuthOrchestrator implements IAuthOrchestrator {
       return cleanError;
     }
     
-    // Try to extract a meaningful temporary error code or message for debugging
+    // Debug info for unhandled errors
     String debugInfo = '';
     final codeRegex = RegExp(r'\[(.*?)\]');
     final match = codeRegex.firstMatch(error.toString());
     if (match != null) {
-      debugInfo = ' (${match.group(1)})';
-    } else if (errorString.contains('code:')) {
-       // Extract simple code
-       final parts = errorString.split('code:');
-       if (parts.length > 1) {
-         debugInfo = ' (${parts[1].trim().split(' ').first})';
-       }
+      debugInfo = ' (Hata Kodu: ${match.group(1)})';
+    } else {
+      // If no bracketed code, show the first part of the error message for debugging
+      final rawError = error.toString();
+      if (rawError.length > 5) {
+        debugInfo = ' (${rawError.split(':').last.trim().split('\n').first})';
+      }
     }
 
-    return 'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.$debugInfo';
+    return 'İşleminiz gerçekleştirilirken beklenmeyen bir hata oluştu. Sorun devam ederse lütfen bize bildirin.$debugInfo';
   }
 
   /// Check if error contains technical terms that should be hidden from users
@@ -773,6 +811,19 @@ class AuthOrchestrator implements IAuthOrchestrator {
         }
         
         debugPrint('✅ Authentication successful, session created: $sessionId');
+
+        // Store local credentials for fallback
+        if (method == AuthMethod.emailPassword && metadata != null) {
+          final email = metadata['email'] as String?;
+          final password = metadata['password'] as String?; // Note: only if available in metadata
+          if (email != null && password != null) {
+            final passwordHash = EncryptionHelper.hashPassword(password);
+            await _storage.storeLocalCredentials(email, passwordHash);
+            debugPrint('💾 Local credentials updated for $email');
+            // Remove password from metadata after storing locally for security
+            metadata.remove('password');
+          }
+        }
       } else {
         throw Exception('Failed to create session after successful authentication');
       }
@@ -811,5 +862,47 @@ class AuthOrchestrator implements IAuthOrchestrator {
     final timestamp = DateTime.now().millisecondsSinceEpoch;
     final random = DateTime.now().microsecondsSinceEpoch % 1000000;
     return '${timestamp}_$random';
+  }
+
+  /// Yerel kimlik doğrulaması yapar (Firebase bağlantısı olmadığında)
+  Future<AuthResult> _authenticateLocally(String email, String password) async {
+    try {
+      final localCreds = await _storage.getLocalCredentials();
+      if (localCreds == null) {
+        return AuthResult.failure(
+          method: AuthMethod.emailPassword,
+          errorMessage: 'Yerel kimlik bilgisi bulunamadı. İlk giriş için internet bağlantısı gereklidir.',
+        );
+      }
+
+      final storedEmail = localCreds['email'];
+      final storedHash = localCreds['passwordHash'];
+
+      if (storedEmail == email && storedHash != null) {
+        final isValid = EncryptionHelper.verifyPassword(password, storedHash);
+        if (isValid) {
+          return AuthResult.success(
+            method: AuthMethod.emailPassword,
+            metadata: {
+              'userId': 'local_${email.hashCode}',
+              'email': email,
+              'displayName': email.split('@').first,
+              'isOffline': true,
+            },
+          );
+        }
+      }
+
+      return AuthResult.failure(
+        method: AuthMethod.emailPassword,
+        errorMessage: 'Hatalı e-posta veya şifre.',
+      );
+    } catch (e) {
+      debugPrint('❌ Local authentication error: $e');
+      return AuthResult.failure(
+        method: AuthMethod.emailPassword,
+        errorMessage: 'Yerel doğrulama sırasında bir hata oluştu.',
+      );
+    }
   }
 }

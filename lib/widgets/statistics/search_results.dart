@@ -1,8 +1,11 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/transaction.dart';
 import '../../models/credit_card_transaction.dart';
 import '../../utils/currency_helper.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
 class SearchResults extends StatelessWidget {
   final List<dynamic> results;
   final String searchQuery;
@@ -29,11 +32,11 @@ class SearchResults extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.onSurface.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -43,22 +46,20 @@ class SearchResults extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
               children: [
                 Icon(
                   Icons.search,
                   size: 20,
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     '${results.length} sonuç bulundu',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                    style: AppTextStyles.labelLarge.copyWith(
+                      color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.8) : AppColors.onSurface.withValues(alpha: 0.8),
                     ),
                   ),
                 ),
@@ -67,7 +68,7 @@ class SearchResults extends StatelessWidget {
           ),
           Divider(
             height: 1,
-            color: isDark ? Colors.grey[800] : Colors.grey[200],
+            color: isDark ? AppColors.surfaceDark : AppColors.background,
           ),
           Expanded(
             child: ListView.separated(
@@ -76,7 +77,7 @@ class SearchResults extends StatelessWidget {
                 height: 1,
                 indent: 16,
                 endIndent: 16,
-                color: isDark ? Colors.grey[800] : Colors.grey[200],
+                color: isDark ? AppColors.surfaceDark : AppColors.background,
               ),
               itemBuilder: (context, index) {
                 final transaction = results[index];
@@ -86,13 +87,12 @@ class SearchResults extends StatelessWidget {
           ),
           if (results.length > 10)
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Center(
                 child: Text(
                   '+${results.length - 10} daha fazla sonuç',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.grey[500] : Colors.grey[500],
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: isDark ? AppColors.onSurface.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ),
@@ -104,13 +104,13 @@ class SearchResults extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppSpacing.xxxl),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.onSurface.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -121,24 +121,21 @@ class SearchResults extends StatelessWidget {
           Icon(
             Icons.search_off,
             size: 64,
-            color: isDark ? Colors.grey[700] : Colors.grey[300],
+            color: isDark ? AppColors.onSurface.withValues(alpha: 0.8) : AppColors.onSurfaceDark.withValues(alpha: 0.8),
           ),
           const SizedBox(height: 16),
           Text(
             'Sonuç bulunamadı',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: isDark ? Colors.grey[300] : Colors.grey[700],
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.8) : AppColors.onSurface.withValues(alpha: 0.8),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '"$searchQuery" için eşleşen işlem bulunamadı',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: isDark ? Colors.grey[500] : Colors.grey[500],
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: isDark ? AppColors.onSurface.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -168,7 +165,7 @@ class SearchResults extends StatelessWidget {
     final amountColor = isIncome ? Colors.green : Colors.red;
 
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       leading: CircleAvatar(
         backgroundColor: isIncome
             ? Colors.green.withValues(alpha: 0.1)
@@ -181,10 +178,8 @@ class SearchResults extends StatelessWidget {
       ),
       title: Text(
         _highlightMatch(transaction.description, searchQuery),
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : Colors.black87,
+        style: AppTextStyles.labelLarge.copyWith(
+          color: isDark ? AppColors.surface : AppColors.onSurface,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -195,25 +190,22 @@ class SearchResults extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             _highlightMatch(transaction.category, searchQuery),
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 2),
           Text(
             DateFormat('dd MMM yyyy', 'tr_TR').format(transaction.date),
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.grey[500] : Colors.grey[500],
+            style: AppTextStyles.labelSmall.copyWith(
+              color: isDark ? AppColors.onSurface.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
       ),
       trailing: Text(
         '${isIncome ? '+' : '-'}${CurrencyHelper.formatAmount(transaction.amount)}',
-        style: TextStyle(
-          fontSize: 15,
+        style: AppTextStyles.bodyLarge.copyWith(
           fontWeight: FontWeight.bold,
           color: amountColor,
         ),
@@ -228,7 +220,7 @@ class SearchResults extends StatelessWidget {
     bool isDark,
   ) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       leading: CircleAvatar(
         backgroundColor: Colors.orange.withValues(alpha: 0.1),
         child: const Icon(
@@ -239,10 +231,8 @@ class SearchResults extends StatelessWidget {
       ),
       title: Text(
         _highlightMatch(transaction.description, searchQuery),
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: isDark ? Colors.white : Colors.black87,
+        style: AppTextStyles.labelLarge.copyWith(
+          color: isDark ? AppColors.surface : AppColors.onSurface,
         ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
@@ -253,25 +243,22 @@ class SearchResults extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             _highlightMatch(transaction.category, searchQuery),
-            style: TextStyle(
-              fontSize: 12,
-              color: isDark ? Colors.grey[400] : Colors.grey[600],
+            style: AppTextStyles.bodySmall.copyWith(
+              color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
             ),
           ),
           const SizedBox(height: 2),
           Text(
             DateFormat('dd MMM yyyy', 'tr_TR').format(transaction.transactionDate),
-            style: TextStyle(
-              fontSize: 11,
-              color: isDark ? Colors.grey[500] : Colors.grey[500],
+            style: AppTextStyles.labelSmall.copyWith(
+              color: isDark ? AppColors.onSurface.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
       ),
       trailing: Text(
         '-${CurrencyHelper.formatAmount(transaction.amount)}',
-        style: const TextStyle(
-          fontSize: 15,
+        style: AppTextStyles.bodyLarge.copyWith(
           fontWeight: FontWeight.bold,
           color: Colors.red,
         ),

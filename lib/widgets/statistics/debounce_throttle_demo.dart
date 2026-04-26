@@ -4,6 +4,7 @@ import 'debounced_filter_bar.dart';
 import 'throttled_scroll_view.dart';
 import '../../models/category.dart';
 import '../../models/wallet.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class DebounceThrottleDemo extends StatefulWidget {
   const DebounceThrottleDemo({super.key});
 
@@ -121,7 +122,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             color: isDark ? const Color(0xFF1C1C1E) : Colors.grey[100],
             child: Column(
               children: [
@@ -178,7 +179,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
                 ),
                 if (_scrollEventCount > 0)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
                       'Reduction: ${(100 - (_throttledScrollCount / _scrollEventCount * 100)).toStringAsFixed(1)}%',
                       style: TextStyle(
@@ -191,7 +192,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -217,7 +218,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
                 ),
                 if (_searchQuery.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
                       'Searching for: "$_searchQuery"',
                       style: TextStyle(
@@ -230,7 +231,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -282,7 +283,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
           const SizedBox(height: 16),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -303,7 +304,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
                         itemBuilder: (context, index) {
                           return Card(
                             margin: const EdgeInsets.symmetric(
-                              vertical: 4,
+                              vertical: AppSpacing.xs,
                               horizontal: 0,
                             ),
                             child: ListTile(
@@ -349,7 +350,7 @@ class _DebounceThrottleDemoState extends State<DebounceThrottleDemo> {
 
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),

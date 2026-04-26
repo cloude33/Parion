@@ -1,4 +1,6 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
+import '../../core/design/app_colors.dart';
 import '../../utils/responsive_helper.dart';
 
 /// Responsive layout wrapper for statistics content
@@ -119,7 +121,7 @@ class ResponsiveCard extends StatelessWidget {
     return Container(
       padding: cardPadding,
       decoration: BoxDecoration(
-        color: color ?? (isDark ? const Color(0xFF1C1C1E) : Theme.of(context).cardColor),
+        color: color ?? (isDark ? AppColors.surfaceDark : Theme.of(context).cardColor),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -222,12 +224,12 @@ class ResponsiveChartContainer extends StatelessWidget {
                         ),
                       ),
                       if (subtitle != null) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           subtitle!,
                           style: TextStyle(
                             fontSize: fontSize * 0.75,
-                            color: Colors.grey,
+                            color: AppColors.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -317,10 +319,10 @@ class AdaptiveTabBar extends StatelessWidget implements PreferredSizeWidget {
     return TabBar(
       controller: controller,
       isScrollable: shouldScroll,
-      indicatorColor: indicatorColor ?? const Color(0xFF00BFA5),
+      indicatorColor: indicatorColor ?? AppColors.primary,
       indicatorWeight: 3,
-      labelColor: labelColor ?? const Color(0xFF00BFA5),
-      unselectedLabelColor: unselectedLabelColor ?? Colors.grey,
+      labelColor: labelColor ?? AppColors.primary,
+      unselectedLabelColor: unselectedLabelColor ?? AppColors.onSurface.withValues(alpha: 0.5),
       labelStyle: TextStyle(
         fontWeight: FontWeight.bold,
         fontSize: fontSize,

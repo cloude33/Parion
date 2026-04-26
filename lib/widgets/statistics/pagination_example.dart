@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'paginated_list_view.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 class PaginationExampleScreen extends StatelessWidget {
   const PaginationExampleScreen({super.key});
@@ -11,7 +12,7 @@ class PaginationExampleScreen extends StatelessWidget {
         title: const Text('Pagination Examples'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _buildPaginatedListExample(),
           
@@ -35,7 +36,7 @@ class PaginationExampleScreen extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -68,7 +69,7 @@ class PaginationExampleScreen extends StatelessWidget {
                 );
               },
               header: Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 color: Colors.blue.withValues(alpha: 0.1),
                 child: const Text(
                   'İşlem Listesi',
@@ -99,7 +100,7 @@ class PaginationExampleScreen extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -140,7 +141,7 @@ class CashFlowPaginationExample extends StatelessWidget {
       loadMoreText: 'Daha Fazla Ay Göster',
       itemBuilder: (context, item, index) {
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: ListTile(
             title: Text(item['month'] as String),
             subtitle: Row(
@@ -182,7 +183,7 @@ class SpendingCategoryPaginationExample extends StatelessWidget {
       loadMoreText: 'Daha Fazla Kategori Göster',
       itemBuilder: (context, category, index) {
         return Card(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: ListTile(
             leading: CircleAvatar(
               backgroundColor: category['color'] as Color,

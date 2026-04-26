@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/wallet.dart';
 import '../../services/payment_simulator_service.dart';
 import '../../utils/currency_helper.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 class PaymentSimulator extends StatefulWidget {
   final List<Wallet> creditCards;
@@ -118,7 +119,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
     if (widget.creditCards.isEmpty) {
       return const Card(
         child: Padding(
-          padding: EdgeInsets.all(16.0),
+          padding: EdgeInsets.all(AppSpacing.lg),
           child: Text(
             'Kredi kartı bulunamadı',
             style: TextStyle(color: Colors.grey),
@@ -129,7 +130,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -143,8 +144,8 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
                 ),
               ),
               items: widget.creditCards.map((card) {
@@ -194,7 +195,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
           borderRadius: BorderRadius.circular(4),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -232,9 +233,9 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
                     : '$monthsToPayoff ay',
               ),
               if (message.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
@@ -272,7 +273,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
   Widget _buildCustomPaymentSection() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -335,7 +336,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -357,28 +358,28 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
                   decoration: BoxDecoration(color: Colors.grey.shade100),
                   children: const [
                     Padding(
-                      padding: EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(AppSpacing.sm),
                       child: Text(
                         'Senaryo',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(AppSpacing.sm),
                       child: Text(
                         'Ödeme',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(AppSpacing.sm),
                       child: Text(
                         'Süre',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
                     Padding(
-                      padding: EdgeInsets.all(8.0),
+                      padding: EdgeInsets.all(AppSpacing.sm),
                       child: Text(
                         'Toplam',
                         style: TextStyle(fontWeight: FontWeight.bold),
@@ -401,7 +402,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
                   return TableRow(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         child: Row(
                           children: [
                             Container(
@@ -418,11 +419,11 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         child: Text(CurrencyHelper.formatAmount(payment)),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         child: Text(
                           months == -1
                               ? '∞'
@@ -432,7 +433,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         child: Text(CurrencyHelper.formatAmount(total)),
                       ),
                     ],
@@ -468,7 +469,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
       onRefresh: _loadSimulations,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -477,7 +478,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
             if (_isLoading)
               const Center(
                 child: Padding(
-                  padding: EdgeInsets.all(32.0),
+                  padding: EdgeInsets.all(AppSpacing.xxxl),
                   child: CircularProgressIndicator(),
                 ),
               )
@@ -485,7 +486,7 @@ class _PaymentSimulatorState extends State<PaymentSimulator> {
               Card(
                 color: Colors.red.shade50,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Row(
                     children: [
                       const Icon(Icons.error, color: Colors.red),

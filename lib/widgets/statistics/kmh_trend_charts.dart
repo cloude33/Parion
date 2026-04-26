@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../models/credit_analysis.dart';
 import '../../utils/currency_helper.dart';
 import 'interactive_line_chart.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class KmhTrendCharts extends StatelessWidget {
   final List<DebtTrendData> debtTrend;
   final double totalLimit;
@@ -24,7 +25,7 @@ class KmhTrendCharts extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
           child: Text(
             'KMH Trend Analizi (Son 6 Ay)',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -52,13 +53,13 @@ class KmhTrendCharts extends StatelessWidget {
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -103,7 +104,7 @@ class KmhTrendCharts extends StatelessWidget {
                   if (index >= 0 && index < debtTrend.length) {
                     final date = debtTrend[index].date;
                     return Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
                       child: Text(
                         DateFormat('MMM', 'tr_TR').format(date),
                         style: TextStyle(
@@ -150,13 +151,13 @@ class KmhTrendCharts extends StatelessWidget {
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -201,7 +202,7 @@ class KmhTrendCharts extends StatelessWidget {
                   if (index >= 0 && index < debtTrend.length) {
                     final date = debtTrend[index].date;
                     return Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
                       child: Text(
                         DateFormat('MMM', 'tr_TR').format(date),
                         style: TextStyle(
@@ -245,13 +246,13 @@ class KmhTrendCharts extends StatelessWidget {
     }
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -298,7 +299,7 @@ class KmhTrendCharts extends StatelessWidget {
                   if (index >= 0 && index < debtTrend.length) {
                     final date = debtTrend[index].date;
                     return Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: const EdgeInsets.only(top: AppSpacing.sm),
                       child: Text(
                         DateFormat('MMM', 'tr_TR').format(date),
                         style: TextStyle(
@@ -347,7 +348,7 @@ class KmhTrendCharts extends StatelessWidget {
     final isIncrease = change > 0;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -385,7 +386,7 @@ class KmhTrendCharts extends StatelessWidget {
             ],
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 6),
             decoration: BoxDecoration(
               color: (isIncrease ? Colors.red : Colors.green).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(16),
@@ -410,7 +411,7 @@ class KmhTrendCharts extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -464,7 +465,7 @@ class KmhTrendCharts extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -520,9 +521,9 @@ class KmhTrendCharts extends StatelessWidget {
   }
   Widget _buildEmptyState(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(AppSpacing.lg),
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

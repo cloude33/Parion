@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'accessibility_helpers.dart';
 import 'summary_card.dart';
@@ -33,7 +34,7 @@ class _AccessibilityIntegrationDemoState
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           // Period filter with accessible chips
           _buildPeriodFilter(),
@@ -402,7 +403,7 @@ class _ContrastCheckerDemoState extends State<ContrastCheckerDemo> {
         title: const Text('Kontrast Kontrolü'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -446,7 +447,7 @@ class _ContrastCheckerDemoState extends State<ContrastCheckerDemo> {
             const SizedBox(height: 24),
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

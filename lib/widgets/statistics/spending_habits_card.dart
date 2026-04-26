@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../models/cash_flow_data.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
+import '../../core/design/app_text_styles.dart';
 class SpendingHabitsCard extends StatefulWidget {
   final SpendingAnalysis spendingData;
   final DateTime startDate;
@@ -27,7 +30,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -44,12 +47,12 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                   segments: const [
                     ButtonSegment(
                       value: true,
-                      label: Text('Gün', style: TextStyle(fontSize: 12)),
+                      label: Text('Gün', style: AppTextStyles.bodySmall),
                       icon: Icon(Icons.calendar_today, size: 16),
                     ),
                     ButtonSegment(
                       value: false,
-                      label: Text('Saat', style: TextStyle(fontSize: 12)),
+                      label: Text('Saat', style: AppTextStyles.bodySmall),
                       icon: Icon(Icons.access_time, size: 16),
                     ),
                   ],
@@ -62,16 +65,16 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             _buildKeyInsights(theme),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             SizedBox(
               height: 200,
               child: _showDayChart
                   ? _buildDayOfWeekChart(theme)
                   : _buildHourOfDayChart(theme),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             _buildAdditionalInsights(theme),
           ],
         ),
@@ -134,7 +137,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             color: Colors.blue,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _buildInsightBox(
             icon: Icons.access_time,
@@ -143,7 +146,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             color: Colors.orange,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: _buildInsightBox(
             icon: Icons.trending_up,
@@ -163,7 +166,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
     required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -175,20 +178,18 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             size: 24,
             color: color,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 10,
-              color: Colors.grey[600],
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.onSurface.withValues(alpha: 0.6),
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 13,
+            style: AppTextStyles.bodySmall.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -231,7 +232,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: 100,
-              color: isDark ? Colors.white10 : Colors.black12,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.1) : AppColors.onSurface.withValues(alpha: 0.12),
             ),
           ),
         ],
@@ -253,8 +254,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                 if (value % 25 != 0) return const SizedBox.shrink();
                 return Text(
                   '${value.toInt()}%',
-                  style: TextStyle(
-                    fontSize: 10,
+                  style: AppTextStyles.labelSmall.copyWith(
                     color: theme.textTheme.bodySmall?.color,
                   ),
                 );
@@ -270,11 +270,10 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                   return const Text('');
                 }
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
                   child: Text(
                     dayNames[index],
-                    style: TextStyle(
-                      fontSize: 10,
+                    style: AppTextStyles.labelSmall.copyWith(
                       color: theme.textTheme.bodySmall?.color,
                       fontWeight: index + 1 == widget.spendingData.mostSpendingDay.index + 1 // Fix index comparison if needed, but simple comparison should work if enum matches 0-based index or logic
                           ? FontWeight.bold
@@ -298,7 +297,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
           horizontalInterval: 25,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: isDark ? Colors.white12 : Colors.black12,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.12) : AppColors.onSurface.withValues(alpha: 0.12),
               strokeWidth: 1,
             );
           },
@@ -307,11 +306,11 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
           show: true,
           border: Border(
             bottom: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black26,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.24) : AppColors.onSurface.withValues(alpha: 0.26),
               width: 1,
             ),
             left: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black26,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.24) : AppColors.onSurface.withValues(alpha: 0.26),
               width: 1,
             ),
           ),
@@ -319,18 +318,17 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (_) => isDark ? Colors.grey[800]! : Colors.white,
-            tooltipPadding: const EdgeInsets.all(8),
-            tooltipMargin: 8,
+            getTooltipColor: (_) => isDark ? AppColors.surfaceDark : AppColors.surface,
+            tooltipPadding: const EdgeInsets.all(AppSpacing.sm),
+            tooltipMargin: AppSpacing.sm,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final weekday = group.x.toInt() + 1;
               final amount = widget.spendingData.dailySpending[weekday] ?? 0.0;
               return BarTooltipItem(
                 _formatCurrency(amount),
-                TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
+                AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.surface : Colors.black,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
               );
             },
@@ -375,7 +373,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: 100,
-              color: isDark ? Colors.white10 : Colors.black12,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.1) : AppColors.onSurface.withValues(alpha: 0.12),
             ),
           ),
         ],
@@ -397,8 +395,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                 if (value % 25 != 0) return const SizedBox.shrink();
                 return Text(
                   '${value.toInt()}%',
-                  style: TextStyle(
-                    fontSize: 10,
+                  style: AppTextStyles.labelSmall.copyWith(
                     color: theme.textTheme.bodySmall?.color,
                   ),
                 );
@@ -414,11 +411,10 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                   return const Text('');
                 }
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: AppSpacing.xs),
                   child: Text(
                     hourLabels[index],
-                    style: TextStyle(
-                      fontSize: 10,
+                    style: AppTextStyles.labelSmall.copyWith(
                       color: theme.textTheme.bodySmall?.color,
                     ),
                   ),
@@ -439,7 +435,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
           horizontalInterval: 25,
           getDrawingHorizontalLine: (value) {
             return FlLine(
-              color: isDark ? Colors.white12 : Colors.black12,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.12) : AppColors.onSurface.withValues(alpha: 0.12),
               strokeWidth: 1,
             );
           },
@@ -448,11 +444,11 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
           show: true,
           border: Border(
             bottom: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black26,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.24) : AppColors.onSurface.withValues(alpha: 0.26),
               width: 1,
             ),
             left: BorderSide(
-              color: isDark ? Colors.white24 : Colors.black26,
+              color: isDark ? AppColors.onPrimary.withValues(alpha: 0.24) : AppColors.onSurface.withValues(alpha: 0.26),
               width: 1,
             ),
           ),
@@ -460,17 +456,16 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
         barTouchData: BarTouchData(
           enabled: true,
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (_) => isDark ? Colors.grey[800]! : Colors.white,
-            tooltipPadding: const EdgeInsets.all(8),
-            tooltipMargin: 8,
+            getTooltipColor: (_) => isDark ? AppColors.surfaceDark : AppColors.surface,
+            tooltipPadding: const EdgeInsets.all(AppSpacing.sm),
+            tooltipMargin: AppSpacing.sm,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final bucketAmount = bucketSpending[group.x.toInt()];
               return BarTooltipItem(
                 _formatCurrency(bucketAmount),
-                TextStyle(
-                  color: isDark ? Colors.white : Colors.black,
+                AppTextStyles.bodySmall.copyWith(
+                  color: isDark ? AppColors.surface : Colors.black,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
               );
             },
@@ -509,7 +504,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
     
     if (!hasHourlyData && !hasDailyData) {
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
@@ -523,15 +518,14 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
             Icon(
               Icons.info_outline,
               size: 20,
-              color: Colors.grey[600],
+              color: AppColors.onSurface.withValues(alpha: 0.6),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 'Yeterli harcama verisi bulunmamaktadır. Daha fazla işlem ekledikçe alışkanlık analizi görüntülenecektir.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.onSurface.withValues(alpha: 0.6),
                 ),
               ),
             ),
@@ -570,7 +564,7 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
     }
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: timeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -589,55 +583,52 @@ class _SpendingHabitsCardState extends State<SpendingHabitsCard> {
                 size: 20,
                 color: timeColor,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 'Alışkanlık Analizi',
-                style: TextStyle(
-                  fontSize: 13,
+                style: AppTextStyles.bodySmall.copyWith(
                   fontWeight: FontWeight.bold,
                   color: timeColor,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           if (hasHourlyData)
             Row(
               children: [
                 Icon(
                   timeIcon,
                   size: 16,
-                  color: Colors.grey[600],
+                  color: AppColors.onSurface.withValues(alpha: 0.6),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     timePattern,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),
               ],
             ),
           if (hasHourlyData && hasDailyData)
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSpacing.xs),
           if (hasDailyData)
             Row(
               children: [
                 Icon(
                   Icons.calendar_today,
                   size: 16,
-                  color: Colors.grey[600],
+                  color: AppColors.onSurface.withValues(alpha: 0.6),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     dayPattern,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[700],
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                     ),
                   ),
                 ),

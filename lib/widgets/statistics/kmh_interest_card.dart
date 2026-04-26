@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../utils/currency_helper.dart';
 class KmhInterestCard extends StatelessWidget {
@@ -38,14 +39,14 @@ class KmhInterestCard extends StatelessWidget {
               : null,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: hasInterest
                           ? Colors.orange.withValues(alpha: isDark ? 0.3 : 0.2)
@@ -58,7 +59,7 @@ class KmhInterestCard extends StatelessWidget {
                       size: 24,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +70,7 @@ class KmhInterestCard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           hasInterest
                               ? 'Tahakkuk eden faiz tutarları'
@@ -85,7 +86,7 @@ class KmhInterestCard extends StatelessWidget {
               ),
 
               if (hasInterest) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xxl),
                 _buildInterestRow(
                   context: context,
                   icon: Icons.today,
@@ -95,7 +96,7 @@ class KmhInterestCard extends StatelessWidget {
                   subtitle: 'Her gün tahakkuk eden',
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
 
                 _buildInterestRow(
                   context: context,
@@ -106,7 +107,7 @@ class KmhInterestCard extends StatelessWidget {
                   subtitle: '30 günlük projeksiyon',
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
 
                 _buildInterestRow(
                   context: context,
@@ -117,9 +118,9 @@ class KmhInterestCard extends StatelessWidget {
                   subtitle: '365 günlük projeksiyon',
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -134,7 +135,7 @@ class KmhInterestCard extends StatelessWidget {
                         color: Colors.orange,
                         size: 20,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           'Faiz tutarları günlük olarak hesaplanır ve borcunuza eklenir. Erken ödeme yaparak faiz maliyetini azaltabilirsiniz.',
@@ -147,9 +148,9 @@ class KmhInterestCard extends StatelessWidget {
                   ),
                 ),
               ] else ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
@@ -164,7 +165,7 @@ class KmhInterestCard extends StatelessWidget {
                         color: Colors.green,
                         size: 20,
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           'KMH hesaplarınızda borç bulunmadığı için faiz tahakkuku yoktur.',
@@ -196,7 +197,7 @@ class KmhInterestCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.white,
         borderRadius: BorderRadius.circular(8),
@@ -207,7 +208,7 @@ class KmhInterestCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
               color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
@@ -218,7 +219,7 @@ class KmhInterestCard extends StatelessWidget {
               size: 20,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -229,7 +230,7 @@ class KmhInterestCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(

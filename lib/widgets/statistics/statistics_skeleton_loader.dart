@@ -1,4 +1,6 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
+import '../../core/design/app_colors.dart';
 
 /// Skeleton loader for statistics cards
 class StatisticsSkeletonLoader extends StatefulWidget {
@@ -53,7 +55,10 @@ class _StatisticsSkeletonLoaderState extends State<StatisticsSkeletonLoader>
           animation: _animation,
           builder: (context, child) {
             return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              margin: EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
               child: _buildSkeletonItem(isDark),
             );
           },
@@ -106,7 +111,7 @@ class _StatisticsSkeletonLoaderState extends State<StatisticsSkeletonLoader>
             gradient: _buildGradient(isDark),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,7 +124,7 @@ class _StatisticsSkeletonLoaderState extends State<StatisticsSkeletonLoader>
                   gradient: _buildGradient(isDark),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Container(
                 height: 12,
                 width: 150,
@@ -138,7 +143,7 @@ class _StatisticsSkeletonLoaderState extends State<StatisticsSkeletonLoader>
   Widget _buildMetricSkeleton(bool isDark) {
     return Container(
       height: 80,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         gradient: _buildGradient(isDark),
@@ -147,8 +152,8 @@ class _StatisticsSkeletonLoaderState extends State<StatisticsSkeletonLoader>
   }
 
   LinearGradient _buildGradient(bool isDark) {
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[200]!;
+    final baseColor = isDark ? AppColors.surfaceDark : AppColors.background;
+    final highlightColor = isDark ? AppColors.onSurface.withValues(alpha: 0.8) : AppColors.background;
 
     return LinearGradient(
       begin: Alignment(_animation.value - 1, 0),
@@ -182,12 +187,12 @@ class ChartSkeletonLoader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(context),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             SizedBox(
               height: 200,
               child: _buildChartSkeleton(context),
@@ -241,7 +246,7 @@ class ChartSkeletonLoader extends StatelessWidget {
         7,
         (index) => Expanded(
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 4),
+            margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             height: 50 + (index * 20.0),
             decoration: BoxDecoration(
               color: Colors.grey[300],
@@ -274,7 +279,7 @@ class ChartSkeletonLoader extends StatelessWidget {
         4,
         (index) => Expanded(
           child: Container(
-            margin: const EdgeInsets.symmetric(vertical: 4),
+            margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
             decoration: BoxDecoration(
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(4),

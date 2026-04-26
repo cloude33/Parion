@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/comparison_data.dart';
 import '../../models/cash_flow_data.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class ComparisonCard extends StatefulWidget {
   final ComparisonData comparisonData;
   final VoidCallback? onPeriodChanged;
@@ -26,7 +27,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -132,7 +133,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
 
   Widget _buildPeriodLabel(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -171,7 +172,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
     final trendIcon = _getTrendIcon(metric.trend);
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(8),
@@ -251,7 +252,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
           ),
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
             decoration: BoxDecoration(
               color: changeColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6),
@@ -301,7 +302,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
     final text = isPositive ? 'Genel Durum İyileşiyor' : 'Genel Durum Kötüleşiyor';
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -349,7 +350,7 @@ class _ComparisonCardState extends State<ComparisonCard> {
         const SizedBox(height: 12),
         ...widget.comparisonData.insights.map((insight) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

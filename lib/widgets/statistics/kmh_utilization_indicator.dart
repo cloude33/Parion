@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../utils/currency_helper.dart';
 class KmhUtilizationIndicator extends StatelessWidget {
@@ -39,8 +40,8 @@ class KmhUtilizationIndicator extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
                     ),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: 0.1),
@@ -57,7 +58,7 @@ class KmhUtilizationIndicator extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     '${utilizationRate.toStringAsFixed(1)}%',
                     style: theme.textTheme.titleMedium?.copyWith(
@@ -69,7 +70,7 @@ class KmhUtilizationIndicator extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
         ],
         Stack(
           children: [
@@ -101,7 +102,7 @@ class KmhUtilizationIndicator extends StatelessWidget {
         ),
         
         if (showAmounts) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

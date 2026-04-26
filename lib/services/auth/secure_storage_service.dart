@@ -28,6 +28,7 @@ class AuthSecureStorageService {
   static const String _sessionStateKey = 'session_state';
   static const String _pendingVerificationKey = 'pending_verification';
   static const String _backgroundTimestampKey = 'auth_background_timestamp';
+  static const String _localCredentialsKey = 'auth_local_credentials';
 
   // Platform-specific secure storage with enhanced security options
   FlutterSecureStorage? _secureStorage;
@@ -552,6 +553,54 @@ class AuthSecureStorageService {
     }
   }
 
+  /// Yerel kimlik bilgilerini saklar (Firebase bağlantısı olmadığında kullanım için)
+  ///
+  /// [email] - Kullanıcı e-postası
+  /// [passwordHash] - Şifre özeti (EncryptionHelper.hashPassword ile oluşturulmuş)
+  Future<bool> storeLocalCredentials(String email, String passwordHash) async {
+    try {
+      await _ensureInitialized();
+      final data = jsonEncode({
+        'email': email,
+        'passwordHash': passwordHash,
+        'updatedAt': DateTime.now().toIso8601String(),
+      });
+      return await _storeSecurely(_localCredentialsKey, data);
+    } catch (e) {
+      debugPrint('Failed to store local credentials: $e');
+      return false;
+    }
+  }
+
+  /// Saklanmış yerel kimlik bilgilerini getirir
+  Future<Map<String, String>?> getLocalCredentials() async {
+    try {
+      await _ensureInitialized();
+      final data = await _retrieveSecurely(_localCredentialsKey);
+      if (data == null) return null;
+
+      final decoded = jsonDecode(data) as Map<String, dynamic>;
+      return {
+        'email': decoded['email'] as String,
+        'passwordHash': decoded['passwordHash'] as String,
+      };
+    } catch (e) {
+      debugPrint('Failed to get local credentials: $e');
+      return null;
+    }
+  }
+
+  /// Yerel kimlik bilgilerini temizler
+  Future<bool> clearLocalCredentials() async {
+    try {
+      await _ensureInitialized();
+      return await _deleteSecurely(_localCredentialsKey);
+    } catch (e) {
+      debugPrint('Failed to clear local credentials: $e');
+      return false;
+    }
+  }
+
   /// Clear all authentication data
   ///
   /// This method removes all stored authentication data including
@@ -579,6 +628,7 @@ class AuthSecureStorageService {
         _sessionDataKey,
         _sessionStateKey,
         _backgroundTimestampKey,
+        _localCredentialsKey,
       ];
 
       bool allSuccess = true;

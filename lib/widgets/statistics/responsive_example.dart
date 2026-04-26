@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../utils/responsive_helper.dart';
@@ -151,7 +152,7 @@ class ResponsiveStatisticsExample extends StatelessWidget {
 
   Widget _buildDetailItem(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -159,7 +160,7 @@ class ResponsiveStatisticsExample extends StatelessWidget {
       child: Column(
         children: [
           Icon(icon, size: 24, color: Colors.blue),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             label,
             style: const TextStyle(
@@ -167,7 +168,7 @@ class ResponsiveStatisticsExample extends StatelessWidget {
               color: Colors.grey,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             value,
             style: const TextStyle(
@@ -212,7 +213,7 @@ class ConditionalRenderingExample extends StatelessWidget {
       padding: ResponsiveHelper.getResponsivePadding(context),
       children: [
         const Text('Mobile Layout'),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         _buildContent(context),
       ],
     );
@@ -233,7 +234,7 @@ class ConditionalRenderingExample extends StatelessWidget {
             padding: ResponsiveHelper.getResponsivePadding(context),
             children: [
               const Text('Tablet Layout'),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               _buildContent(context),
             ],
           ),
@@ -262,7 +263,7 @@ class ConditionalRenderingExample extends StatelessWidget {
                 padding: ResponsiveHelper.getResponsivePadding(context),
                 children: [
                   const Text('Desktop Layout'),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   _buildContent(context),
                 ],
               ),
@@ -288,7 +289,7 @@ class ConditionalRenderingExample extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'Screen width: ${MediaQuery.of(context).size.width.toStringAsFixed(0)}px',
           ),

@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:parion/widgets/statistics/accessibility_helpers.dart';
 
@@ -56,7 +57,7 @@ class SummaryCard extends StatelessWidget {
                   )
                 : const BoxConstraints(),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -64,7 +65,7 @@ class SummaryCard extends StatelessWidget {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(AppSpacing.sm),
                         decoration: BoxDecoration(
                           color: accessibleColor.withValues(alpha: isDark ? 0.2 : 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -75,7 +76,7 @@ class SummaryCard extends StatelessWidget {
                           size: 24,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           title,
@@ -86,7 +87,7 @@ class SummaryCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
                     value,
                     style: theme.textTheme.headlineSmall?.copyWith(
@@ -95,7 +96,7 @@ class SummaryCard extends StatelessWidget {
                     ),
                   ),
                   if (subtitle != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       subtitle!,
                       style: theme.textTheme.bodySmall?.copyWith(

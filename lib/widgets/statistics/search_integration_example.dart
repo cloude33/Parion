@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import '../../models/transaction.dart';
 import '../../models/credit_card_transaction.dart';
@@ -82,7 +83,7 @@ class _SearchIntegrationExampleState extends State<SearchIntegrationExample> {
         title: const Text('Arama ve Filtre Örneği'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -179,7 +180,7 @@ class _SearchIntegrationExampleState extends State<SearchIntegrationExample> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -214,7 +215,7 @@ class _SearchIntegrationExampleState extends State<SearchIntegrationExample> {
           if (_filteredTransactions.isEmpty)
             Center(
               child: Padding(
-                padding: const EdgeInsets.all(32),
+                padding: const EdgeInsets.all(AppSpacing.xxxl),
                 child: Column(
                   children: [
                     Icon(

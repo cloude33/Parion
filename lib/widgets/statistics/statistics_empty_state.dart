@@ -1,4 +1,7 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
 
 /// Empty state widget for statistics screens
 class StatisticsEmptyState extends StatelessWidget {
@@ -23,44 +26,41 @@ class StatisticsEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               size: 80,
-              color: iconColor ?? Colors.grey[400],
+              color: iconColor ?? AppColors.onSurface.withValues(alpha: 0.4),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[700],
+              style: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.onSurface.withValues(alpha: 0.8),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Text(
               message,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.onSurface.withValues(alpha: 0.6),
               ),
               textAlign: TextAlign.center,
             ),
             if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               ElevatedButton.icon(
                 onPressed: onAction,
                 icon: const Icon(Icons.add),
                 label: Text(actionLabel!),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                    horizontal: AppSpacing.xxl,
+                    vertical: AppSpacing.sm,
                   ),
                 ),
               ),

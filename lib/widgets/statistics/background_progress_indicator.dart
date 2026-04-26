@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 class BackgroundProgressIndicator extends StatelessWidget {
   final double? progress;
@@ -103,9 +104,9 @@ class BackgroundProgressIndicator extends StatelessWidget {
         color: effectiveBackgroundColor,
         child: Center(
           child: Card(
-            margin: const EdgeInsets.all(32),
+            margin: const EdgeInsets.all(AppSpacing.xxxl),
             child: Padding(
-              padding: const EdgeInsets.all(32),
+              padding: const EdgeInsets.all(AppSpacing.xxxl),
               child: content,
             ),
           ),
@@ -114,7 +115,7 @@ class BackgroundProgressIndicator extends StatelessWidget {
     } else {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: content,
         ),
       );

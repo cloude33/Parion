@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class CustomTooltip extends StatelessWidget {
   final String title;
   final String value;
@@ -27,7 +28,7 @@ class CustomTooltip extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: padding ?? const EdgeInsets.all(12),
+      padding: padding ?? const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.black87,
         borderRadius: BorderRadius.circular(borderRadius ?? 8),
@@ -103,7 +104,7 @@ class CustomTooltip extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             ...additionalItems!.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [

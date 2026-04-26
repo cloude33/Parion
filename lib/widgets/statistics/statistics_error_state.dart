@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
+import '../../core/design/app_text_styles.dart';
 
 /// Error state widget for statistics screens
 class StatisticsErrorState extends StatelessWidget {
@@ -21,7 +24,7 @@ class StatisticsErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -30,36 +33,32 @@ class StatisticsErrorState extends StatelessWidget {
               size: 80,
               color: iconColor ?? Colors.red[300],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             Text(
               message,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: AppTextStyles.titleLarge,
               textAlign: TextAlign.center,
             ),
             if (details != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 details!,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.onSurface.withValues(alpha: 0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
             ],
             if (onRetry != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               ElevatedButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Tekrar Dene'),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
+                    horizontal: AppSpacing.xxl,
+                    vertical: AppSpacing.sm,
                   ),
                 ),
               ),
@@ -85,7 +84,7 @@ class InlineErrorWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: Colors.red[50],
         borderRadius: BorderRadius.circular(8),
@@ -94,18 +93,17 @@ class InlineErrorWidget extends StatelessWidget {
       child: Row(
         children: [
           Icon(Icons.error_outline, color: Colors.red[700], size: 20),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.red[900],
               ),
             ),
           ),
           if (onRetry != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: onRetry,
@@ -137,21 +135,21 @@ class StatisticsErrorSnackbar {
           children: [
             Row(
               children: [
-                const Icon(Icons.error_outline, color: Colors.white),
-                const SizedBox(width: 8),
+                const Icon(Icons.error_outline, color: AppColors.onPrimary),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     message,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: AppTextStyles.labelLarge,
                   ),
                 ),
               ],
             ),
             if (details != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 details,
-                style: const TextStyle(fontSize: 12),
+                style: AppTextStyles.bodySmall,
               ),
             ],
           ],
@@ -161,7 +159,7 @@ class StatisticsErrorSnackbar {
         duration: duration,
         action: SnackBarAction(
           label: 'Tamam',
-          textColor: Colors.white,
+          textColor: AppColors.onPrimary,
           onPressed: () {
             ScaffoldMessenger.of(context).hideCurrentSnackBar();
           },
@@ -182,12 +180,12 @@ class StatisticsSuccessSnackbar {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.check_circle_outline, color: Colors.white),
-            const SizedBox(width: 8),
+            const Icon(Icons.check_circle_outline, color: AppColors.onPrimary),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: AppTextStyles.labelLarge,
               ),
             ),
           ],
@@ -211,12 +209,12 @@ class StatisticsWarningSnackbar {
       SnackBar(
         content: Row(
           children: [
-            const Icon(Icons.warning_amber_outlined, color: Colors.white),
-            const SizedBox(width: 8),
+            const Icon(Icons.warning_amber_outlined, color: AppColors.onPrimary),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 message,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: AppTextStyles.labelLarge,
               ),
             ),
           ],
@@ -236,7 +234,7 @@ class StatisticsErrorStates {
       message: 'Veri Bulunamadı',
       details: 'Seçilen tarih aralığında veri bulunmuyor',
       icon: Icons.inbox_outlined,
-      iconColor: Colors.grey[400],
+      iconColor: AppColors.onSurface.withValues(alpha: 0.4),
       onRetry: onRetry,
     );
   }

@@ -3,6 +3,7 @@ import '../../models/comparison_data.dart';
 import '../../services/statistics_service.dart';
 import 'comparison_card.dart';
 import 'period_selector.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class ComparisonView extends StatefulWidget {
   final StatisticsService statisticsService;
   final PeriodType initialPeriod;
@@ -85,14 +86,14 @@ class _ComparisonViewState extends State<ComparisonView> {
         if (_isLoading)
           const Center(
             child: Padding(
-              padding: EdgeInsets.all(32.0),
+              padding: EdgeInsets.all(AppSpacing.xxxl),
               child: CircularProgressIndicator(),
             ),
           ),
         if (_error != null)
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: [
                   const Icon(
@@ -141,7 +142,7 @@ class _ComparisonViewState extends State<ComparisonView> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -168,7 +169,7 @@ class _ComparisonViewState extends State<ComparisonView> {
                       : Icons.trending_down;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Column(
                   children: [
                     Row(

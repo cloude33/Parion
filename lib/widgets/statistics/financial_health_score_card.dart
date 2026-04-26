@@ -1,7 +1,7 @@
-library;
-
 import 'package:flutter/material.dart';
+import '../../core/design/app_spacing.dart';
 import '../../models/asset_analysis.dart';
+
 class FinancialHealthScoreCard extends StatelessWidget {
   final FinancialHealthScore healthScore;
   final VoidCallback? onTap;
@@ -18,12 +18,12 @@ class FinancialHealthScoreCard extends StatelessWidget {
 
     return Card(
       elevation: 2,
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(AppSpacing.lg),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -34,7 +34,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                     color: _getScoreColor(healthScore.overallScore),
                     size: 28,
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,8 +57,8 @@ class FinancialHealthScoreCard extends StatelessWidget {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                      horizontal: AppSpacing.lg,
+                      vertical: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
                       color: _getScoreColor(
@@ -81,7 +81,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               _buildScoreRow(
                 context,
                 'Likidite',
@@ -90,7 +90,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                 'Kısa vadeli yükümlülükleri karşılama kapasitesi',
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
 
               _buildScoreRow(
                 context,
@@ -100,7 +100,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                 'Borç seviyeleri ve geri ödeme kapasitesi',
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
 
               _buildScoreRow(
                 context,
@@ -110,7 +110,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                 'Tasarruf oranı ve net varlık büyümesi',
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
 
               _buildScoreRow(
                 context,
@@ -120,9 +120,9 @@ class FinancialHealthScoreCard extends StatelessWidget {
                 'Yatırım çeşitlendirmesi ve dağılımı',
               ),
               if (healthScore.recommendations.isNotEmpty) ...[
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xxl),
                 const Divider(),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
 
                 Row(
                   children: [
@@ -131,7 +131,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                       color: theme.colorScheme.primary,
                       size: 24,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSpacing.sm),
                     Text(
                       'Öneriler',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -141,16 +141,16 @@ class FinancialHealthScoreCard extends StatelessWidget {
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
 
                 ...healthScore.recommendations.map((recommendation) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          margin: const EdgeInsets.only(top: 6),
+                          margin: const EdgeInsets.only(top: AppSpacing.xs),
                           width: 6,
                           height: 6,
                           decoration: BoxDecoration(
@@ -158,7 +158,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
                             shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
                             recommendation,
@@ -192,7 +192,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
         Row(
           children: [
             Icon(icon, size: 20, color: scoreColor),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 label,
@@ -211,7 +211,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
           ],
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
           child: LinearProgressIndicator(
@@ -222,7 +222,7 @@ class FinancialHealthScoreCard extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
 
         Text(
           description,

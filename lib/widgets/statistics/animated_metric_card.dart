@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:parion/models/cash_flow_data.dart';
 import 'animations/fade_in_animation.dart';
 import 'animations/scale_animation.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 /// Animated version of MetricCard with entrance animations
 class AnimatedMetricCard extends StatelessWidget {
@@ -54,7 +55,7 @@ class AnimatedMetricCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,

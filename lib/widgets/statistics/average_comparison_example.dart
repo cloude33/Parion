@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../services/statistics_service.dart';
 import 'average_comparison_card.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class AverageComparisonExample extends StatefulWidget {
   const AverageComparisonExample({super.key});
 
@@ -90,7 +91,7 @@ class _AverageComparisonExampleState extends State<AverageComparisonExample> {
             ),
             const SizedBox(height: 8),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxxl),
               child: Text(
                 _error!,
                 textAlign: TextAlign.center,
@@ -114,14 +115,14 @@ class _AverageComparisonExampleState extends State<AverageComparisonExample> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Card(
             color: Colors.blue[50],
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Row(
                 children: [
                   Icon(
@@ -157,7 +158,7 @@ class _AverageComparisonExampleState extends State<AverageComparisonExample> {
   Widget _buildAdditionalInfo() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

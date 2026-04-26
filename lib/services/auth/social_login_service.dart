@@ -494,35 +494,35 @@ class SocialLoginService implements ISocialLoginService {
   String _handleFirebaseAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'account-exists-with-different-credential':
-        return 'Bu e-posta adresi farklı bir giriş yöntemi ile kayıtlı. Lütfen o yöntemi kullanın.';
+        return 'Bu e-posta adresi farklı bir giriş yöntemi (örneğin Google) ile kayıtlı. Lütfen o yöntemi kullanarak giriş yapın.';
       case 'invalid-credential':
-        return 'Geçersiz kimlik bilgileri. Lütfen tekrar deneyin.';
+        return 'Giriş bilgileri geçersiz veya süresi dolmuş. Lütfen tekrar deneyin.';
       case 'operation-not-allowed':
-        return 'Bu işlem şu anda izin verilmiyor.';
+        return 'Bu giriş yöntemi şu anda kullanılamıyor. Lütfen diğer yöntemleri deneyin.';
       case 'user-disabled':
-        return 'Bu kullanıcı hesabı devre dışı bırakılmış.';
+        return 'Hesabınız devre dışı bırakılmış. Destek ekibiyle iletişime geçebilirsiniz.';
       case 'user-not-found':
-        return 'Kullanıcı bulunamadı.';
+        return 'Bu hesap bulunamadı. Lütfen bilgilerinizi kontrol edin.';
       case 'wrong-password':
-        return 'Hatalı şifre.';
+        return 'Hatalı şifre girdiniz.';
       case 'invalid-verification-code':
-        return 'Geçersiz doğrulama kodu.';
+        return 'Doğrulama kodu geçersiz. Lütfen kodu kontrol edip tekrar deneyin.';
       case 'invalid-verification-id':
-        return 'Geçersiz doğrulama ID\'si.';
+        return 'Doğrulama işlemi zaman aşımına uğradı. Lütfen tekrar deneyin.';
       case 'credential-already-in-use':
-        return 'Bu kimlik bilgileri başka bir hesap tarafından kullanılıyor.';
+        return 'Bu kimlik bilgileri zaten başka bir hesap tarafından kullanılıyor.';
       case 'provider-already-linked':
-        return 'Bu sağlayıcı zaten hesabınıza bağlı.';
+        return 'Bu giriş yöntemi zaten hesabınıza bağlı.';
       case 'no-such-provider':
-        return 'Bu sağlayıcı hesabınıza bağlı değil.';
+        return 'Bu giriş yöntemi hesabınıza bağlı değil.';
       case 'requires-recent-login':
-        return 'Bu işlem için yeniden giriş yapmanız gerekiyor.';
+        return 'Güvenliğiniz için bu işlemi yapmadan önce tekrar giriş yapmanız gerekiyor.';
       case 'network-request-failed':
-        return 'İnternet bağlantısı sorunu. Lütfen bağlantınızı kontrol edin.';
+        return 'İnternet bağlantısı sorunu yaşanıyor. Lütfen bağlantınızı kontrol edin.';
       case 'too-many-requests':
-        return 'Çok fazla istek. Lütfen daha sonra tekrar deneyin.';
+        return 'Çok fazla istek gönderildi. Güvenliğiniz için lütfen biraz bekleyip tekrar deneyin.';
       default:
-        return e.message ?? 'Bilinmeyen bir hata oluştu';
+        return e.message ?? 'Bir kimlik doğrulama hatası oluştu.';
     }
   }
 
@@ -531,17 +531,17 @@ class SocialLoginService implements ISocialLoginService {
     switch (e.code) {
       case 'sign_in_failed':
         if (e.message?.contains('10') == true) {
-          return 'Google Sign-In yapılandırma hatası. Lütfen uygulamayı yeniden başlatın.';
+          return 'Google girişi yapılandırılamadı. Lütfen internetinizi kontrol edip uygulamayı yeniden başlatın.';
         }
-        return 'Giriş başarısız. Lütfen tekrar deneyin.';
+        return 'Giriş işlemi başarısız oldu. Lütfen tekrar deneyin.';
       case 'network_error':
-        return 'İnternet bağlantısı sorunu. Lütfen bağlantınızı kontrol edin.';
+        return 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.';
       case 'sign_in_canceled':
-        return 'Giriş iptal edildi.';
+        return 'Giriş işlemi iptal edildi.';
       case 'sign_in_required':
-        return 'Giriş gerekli.';
+        return 'Devam etmek için giriş yapmanız gerekmektedir.';
       default:
-        return e.message ?? 'Platform hatası oluştu';
+        return e.message ?? 'Cihaz seviyesinde bir hata oluştu.';
     }
   }
 }

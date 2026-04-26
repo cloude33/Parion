@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/cash_flow_data.dart';
 import '../../services/statistics_service.dart';
+import '../../services/data_service.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_spacing.dart';
+import '../../core/design/app_text_styles.dart';
 import 'interactive_pie_chart.dart';
-
+import 'statistics_empty_state.dart';
+import 'statistics_error_state.dart';
+import 'statistics_loading_state.dart';
 import 'period_comparison_card.dart';
 import 'budget_tracker_card.dart';
 import 'spending_habits_card.dart';
@@ -31,22 +37,25 @@ class SpendingTab extends StatefulWidget {
 
 class _SpendingTabState extends State<SpendingTab> {
   final StatisticsService _statisticsService = GetIt.I<StatisticsService>();
+  final DataService _dataService = GetIt.I<DataService>();
   SpendingAnalysis? _spendingData;
   SpendingAnalysis? _previousPeriodData;
+  Map<String, double> _incomeByCategory = {};
+  int _totalTransactionCount = 0;
   bool _isLoading = true;
   String? _error;
   String? _selectedCategory;
   bool _showComparison = false;
   static const Map<String, Color> categoryColors = {
-    'Market': Color(0xFF4CAF50),
-    'Restoran': Color(0xFFFF9800),
-    'Ulaşım': Color(0xFF2196F3),
-    'Eğlence': Color(0xFF9C27B0),
-    'Sağlık': Color(0xFFF44336),
-    'Giyim': Color(0xFFE91E63),
-    'Faturalar': Color(0xFF00BCD4),
-    'Eğitim': Color(0xFFFFEB3B),
-    'Diğer': Color(0xFF607D8B),
+    'Market': AppColors.success,
+    'Restoran': AppColors.warning,
+    'Ulaşım': AppColors.primary,
+    'Eğlence': AppColors.primaryVariant,
+    'Sağlık': AppColors.error,
+    'Giyim': AppColors.expenseColor,
+    'Faturalar': AppColors.primaryDark,
+    'Eğitim': AppColors.secondary,
+    'Diğer': AppColors.onSurface,
   };
 
   @override
@@ -99,10 +108,29 @@ class _SpendingTabState extends State<SpendingTab> {
         }
       }
 
+      // Load income sources by category
+      final allTransactions = await _dataService.getTransactions();
+      final periodTransactions = allTransactions.where((t) {
+        return t.date.isAfter(
+              widget.startDate.subtract(const Duration(seconds: 1)),
+            ) &&
+            t.date.isBefore(widget.endDate.add(const Duration(days: 1)));
+      }).toList();
+
+      final incomeByCategory = <String, double>{};
+      for (final t in periodTransactions) {
+        if (t.type == 'income') {
+          incomeByCategory[t.category] =
+              (incomeByCategory[t.category] ?? 0) + t.amount;
+        }
+      }
+
       if (mounted) {
         setState(() {
           _spendingData = data;
           _previousPeriodData = previousData;
+          _incomeByCategory = incomeByCategory;
+          _totalTransactionCount = periodTransactions.length;
           _isLoading = false;
         });
       }
@@ -119,33 +147,27 @@ class _SpendingTabState extends State<SpendingTab> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const StatisticsLoadingState(
+        message: 'Harcama verileri yükleniyor...',
+      );
     }
 
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
-            const SizedBox(height: 16),
-            Text(
-              'Hata: $_error',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadSpendingData,
-              child: const Text('Tekrar Dene'),
-            ),
-          ],
-        ),
+      return StatisticsErrorState(
+        message: 'Veriler yüklenemedi',
+        details: _error,
+        onRetry: _loadSpendingData,
       );
     }
 
     if (_spendingData == null) {
-      return const Center(child: Text('Veri bulunamadı'));
+      return StatisticsEmptyState(
+        icon: Icons.shopping_cart_outlined,
+        title: 'Veri Bulunamadı',
+        message: 'Bu dönem için harcama verisi bulunmamaktadır.',
+        actionLabel: 'Harcama Ekle',
+        onAction: () {},
+      );
     }
 
     return RefreshIndicator(
@@ -154,6 +176,7 @@ class _SpendingTabState extends State<SpendingTab> {
         children: [
           _buildComparisonToggle(),
           _buildSummaryCards(),
+          if (_totalTransactionCount < 10) _buildInsufficientDataWarning(),
           if (_showComparison && _previousPeriodData != null)
             _buildPeriodComparison(),
           if (_spendingData!.budgetComparisons.isNotEmpty)
@@ -175,6 +198,7 @@ class _SpendingTabState extends State<SpendingTab> {
             endDate: widget.endDate,
           ),
           _buildSpendingInsights(),
+          _buildIncomeSourcesSection(),
         ],
       ),
     );
@@ -189,12 +213,12 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            isDark ? const Color(0xFF1E1E24) : Colors.blue.shade800,
-            isDark ? const Color(0xFF2D2D35) : Colors.blue.shade600,
+            isDark ? AppColors.surfaceDark : AppColors.primary,
+            isDark ? AppColors.primaryVariantDark : AppColors.primaryVariant,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -202,7 +226,7 @@ class _SpendingTabState extends State<SpendingTab> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.blue.withValues(alpha: 0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -210,42 +234,40 @@ class _SpendingTabState extends State<SpendingTab> {
       ),
       child: Column(
         children: [
-          const Text(
+          Text(
             'Toplam Harcama',
-            style: TextStyle(color: Colors.white70, fontSize: 14),
+            style: AppTextStyles.bodySmall.copyWith(color: AppColors.onPrimary.withValues(alpha: 0.7)),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             _formatCurrency(data.totalSpending),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
+            style: AppTextStyles.displayLarge.copyWith(
+              color: AppColors.onPrimary,
               letterSpacing: -1,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           Row(
             children: [
               _buildSummaryItem(
                 'Günlük Ort.',
                 _formatCurrency(dailyAverage),
                 Icons.calendar_today,
-                Colors.white,
+                AppColors.onPrimary,
               ),
-              Container(width: 1, height: 40, color: Colors.white24),
+              Container(width: 1, height: 40, color: AppColors.onPrimary.withValues(alpha: 0.24)),
               _buildSummaryItem(
                 'En Çok',
                 data.topCategory.isNotEmpty ? data.topCategory : '-',
                 Icons.star,
-                Colors.amberAccent,
+                AppColors.secondary,
               ),
-              Container(width: 1, height: 40, color: Colors.white24),
+              Container(width: 1, height: 40, color: AppColors.onPrimary.withValues(alpha: 0.24)),
               _buildSummaryItem(
                 'Kategori',
                 '${data.categoryBreakdown.length} Adet',
                 Icons.category,
-                Colors.lightGreenAccent,
+                AppColors.success,
               ),
             ],
           ),
@@ -264,22 +286,22 @@ class _SpendingTabState extends State<SpendingTab> {
       child: Column(
         children: [
           Icon(icon, color: color.withValues(alpha: 0.8), size: 20),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
+            style: AppTextStyles.labelLarge.copyWith(
+              color: AppColors.onPrimary,
             ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             label,
-            style: const TextStyle(color: Colors.white60, fontSize: 11),
+            style: AppTextStyles.labelSmall.copyWith(
+              color: AppColors.onPrimary.withValues(alpha: 0.6),
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -294,10 +316,10 @@ class _SpendingTabState extends State<SpendingTab> {
     if (data.categoryBreakdown.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Text(
             'Bu dönem için harcama bulunmamaktadır',
-            style: TextStyle(
+            style: AppTextStyles.bodyMedium.copyWith(
               color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.5),
             ),
           ),
@@ -307,16 +329,16 @@ class _SpendingTabState extends State<SpendingTab> {
     final colors = <String, Color>{};
     int colorIndex = 0;
     final defaultColors = [
-      const Color(0xFF4CAF50),
-      const Color(0xFF2196F3),
-      const Color(0xFFFF9800),
-      const Color(0xFF9C27B0),
-      const Color(0xFFF44336),
-      const Color(0xFF00BCD4),
-      const Color(0xFFFFEB3B),
-      const Color(0xFF795548),
-      const Color(0xFF607D8B),
-      const Color(0xFFE91E63),
+      AppColors.success,
+      AppColors.primary,
+      AppColors.warning,
+      AppColors.primaryVariant,
+      AppColors.error,
+      AppColors.primaryDark,
+      AppColors.secondary,
+      AppColors.successDark,
+      AppColors.onSurface,
+      AppColors.expenseColor,
     ];
 
     data.categoryBreakdown.forEach((category, value) {
@@ -330,7 +352,10 @@ class _SpendingTabState extends State<SpendingTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -349,7 +374,7 @@ class _SpendingTabState extends State<SpendingTab> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         SizedBox(
           height: 320,
           child: InteractivePieChart(
@@ -369,10 +394,10 @@ class _SpendingTabState extends State<SpendingTab> {
           ),
         ),
         if (_selectedCategory != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _buildSelectedCategoryDetails(_selectedCategory!),
         ] else ...[
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
           _buildLegend(colors),
         ],
       ],
@@ -390,7 +415,7 @@ class _SpendingTabState extends State<SpendingTab> {
         final category = entry.key;
         final value = entry.value;
         final percentage = total > 0 ? (value / total) * 100 : 0.0;
-        final color = colors[category] ?? Colors.grey;
+        final color = colors[category] ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
 
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -400,10 +425,10 @@ class _SpendingTabState extends State<SpendingTab> {
               height: 12,
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: AppSpacing.sm),
             Text(
               '$category (${percentage.toStringAsFixed(1)}%)',
-              style: const TextStyle(fontSize: 11),
+              style: AppTextStyles.labelSmall,
             ),
           ],
         );
@@ -423,9 +448,9 @@ class _SpendingTabState extends State<SpendingTab> {
     final budgetComparison = data.budgetComparisons[category];
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: isDark ? Colors.grey[850] : Colors.grey[100],
+        color: isDark ? AppColors.surfaceDark : AppColors.background,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -437,17 +462,17 @@ class _SpendingTabState extends State<SpendingTab> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildDetailItem('Tutar', amount, Colors.red),
-              _buildDetailItem('Oran', percentage, Colors.blue, suffix: '%'),
+              _buildDetailItem('Tutar', amount, AppColors.error),
+              _buildDetailItem('Oran', percentage, AppColors.primary, suffix: '%'),
               if (budgetComparison != null)
                 _buildDetailItem(
                   'Bütçe',
                   budgetComparison.usagePercentage,
-                  budgetComparison.exceeded ? Colors.red : Colors.green,
+                  budgetComparison.exceeded ? AppColors.error : AppColors.success,
                   suffix: '%',
                 ),
             ],
@@ -466,17 +491,18 @@ class _SpendingTabState extends State<SpendingTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-        const SizedBox(height: 2),
+        Text(
+          label,
+          style: AppTextStyles.labelSmall.copyWith(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           suffix != null
               ? '${value.toStringAsFixed(1)}$suffix'
               : _formatCurrency(value),
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
+          style: AppTextStyles.labelLarge.copyWith(color: color),
         ),
       ],
     );
@@ -493,7 +519,7 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -503,7 +529,7 @@ class _SpendingTabState extends State<SpendingTab> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
 
             ...data.paymentMethodBreakdown.entries.map((entry) {
               final method = entry.key;
@@ -511,9 +537,12 @@ class _SpendingTabState extends State<SpendingTab> {
               final percentage = data.totalSpending > 0
                   ? (amount / data.totalSpending) * 100
                   : 0.0;
+              final methodColor = method == 'Kredi Kartı'
+                  ? AppColors.primary
+                  : AppColors.success;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -527,11 +556,9 @@ class _SpendingTabState extends State<SpendingTab> {
                                   ? Icons.credit_card
                                   : Icons.account_balance,
                               size: 20,
-                              color: method == 'Kredi Kartı'
-                                  ? Colors.blue
-                                  : Colors.green,
+                              color: methodColor,
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSpacing.sm),
                             Text(
                               method,
                               style: theme.textTheme.bodyMedium?.copyWith(
@@ -544,12 +571,12 @@ class _SpendingTabState extends State<SpendingTab> {
                           _formatCurrency(amount),
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: AppColors.error,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xs),
                     Row(
                       children: [
                         Expanded(
@@ -559,22 +586,17 @@ class _SpendingTabState extends State<SpendingTab> {
                               value: percentage / 100,
                               minHeight: 8,
                               backgroundColor: isDark
-                                  ? Colors.grey[800]
-                                  : Colors.grey[200],
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                method == 'Kredi Kartı'
-                                    ? Colors.blue
-                                    : Colors.green,
-                              ),
+                                  ? AppColors.surfaceDark
+                                  : AppColors.background,
+                              valueColor: AlwaysStoppedAnimation<Color>(methodColor),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.sm),
                         Text(
                           '${percentage.toStringAsFixed(1)}%',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -604,7 +626,10 @@ class _SpendingTabState extends State<SpendingTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
+          ),
           child: Text(
             'Harcama Detayları',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -665,8 +690,8 @@ class _SpendingTabState extends State<SpendingTab> {
               });
             },
             child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: AppSpacing.md),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 color: _selectedCategory == category
                     ? color.withValues(alpha: 0.1)
@@ -677,7 +702,7 @@ class _SpendingTabState extends State<SpendingTab> {
                     : null,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
+                    color: theme.shadowColor.withValues(alpha: 0.03),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -688,30 +713,28 @@ class _SpendingTabState extends State<SpendingTab> {
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(AppSpacing.sm + AppSpacing.xs),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(categoryIcon, color: color, size: 24),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               category,
-                              style: const TextStyle(
+                              style: AppTextStyles.bodyLarge.copyWith(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 15,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               '${percentage.toStringAsFixed(1)}% pay',
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: AppTextStyles.bodySmall.copyWith(
                                 color: theme.textTheme.bodySmall?.color,
                               ),
                             ),
@@ -723,22 +746,20 @@ class _SpendingTabState extends State<SpendingTab> {
                         children: [
                           Text(
                             _formatCurrency(amount),
-                            style: const TextStyle(
+                            style: AppTextStyles.bodyLarge.copyWith(
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
                             ),
                           ),
                           if (budgetComparison != null) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               budgetComparison.exceeded
                                   ? 'Bütçe Aşıldı'
                                   : 'Bütçe Uygun',
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: AppTextStyles.labelSmall.copyWith(
                                 color: budgetComparison.exceeded
-                                    ? Colors.red
-                                    : Colors.green,
+                                    ? AppColors.error
+                                    : AppColors.success,
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -747,20 +768,20 @@ class _SpendingTabState extends State<SpendingTab> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.md),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: percentage / 100,
                       minHeight: 6,
                       backgroundColor: isDark
-                          ? Colors.grey[800]
-                          : Colors.grey[100],
+                          ? AppColors.surfaceDark
+                          : AppColors.background,
                       color: color,
                     ),
                   ),
                   if (_selectedCategory == category) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     _buildSelectedCategoryDetails(category),
                   ],
                 ],
@@ -789,7 +810,7 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -799,21 +820,21 @@ class _SpendingTabState extends State<SpendingTab> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             _buildInsightRow(
               icon: Icons.calendar_today,
               label: 'En Çok Harcama Yapılan Gün',
               value: dayName,
-              color: Colors.blue,
+              color: AppColors.primary,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildInsightRow(
               icon: Icons.access_time,
               label: 'En Çok Harcama Yapılan Saat',
               value: '${data.mostSpendingHour}:00',
-              color: Colors.orange,
+              color: AppColors.warning,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             _buildInsightRow(
               icon: Icons.trending_up,
               label: 'Günlük Ortalama Harcama',
@@ -821,7 +842,7 @@ class _SpendingTabState extends State<SpendingTab> {
                 data.totalSpending /
                     (widget.endDate.difference(widget.startDate).inDays + 1),
               ),
-              color: Colors.purple,
+              color: AppColors.primaryVariant,
             ),
           ],
         ),
@@ -848,16 +869,18 @@ class _SpendingTabState extends State<SpendingTab> {
           ),
           child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 label,
-                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 value,
                 style: theme.textTheme.bodyMedium?.copyWith(
@@ -872,9 +895,13 @@ class _SpendingTabState extends State<SpendingTab> {
   }
 
   Widget _buildComparisonToggle() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = isDark ? AppColors.primaryDark : AppColors.primary;
+    final inactiveColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -883,15 +910,14 @@ class _SpendingTabState extends State<SpendingTab> {
                 Icon(
                   Icons.compare_arrows,
                   size: 20,
-                  color: _showComparison ? Colors.blue : Colors.grey,
+                  color: _showComparison ? activeColor : inactiveColor,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   'Dönemsel Karşılaştırma',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppTextStyles.bodyMedium.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: _showComparison ? Colors.blue : null,
+                    color: _showComparison ? activeColor : null,
                   ),
                 ),
               ],
@@ -922,7 +948,7 @@ class _SpendingTabState extends State<SpendingTab> {
         currentValue: _spendingData!.totalSpending,
         previousValue: _previousPeriodData!.totalSpending,
         icon: Icons.shopping_cart,
-        color: Colors.red,
+        color: AppColors.error,
         higherIsBetter: false,
       ),
       PeriodComparisonData(
@@ -930,7 +956,7 @@ class _SpendingTabState extends State<SpendingTab> {
         currentValue: _spendingData!.topCategoryAmount,
         previousValue: _previousPeriodData!.topCategoryAmount,
         icon: Icons.star,
-        color: Colors.orange,
+        color: AppColors.warning,
         higherIsBetter: false,
       ),
       PeriodComparisonData(
@@ -938,12 +964,175 @@ class _SpendingTabState extends State<SpendingTab> {
         currentValue: _spendingData!.categoryBreakdown.length.toDouble(),
         previousValue: _previousPeriodData!.categoryBreakdown.length.toDouble(),
         icon: Icons.category,
-        color: Colors.blue,
+        color: AppColors.primary,
         higherIsBetter: false,
       ),
     ];
 
     return PeriodComparisonList(comparisons: comparisons);
+  }
+
+  /// Yetersiz veri uyarısı (< 10 işlem) — Gereksinim 7.8
+  Widget _buildInsufficientDataWarning() {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.warning.withValues(alpha: 0.4),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 20),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'Yeterli veri bulunmamaktadır. Daha doğru analiz için en az 10 işlem gereklidir. '
+              'Şu an $_totalTransactionCount işlem mevcut.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.warning,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Gelir kaynakları dağılımı bölümü — Gereksinim 8.1–8.6
+  Widget _buildIncomeSourcesSection() {
+    final theme = Theme.of(context);
+
+    // Gelir yoksa StatisticsEmptyState göster — Gereksinim 8.6
+    if (_incomeByCategory.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.sm,
+            ),
+            child: Text(
+              'Gelir Kaynakları',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          StatisticsEmptyStates.noTransactions(
+            onAddTransaction: () {},
+          ),
+        ],
+      );
+    }
+
+    // Kategorileri yüzdeye göre büyükten küçüğe sırala — Gereksinim 8.3
+    final totalIncome = _incomeByCategory.values.fold(0.0, (a, b) => a + b);
+    final sortedEntries = _incomeByCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    // Renk paleti
+    final incomeColors = [
+      AppColors.success,
+      AppColors.primary,
+      AppColors.primaryDark,
+      AppColors.successDark,
+      AppColors.incomeColor,
+      AppColors.primaryVariant,
+      AppColors.primaryVariantDark,
+      AppColors.warning,
+      AppColors.onSurface,
+      AppColors.warningDark,
+    ];
+    final colorMap = <String, Color>{};
+    for (int i = 0; i < sortedEntries.length; i++) {
+      colorMap[sortedEntries[i].key] = incomeColors[i % incomeColors.length];
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
+          ),
+          child: Text(
+            'Gelir Kaynakları',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        // InteractivePieChart — Gereksinim 8.1, 8.4
+        Semantics(
+          label: 'Gelir kaynakları pasta grafiği',
+          child: SizedBox(
+            height: 280,
+            child: InteractivePieChart(
+              data: _incomeByCategory,
+              colors: colorMap,
+              centerSpaceRadius: 50,
+              radius: 100,
+              showPercentage: true,
+              enableTouch: true,
+              title: null,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        // Kategorileri yüzdeye göre sıralı liste — Gereksinim 8.2, 8.3
+        ...sortedEntries.map((entry) {
+          final category = entry.key;
+          final amount = entry.value;
+          final percentage = totalIncome > 0 ? (amount / totalIncome) * 100 : 0.0;
+          final color = colorMap[category] ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Row(
+              children: [
+                Container(
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    category,
+                    style: theme.textTheme.bodyMedium,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '${percentage.toStringAsFixed(1)}%',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  _formatCurrency(amount),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
   }
 
   String _formatCurrency(double value) {

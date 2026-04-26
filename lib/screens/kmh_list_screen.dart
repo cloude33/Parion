@@ -98,7 +98,9 @@ class _KmhListScreenState extends State<KmhListScreen> {
   Future<void> _navigateToAddAccount() async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AddWalletScreen()),
+      MaterialPageRoute(
+        builder: (context) => const AddWalletScreen(initialType: 'overdraft'),
+      ),
     );
 
     if (result == true) {
@@ -163,10 +165,10 @@ class _KmhListScreenState extends State<KmhListScreen> {
                 ),
               ],
             ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: _navigateToAddAccount,
-        icon: const Icon(Icons.add),
-        label: const Text('KMH Hesabı Ekle'),
+        tooltip: 'KMH Hesabı Ekle',
+        child: const Icon(Icons.add),
       ),
     );
   }

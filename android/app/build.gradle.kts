@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -8,7 +11,25 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            val storeFileStr = keystoreProperties.getProperty("storeFile")
+            if (storeFileStr != null) {
+                storeFile = rootProject.file(storeFileStr)
+            }
+            storePassword = keystoreProperties.getProperty("storePassword")
+        }
+    }
+
     namespace = "com.bulut.wallet"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "28.2.13676358"
@@ -38,9 +59,7 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             // Enable proguard for release builds to protect biometric and security code
             isMinifyEnabled = true
             isShrinkResources = true
@@ -78,14 +97,6 @@ tasks.withType<JavaCompile>().configureEach {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
-    // Firebase bağımlılıkları için Google Play Core çakışmasını çöz
-    implementation("com.google.android.play:core-common:2.0.3")
-    implementation("com.google.android.play:core-ktx:1.8.1")
-    
-    // Çakışan bağımlılığı hariç tut
-    configurations.all {
-        exclude(group = "com.google.android.play", module = "core")
-    }
 }
 
 flutter {

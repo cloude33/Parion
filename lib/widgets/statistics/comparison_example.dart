@@ -3,6 +3,7 @@ import '../../models/comparison_data.dart';
 import '../../models/cash_flow_data.dart';
 import 'comparison_card.dart';
 import 'period_selector.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class ComparisonExample extends StatelessWidget {
   const ComparisonExample({super.key});
 
@@ -11,7 +12,7 @@ class ComparisonExample extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Karşılaştırma Örnekleri')),
       body: ListView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           Text(
             '1. Basit Karşılaştırma Kartı',
@@ -58,7 +59,7 @@ class ComparisonExample extends StatelessWidget {
           const SizedBox(height: 8),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -87,7 +88,7 @@ class ComparisonExample extends StatelessWidget {
 
   Widget _buildNote(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(text, style: const TextStyle(fontSize: 14)),
     );
   }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/category.dart';
 import '../../models/wallet.dart';
+import '../../core/design/app_colors.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class FilterBar extends StatelessWidget {
   final String selectedTimeFilter;
   final List<String> selectedCategories;
@@ -45,7 +47,7 @@ class FilterBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -69,7 +71,7 @@ class FilterBar extends StatelessWidget {
 
   Widget _buildTimeFilterRow(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -92,7 +94,7 @@ class FilterBar extends StatelessWidget {
 
   Widget _buildAdditionalFiltersRow(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       child: Row(
         children: [
           Expanded(
@@ -138,9 +140,9 @@ class FilterBar extends StatelessWidget {
               selectedWallets.isNotEmpty ||
               selectedTransactionType != 'all')
             Container(
-              margin: const EdgeInsets.only(left: 4),
+              margin: const EdgeInsets.only(left: AppSpacing.xs),
               decoration: BoxDecoration(
-                color: const Color(0xFF00BFA5).withValues(alpha: 0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: IconButton(
@@ -150,7 +152,7 @@ class FilterBar extends StatelessWidget {
                     SnackBar(
                       content: const Text('Filtreler temizlendi'),
                       duration: const Duration(seconds: 2),
-                      backgroundColor: const Color(0xFF00BFA5),
+                      backgroundColor: AppColors.primary,
                       behavior: SnackBarBehavior.floating,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -160,7 +162,7 @@ class FilterBar extends StatelessWidget {
                   onClearFilters();
                 },
                 tooltip: 'Filtreleri Temizle',
-                color: const Color(0xFF00BFA5),
+                color: AppColors.primary,
               ),
             ),
         ],
@@ -177,7 +179,7 @@ class FilterBar extends StatelessWidget {
           id: categoryId,
           name: categoryId,
           icon: Icons.category,
-          color: const Color(0xFF9E9E9E),
+          color: AppColors.onSurface.withValues(alpha: 0.5),
           type: 'expense',
         ),
       );
@@ -221,7 +223,7 @@ class FilterBar extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -235,19 +237,19 @@ class FilterBar extends StatelessWidget {
     return GestureDetector(
       onTap: () => onTimeFilterChanged(label),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF00BFA5)
-              : (isDark ? const Color(0xFF2C2C2E) : Colors.grey[200]),
+              ? AppColors.primary
+              : (isDark ? AppColors.surfaceDark : AppColors.background),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
           style: TextStyle(
             color: isSelected
-                ? Colors.white
-                : (isDark ? Colors.white : Colors.black87),
+                ? AppColors.surface
+                : (isDark ? AppColors.surface : Colors.black87),
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             fontSize: 13,
           ),
@@ -265,11 +267,11 @@ class FilterBar extends StatelessWidget {
     return GestureDetector(
       onTap: onCustomDateRange,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF00BFA5)
-              : (isDark ? const Color(0xFF2C2C2E) : Colors.grey[200]),
+              ? AppColors.primary
+              : (isDark ? AppColors.surfaceDark : AppColors.background),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
@@ -279,16 +281,16 @@ class FilterBar extends StatelessWidget {
               Icons.calendar_today,
               size: 14,
               color: isSelected
-                  ? Colors.white
-                  : (isDark ? Colors.white : Colors.black87),
+                  ? AppColors.surface
+                  : (isDark ? AppColors.surface : Colors.black87),
             ),
             const SizedBox(width: 6),
             Text(
               dateText,
               style: TextStyle(
                 color: isSelected
-                    ? Colors.white
-                    : (isDark ? Colors.white : Colors.black87),
+                    ? AppColors.surface
+                    : (isDark ? AppColors.surface : Colors.black87),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 13,
               ),
@@ -310,16 +312,16 @@ class FilterBar extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
         decoration: BoxDecoration(
           color: isActive
-              ? const Color(0xFF00BFA5).withValues(alpha: 0.1)
-              : (isDark ? const Color(0xFF2C2C2E) : Colors.grey[100]),
+              ? AppColors.primary.withValues(alpha: 0.1)
+              : (isDark ? AppColors.surfaceDark : AppColors.background),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive
-                ? const Color(0xFF00BFA5)
-                : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
+                ? AppColors.primary
+                : (isDark ? AppColors.onSurface.withValues(alpha: 0.8) : AppColors.background),
           ),
         ),
         child: Row(
@@ -329,8 +331,8 @@ class FilterBar extends StatelessWidget {
               icon,
               size: 16,
               color: isActive
-                  ? const Color(0xFF00BFA5)
-                  : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ? AppColors.primary
+                  : (isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6)),
             ),
             const SizedBox(width: 6),
             Text(
@@ -338,8 +340,8 @@ class FilterBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 color: isActive
-                    ? const Color(0xFF00BFA5)
-                    : (isDark ? Colors.grey[400] : Colors.grey[600]),
+                    ? AppColors.primary
+                    : (isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6)),
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -356,11 +358,11 @@ class FilterBar extends StatelessWidget {
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
-        color: const Color(0xFF00BFA5).withValues(alpha: 0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF00BFA5)),
+        border: Border.all(color: AppColors.primary),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -369,7 +371,7 @@ class FilterBar extends StatelessWidget {
             label,
             style: const TextStyle(
               fontSize: 11,
-              color: Color(0xFF00BFA5),
+              color: AppColors.primary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -379,7 +381,7 @@ class FilterBar extends StatelessWidget {
             child: const Icon(
               Icons.close,
               size: 14,
-              color: Color(0xFF00BFA5),
+              color: AppColors.primary,
             ),
           ),
         ],
@@ -465,18 +467,18 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  color: isDark ? Colors.grey[800]! : AppColors.background!,
                 ),
               ),
             ),
@@ -535,10 +537,10 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
                     child: Icon(
                       category.icon,
                       size: 16,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                   ),
-                  activeColor: const Color(0xFF00BFA5),
+                  activeColor: AppColors.primary,
                 );
               },
             ),
@@ -580,18 +582,18 @@ class _WalletFilterSheetState extends State<_WalletFilterSheet> {
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  color: isDark ? Colors.grey[800]! : AppColors.background!,
                 ),
               ),
             ),
@@ -651,10 +653,10 @@ class _WalletFilterSheetState extends State<_WalletFilterSheet> {
                     child: Icon(
                       _getWalletIcon(wallet.type),
                       size: 16,
-                      color: Colors.white,
+                      color: AppColors.surface,
                     ),
                   ),
-                  activeColor: const Color(0xFF00BFA5),
+                  activeColor: AppColors.primary,
                 );
               },
             ),
@@ -707,18 +709,18 @@ class _TransactionTypeFilterSheet extends StatelessWidget {
     
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? Colors.grey[800]! : Colors.grey[200]!,
+                  color: isDark ? Colors.grey[800]! : AppColors.background!,
                 ),
               ),
             ),
@@ -734,7 +736,7 @@ class _TransactionTypeFilterSheet extends StatelessWidget {
             leading: const Icon(Icons.all_inclusive, color: Colors.blue),
             title: const Text('Tümü'),
             trailing: selectedType == 'all'
-                ? const Icon(Icons.check, color: Color(0xFF00BFA5))
+                ? const Icon(Icons.check, color: AppColors.primary)
                 : null,
             onTap: () {
               onChanged('all');
@@ -745,7 +747,7 @@ class _TransactionTypeFilterSheet extends StatelessWidget {
             leading: const Icon(Icons.trending_up, color: Colors.green),
             title: const Text('Gelir'),
             trailing: selectedType == 'income'
-                ? const Icon(Icons.check, color: Color(0xFF00BFA5))
+                ? const Icon(Icons.check, color: AppColors.primary)
                 : null,
             onTap: () {
               onChanged('income');
@@ -756,7 +758,7 @@ class _TransactionTypeFilterSheet extends StatelessWidget {
             leading: const Icon(Icons.trending_down, color: Colors.red),
             title: const Text('Gider'),
             trailing: selectedType == 'expense'
-                ? const Icon(Icons.check, color: Color(0xFF00BFA5))
+                ? const Icon(Icons.check, color: AppColors.primary)
                 : null,
             onTap: () {
               onChanged('expense');

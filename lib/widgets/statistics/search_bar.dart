@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../utils/debounce_throttle.dart';
+import '../../core/design/app_colors.dart';
+import '../../core/design/app_text_styles.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class StatisticsSearchBar extends StatefulWidget {
   final String searchQuery;
   final Function(String) onSearchChanged;
@@ -82,11 +85,11 @@ class _StatisticsSearchBarState extends State<StatisticsSearchBar> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: AppColors.onSurface.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -95,19 +98,19 @@ class _StatisticsSearchBarState extends State<StatisticsSearchBar> {
       child: TextField(
         controller: _controller,
         onChanged: _onSearchChanged,
-        style: TextStyle(
-          color: isDark ? Colors.white : Colors.black87,
+        style: AppTextStyles.bodyLarge.copyWith(
+          color: isDark ? AppColors.onSurfaceDark : AppColors.onSurface,
           fontSize: 15,
         ),
         decoration: InputDecoration(
           hintText: widget.hintText,
-          hintStyle: TextStyle(
-            color: isDark ? Colors.grey[500] : Colors.grey[400],
+          hintStyle: AppTextStyles.bodyLarge.copyWith(
+            color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.4),
             fontSize: 15,
           ),
           prefixIcon: Icon(
             Icons.search,
-            color: isDark ? Colors.grey[400] : Colors.grey[600],
+            color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
             size: 22,
           ),
           suffixIcon: _controller.text.isNotEmpty
@@ -116,14 +119,14 @@ class _StatisticsSearchBarState extends State<StatisticsSearchBar> {
                   children: [
                     if (_isSearching)
                       Padding(
-                        padding: const EdgeInsets.only(right: 8),
+                        padding: const EdgeInsets.only(right: AppSpacing.sm),
                         child: SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              isDark ? Colors.grey[400]! : Colors.grey[600]!,
+                              isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                         ),
@@ -131,7 +134,7 @@ class _StatisticsSearchBarState extends State<StatisticsSearchBar> {
                     IconButton(
                       icon: Icon(
                         Icons.clear,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
                         size: 20,
                       ),
                       onPressed: _clearSearch,
@@ -151,15 +154,15 @@ class _StatisticsSearchBarState extends State<StatisticsSearchBar> {
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: const BorderSide(
-              color: Color(0xFF00BFA5),
+              color: AppColors.primary,
               width: 2,
             ),
           ),
           filled: true,
-          fillColor: isDark ? const Color(0xFF2C2C2E) : Colors.grey[100],
+          fillColor: isDark ? AppColors.surfaceDark : AppColors.background,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
           ),
         ),
       ),

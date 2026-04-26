@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import '../../services/statistics_service.dart';
 import 'goal_comparison_card.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class GoalComparisonExample extends StatefulWidget {
   const GoalComparisonExample({super.key});
 
@@ -86,7 +87,7 @@ class _GoalComparisonExampleState extends State<GoalComparisonExample> {
       onRefresh: _loadGoalComparison,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: GoalComparisonCard(
           summary: _summary!,
           onGoalTap: () {

@@ -1,4 +1,6 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
+import '../../core/design/app_colors.dart';
 class StatisticsFilterChip extends StatelessWidget {
   final String label;
   final bool selected;
@@ -18,24 +20,27 @@ class StatisticsFilterChip extends StatelessWidget {
 
     final backgroundColor = selected
         ? theme.primaryColor
-        : (isDark ? Colors.grey[800] : Colors.grey[200]);
+        : (isDark ? AppColors.surfaceDark : AppColors.background);
 
     final textColor = selected
-        ? Colors.white
+        ? AppColors.onPrimary
         : theme.textTheme.bodyMedium?.color;
 
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(20),
           border: selected
               ? null
               : Border.all(
-                  color: isDark ? Colors.grey[700]! : Colors.grey[300]!,
+                  color: isDark ? AppColors.onSurface.withValues(alpha: 0.8)! : AppColors.onSurfaceDark.withValues(alpha: 0.8)!,
                   width: 1,
                 ),
         ),

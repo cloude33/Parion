@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
+import '../../core/design/app_text_styles.dart';
 import '../../models/asset_analysis.dart';
 import '../../models/wallet.dart';
 import '../../services/statistics_service.dart';
@@ -10,6 +11,7 @@ import 'summary_card.dart';
 import 'kmh_asset_card.dart';
 import 'net_worth_trend_chart.dart';
 import 'financial_health_score_card.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class AssetsTab extends StatefulWidget {
   const AssetsTab({super.key});
 
@@ -88,7 +90,7 @@ class _AssetsTabState extends State<AssetsTab> {
             Text(
               'Hata: $_error',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.red),
+              style: AppTextStyles.bodyMedium.copyWith(color: Colors.red),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -109,7 +111,7 @@ class _AssetsTabState extends State<AssetsTab> {
     return RefreshIndicator(
       onRefresh: _loadAssetData,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 120),
         children: [
           _buildNetWorthSummaryCards(),
           const SizedBox(height: 16),
@@ -214,7 +216,7 @@ class _AssetsTabState extends State<AssetsTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -288,7 +290,7 @@ class _AssetsTabState extends State<AssetsTab> {
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[850] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),
@@ -326,16 +328,14 @@ class _AssetsTabState extends State<AssetsTab> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            fontSize: 11,
+          style: AppTextStyles.labelSmall.copyWith(
             color: Colors.grey[600],
           ),
         ),
         const SizedBox(height: 4),
         Text(
           _formatCurrency(value),
-          style: TextStyle(
-            fontSize: 14,
+          style: AppTextStyles.titleMedium.copyWith(
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -378,7 +378,7 @@ class _AssetsTabState extends State<AssetsTab> {
     if (assetData.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Center(
             child: Column(
               children: [
@@ -390,7 +390,7 @@ class _AssetsTabState extends State<AssetsTab> {
                 const SizedBox(height: 16),
                 Text(
                   'Henüz varlık bulunmamaktadır',
-                  style: TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                   ),
                 ),
@@ -403,7 +403,7 @@ class _AssetsTabState extends State<AssetsTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -455,7 +455,7 @@ class _AssetsTabState extends State<AssetsTab> {
                             (entry.value / data.totalAssets) * 100;
 
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                           child: InkWell(
                             onTap: () {
                               setState(() {
@@ -545,7 +545,7 @@ class _AssetsTabState extends State<AssetsTab> {
         value: entry.value,
         title: '${percentage.toStringAsFixed(0)}%',
         radius: isSelected ? 70 : 60,
-        titleStyle: TextStyle(
+        titleStyle: AppTextStyles.bodySmall.copyWith(
           fontSize: isSelected ? 14 : 12,
           fontWeight: FontWeight.bold,
           color: Colors.white,
@@ -559,7 +559,7 @@ class _AssetsTabState extends State<AssetsTab> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: isDark ? Colors.grey[850] : Colors.grey[100],
         borderRadius: BorderRadius.circular(8),
@@ -605,7 +605,7 @@ class _AssetsTabState extends State<AssetsTab> {
     if (data.totalLiabilities == 0) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: const EdgeInsets.all(AppSpacing.xxxl),
           child: Center(
             child: Column(
               children: [
@@ -625,7 +625,7 @@ class _AssetsTabState extends State<AssetsTab> {
                 const SizedBox(height: 8),
                 Text(
                   'Finansal durumunuz çok iyi',
-                  style: TextStyle(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                   ),
                 ),
@@ -638,7 +638,7 @@ class _AssetsTabState extends State<AssetsTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -660,7 +660,7 @@ class _AssetsTabState extends State<AssetsTab> {
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
                 color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -708,7 +708,7 @@ class _AssetsTabState extends State<AssetsTab> {
             ),
             const SizedBox(height: 12),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: isDark ? Colors.grey[850] : Colors.grey[100],
                 borderRadius: BorderRadius.circular(8),

@@ -8,9 +8,6 @@ import '../services/data_service.dart';
 import 'add_credit_card_screen.dart';
 import 'credit_card_detail_screen.dart';
 import 'card_reporting_screen.dart';
-import 'kmh_list_screen.dart';
-import 'kmh_account_detail_screen.dart';
-import 'add_wallet_screen.dart';
 import 'installment_tracking_screen.dart';
 import '../widgets/cards/bank_card_visual_widget.dart';
 
@@ -32,17 +29,12 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
 
   List<CreditCard> _cards = [];
   Map<String, Map<String, dynamic>> _cardDetails = {};
-  List<Wallet> _kmhAccounts = [];
   bool _isLoading = true;
-  int _selectedTab = 0; // 0: Credit Cards, 1: KMH Accounts, 2: Installments
+  int _selectedTab = 0; // 0: Credit Cards, 1: Installments
 
   double _totalDebt = 0;
   double _totalAvailableCredit = 0;
   double _totalDueThisMonth = 0;
-
-  double _totalKmhDebt = 0;
-  double _totalKmhAvailableCredit = 0;
-  double _totalKmhCreditLimit = 0;
 
   @override
   void initState() {
@@ -63,30 +55,12 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
         details[card.id] = await _cardService.getCardWithDetails(card.id);
       }
 
-      // Load KMH accounts
-      final wallets = await _dataService.getWallets();
-      final kmhAccounts = wallets.where((w) => w.isKmhAccount).toList();
-
-      double totalKmhDebt = 0;
-      double totalKmhAvailableCredit = 0;
-      double totalKmhCreditLimit = 0;
-
-      for (var account in kmhAccounts) {
-        totalKmhDebt += account.usedCredit;
-        totalKmhAvailableCredit += account.availableCredit;
-        totalKmhCreditLimit += account.creditLimit;
-      }
-
       setState(() {
         _cards = cards;
         _cardDetails = details;
         _totalDebt = totalDebt;
         _totalAvailableCredit = totalAvailable;
         _totalDueThisMonth = totalDue;
-        _kmhAccounts = kmhAccounts;
-        _totalKmhDebt = totalKmhDebt;
-        _totalKmhAvailableCredit = totalKmhAvailableCredit;
-        _totalKmhCreditLimit = totalKmhCreditLimit;
         _isLoading = false;
       });
     } catch (e) {
@@ -147,11 +121,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         title: Text(
-          _selectedTab == 0
-              ? 'Kredi Kartlarım'
-              : _selectedTab == 1
-              ? 'KMH Hesaplarım'
-              : 'Taksit Takibi',
+          _selectedTab == 0 ? 'Kredi Kartlarım' : 'Taksit Takibi',
         ),
         actions: [
           if (_selectedTab == 0)
@@ -167,19 +137,6 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                 );
               },
             ),
-          if (_selectedTab == 1 && _kmhAccounts.length > 1)
-            IconButton(
-              icon: const Icon(Icons.compare_arrows),
-              tooltip: 'Hesapları Karşılaştır',
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const KmhListScreen(),
-                  ),
-                ).then((_) => _loadCards());
-              },
-            ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadCards),
         ],
       ),
@@ -189,25 +146,18 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
               children: [
                 _buildTabSelector(),
                 if (_selectedTab == 0) _buildSummaryCard(),
-                if (_selectedTab == 1) _buildKmhSummaryCard(),
                 Expanded(
                   child: _selectedTab == 0
                       ? (_cards.isEmpty ? _buildEmptyState() : _buildCardList())
-                      : _selectedTab == 1
-                      ? (_kmhAccounts.isEmpty
-                            ? _buildKmhEmptyState()
-                            : _buildKmhAccountList())
                       : const InstallmentTrackingScreen(),
                 ),
               ],
             ),
-      floatingActionButton: _selectedTab != 2
+      floatingActionButton: _selectedTab == 0
           ? FloatingActionButton(
-              onPressed: _selectedTab == 0
-                  ? _navigateToAddCard
-                  : _navigateToAddKmhAccount,
-              tooltip: _selectedTab == 0 ? 'Kart Ekle' : 'KMH Hesabı Ekle',
-              child: Icon(_selectedTab == 0 ? Icons.add_card : Icons.add),
+              onPressed: _navigateToAddCard,
+              tooltip: 'Kart Ekle',
+              child: const Icon(Icons.add_card),
             )
           : null,
     );
@@ -278,47 +228,8 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.account_balance,
-                      color: _selectedTab == 1
-                          ? Colors.white
-                          : Colors.grey[600],
-                      size: 18,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'KMH',
-                      style: TextStyle(
-                        color: _selectedTab == 1
-                            ? Colors.white
-                            : Colors.grey[600],
-                        fontWeight: _selectedTab == 1
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _selectedTab = 2),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: _selectedTab == 2
-                      ? const Color(0xFF00BFA5)
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
                       Icons.format_list_numbered,
-                      color: _selectedTab == 2
+                      color: _selectedTab == 1
                           ? Colors.white
                           : Colors.grey[600],
                       size: 18,
@@ -327,10 +238,10 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                     Text(
                       'Taksitler',
                       style: TextStyle(
-                        color: _selectedTab == 2
+                        color: _selectedTab == 1
                             ? Colors.white
                             : Colors.grey[600],
-                        fontWeight: _selectedTab == 2
+                        fontWeight: _selectedTab == 1
                             ? FontWeight.bold
                             : FontWeight.normal,
                         fontSize: 13,
@@ -591,292 +502,4 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     }
   }
 
-  // KMH Account Methods
-  Future<void> _navigateToAddKmhAccount() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const AddWalletScreen(initialType: 'overdraft'),
-      ),
-    );
-
-    if (result == true) {
-      _loadCards();
-    }
-  }
-
-  Future<void> _navigateToKmhAccountDetail(Wallet account) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => KmhAccountDetailScreen(account: account),
-      ),
-    );
-
-    if (result == true) {
-      _loadCards();
-    }
-  }
-
-  Widget _buildKmhSummaryCard() {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSummaryItem(
-                  'Toplam Borç',
-                  _currencyFormat.format(_totalKmhDebt),
-                  Colors.red,
-                  Icons.trending_down,
-                ),
-                _buildSummaryItem(
-                  'Kullanılabilir Limit',
-                  _currencyFormat.format(_totalKmhAvailableCredit),
-                  Colors.green,
-                  Icons.trending_up,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.account_balance_wallet, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Toplam Limit: ${_currencyFormat.format(_totalKmhCreditLimit)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildKmhEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.account_balance, size: 80, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'Henüz KMH hesabı eklenmemiş',
-            style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'KMH hesaplarınızı takip etmeye başlamak için\n"KMH Hesabı Ekle" butonuna tıklayın',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildKmhAccountList() {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _kmhAccounts.length,
-      itemBuilder: (context, index) {
-        final account = _kmhAccounts[index];
-        return _buildKmhAccountCard(account);
-      },
-    );
-  }
-
-  Widget _buildKmhAccountCard(Wallet account) {
-    final utilizationColor = _getUtilizationColor(account.utilizationRate);
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => _navigateToKmhAccountDetail(account),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Color(
-                        int.parse(account.color),
-                      ).withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.account_balance,
-                      color: Color(int.parse(account.color)),
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          account.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (account.accountNumber != null)
-                          Text(
-                            '•••• ${account.accountNumber!.substring(account.accountNumber!.length - 4)}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: utilizationColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '${account.utilizationRate.toStringAsFixed(0)}%',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: utilizationColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildInfoColumn(
-                      'Mevcut Bakiye',
-                      _currencyFormat.format(account.balance),
-                      account.balance < 0 ? Colors.red : Colors.green,
-                    ),
-                  ),
-                  Expanded(
-                    child: _buildInfoColumn(
-                      'Kullanılan Kredi',
-                      _currencyFormat.format(account.usedCredit),
-                      Colors.orange,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: account.utilizationRate / 100,
-                  backgroundColor: Colors.grey[200],
-                  valueColor: AlwaysStoppedAnimation<Color>(utilizationColor),
-                  minHeight: 8,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.account_balance_wallet,
-                          size: 16,
-                          color: Colors.grey[600],
-                        ),
-                        const SizedBox(width: 4),
-                        Flexible(
-                          child: Text(
-                            'Kullanılabilir: ${_currencyFormat.format(account.availableCredit)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (account.interestRate != null)
-                    Flexible(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.percent,
-                            size: 16,
-                            color: Colors.grey[600],
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Faiz: %${account.interestRate!.toStringAsFixed(2)}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Color _getUtilizationColor(double utilization) {
-    if (utilization >= 80) {
-      return Colors.red;
-    } else if (utilization >= 50) {
-      return Colors.orange;
-    } else {
-      return Colors.green;
-    }
-  }
 }

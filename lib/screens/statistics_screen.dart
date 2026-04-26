@@ -19,10 +19,30 @@ import '../widgets/statistics/cash_flow_tab.dart';
 import '../widgets/statistics/time_filter_bar.dart';
 import '../widgets/statistics/responsive_statistics_layout.dart';
 import '../widgets/statistics/statistics_state_builder.dart';
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
+import '../core/design/app_text_styles.dart';
 
 import 'manage_goals_screen.dart';
 import '../utils/cache_manager.dart';
 import '../widgets/statistics/interactive_pie_chart.dart';
+import '../widgets/statistics/debt_statistics_tab.dart';
+import '../widgets/statistics/card_reporting_tab.dart';
+import '../widgets/statistics/recurring_statistics_tab.dart';
+import '../widgets/statistics/financial_health_score_card.dart';
+import '../widgets/statistics/savings_rate_trend_chart.dart';
+import '../widgets/statistics/budget_tracker_card.dart';
+import '../widgets/statistics/period_comparison_card.dart';
+import '../widgets/statistics/bill_history_summary_card.dart';
+import '../widgets/statistics/statistics_loading_state.dart';
+import '../widgets/statistics/statistics_empty_state.dart';
+import '../widgets/statistics/statistics_error_state.dart';
+import '../models/savings_rate_trend_data.dart';
+import '../models/bill_history_summary.dart';
+import '../models/cash_flow_data.dart' show SpendingAnalysis;
+import '../widgets/statistics/kmh_dashboard.dart';
+import '../widgets/statistics/kmh_asset_card.dart';
+import '../widgets/statistics/net_worth_trend_chart.dart';
 
 enum TimeFilter { daily, weekly, monthly, yearly, custom }
 
@@ -47,12 +67,22 @@ class StatisticsScreen extends StatefulWidget {
 class _StatisticsScreenState extends State<StatisticsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final List<bool> _tabLoaded = List.filled(7, false);
   TimeFilter _selectedTimeFilter = TimeFilter.monthly;
   DateTime? _customStartDate;
   DateTime? _customEndDate;
   final String _selectedWalletId = 'all';
   final String _selectedCategory = 'all';
   final String _selectedTransactionType = 'all';
+
+  // Sekme indeksleri
+  static const int kTabSummary   = 0;
+  static const int kTabSpending  = 1;
+  static const int kTabCashFlow  = 2;
+  static const int kTabAssets    = 3;
+  static const int kTabDebt      = 4;
+  static const int kTabCards     = 5;
+  static const int kTabRecurring = 6;
 
   late final DataService _dataService;
   late final StatisticsService _statisticsService;
@@ -92,18 +122,18 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     }
   }
 
-  // Fatura kategorileri için renk haritası
+  // Fatura kategorileri için renk haritası — AppColors token'larına taşındı (Gereksinim 13.6)
   final Map<String, Color> _billCategoryColors = {
-    'Elektrik': const Color(0xFFFFA726), // Turuncu
-    'Doğalgaz': const Color(0xFF42A5F5), // Mavi
-    'Su': const Color(0xFF26C6DA), // Açık Mavi
-    'İnternet': const Color(0xFF9C27B0), // Mor
-    'Telefon': const Color(0xFF66BB6A), // Yeşil
-    'Kira': const Color(0xFFEF5350), // Kırmızı
-    'Aidat': const Color(0xFFFF7043), // Koyu Turuncu
-    'Sigorta': const Color(0xFF5C6BC0), // İndigo
-    'Abonelik': const Color(0xFFEC407A), // Pembe
-    'Diğer': const Color(0xFF78909C), // Gri
+    'Elektrik': AppColors.warning,
+    'Doğalgaz': AppColors.primary,
+    'Su': AppColors.primaryVariantDark,
+    'İnternet': AppColors.primaryVariant,
+    'Telefon': AppColors.success,
+    'Kira': AppColors.error,
+    'Aidat': AppColors.warning,
+    'Sigorta': AppColors.primaryVariant,
+    'Abonelik': AppColors.expenseColor,
+    'Diğer': AppColors.onSurface,
   };
 
   @override
@@ -120,10 +150,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       _statisticsService = StatisticsService();
     }
     
-    _tabController = TabController(length: 5, vsync: this);
-    _tabController.addListener(() {
-      setState(() {});
-    });
+    _tabController = TabController(length: 7, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    _tabLoaded[0] = true; // Özet sekmesi varsayılan olarak yüklü
     _tabController.index = 0;
     _loadCategories();
   }
@@ -135,6 +164,51 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         _categories = categories;
       });
     }
+  }
+
+  /// Sekme değiştiğinde çağrılır; ziyaret edilen sekmeyi yüklü olarak işaretler.
+  void _onTabChanged() {
+    final i = _tabController.index;
+    if (!_tabLoaded[i]) {
+      setState(() => _tabLoaded[i] = true);
+    } else {
+      // Sekme zaten yüklüyse sadece rebuild tetikle (UI güncellemesi için)
+      setState(() {});
+    }
+  }
+
+  /// Zaman filtresi değiştiğinde tüm sekmeleri sıfırlar, aktif sekmeyi hemen yükler.
+  void _onFilterChanged(TimeFilter filter) {
+    setState(() {
+      _selectedTimeFilter = filter;
+      for (int i = 0; i < _tabLoaded.length; i++) {
+        _tabLoaded[i] = false;
+      }
+      _tabLoaded[_tabController.index] = true;
+    });
+  }
+
+  /// Belirtilen sekmeyi yeniden yüklemek için sıfırlar ve bir sonraki frame'de yeniden işaretler.
+  void _retryTab(int tabIndex) {
+    setState(() {
+      _tabLoaded[tabIndex] = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() => _tabLoaded[tabIndex] = true);
+      }
+    });
+  }
+
+  /// Pull-to-refresh: stats önbelleğini temizler ve tüm sekmeleri sıfırlar.
+  Future<void> _onRefresh() async {
+    CacheManager().clearPattern('stats_');
+    setState(() {
+      for (int i = 0; i < _tabLoaded.length; i++) {
+        _tabLoaded[i] = false;
+      }
+      _tabLoaded[_tabController.index] = true;
+    });
   }
 
   @override
@@ -178,50 +252,709 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final period = _getCurrentPeriod();
+
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF000000)
-          : const Color(0xFFCAE3CA),
+      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
             Material(
               elevation: 4,
-              color:
-                  Theme.of(context).appBarTheme.backgroundColor ??
-                  (isDark ? const Color(0xFF1E1E24) : Colors.white),
+              color: Theme.of(context).appBarTheme.backgroundColor ??
+                  (isDark ? AppColors.surfaceDark : AppColors.surface),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
+                  // Kaydırılabilir sekme başlıkları (7 sekme) en üstte
+                  Container(
+                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.surfaceDark : AppColors.background,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: _buildHeaderTimeFilter(),
+                    child: TabBar(
+                      controller: _tabController,
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      dividerColor: Colors.transparent, // Alt çizgiyi gizle
+                      indicator: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      indicatorSize: TabBarIndicatorSize.tab,
+                      labelColor: AppColors.onPrimary,
+                      unselectedLabelColor: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
+                      labelStyle: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
+                      unselectedLabelStyle: AppTextStyles.bodySmall,
+                      tabs: const [
+                        Tab(text: 'Özet'),
+                        Tab(text: 'Harcama'),
+                        Tab(text: 'Nakit Akışı'),
+                        Tab(text: 'Varlıklar'),
+                        Tab(text: 'Borç/Alacak'),
+                        Tab(text: 'Kartlar'),
+                        Tab(text: 'Tekrarlayan'),
+                      ],
+                    ),
                   ),
-                  AdaptiveTabBar(
-                    controller: _tabController,
-                    tabs: const [
-                      Tab(text: 'Raporlar'),
-                      Tab(text: 'Harcama'),
-                      Tab(text: 'Kredi'),
-                      Tab(text: 'Nakit Akışı'),
-                      Tab(text: 'Varlıklar'),
-                    ],
+                  // Evrensel zaman filtresi (Aşağı açılan dropdown)
+                  TimeFilterBar(
+                    selectedFilter: _selectedTimeFilter,
+                    onFilterChanged: _onFilterChanged,
+                    customStartDate: _customStartDate,
+                    customEndDate: _customEndDate,
+                    onStartDateChanged: (d) =>
+                        setState(() => _customStartDate = d),
+                    onEndDateChanged: (d) =>
+                        setState(() => _customEndDate = d),
                   ),
                 ],
               ),
             ),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
+              child: RefreshIndicator(
+                onRefresh: _onRefresh,
+                color: isDark ? AppColors.primaryDark : AppColors.primary,
+                child: IndexedStack(
+                  index: _tabController.index,
+                  children: [
+                    // [0] Özet
+                    _tabLoaded[kTabSummary]
+                        ? _buildSummaryTab()
+                        : const SizedBox.shrink(),
+                    // [1] Harcama
+                    _tabLoaded[kTabSpending]
+                        ? SpendingTab(
+                            startDate: period.start,
+                            endDate: period.end,
+                          )
+                        : const SizedBox.shrink(),
+                    // [2] Nakit Akışı
+                    _tabLoaded[kTabCashFlow]
+                        ? CashFlowTab(
+                            startDate: period.start,
+                            endDate: period.end,
+                            walletId: _selectedWalletId == 'all'
+                                ? null
+                                : _selectedWalletId,
+                            category: _selectedCategory == 'all'
+                                ? null
+                                : _selectedCategory,
+                          )
+                        : const SizedBox.shrink(),
+                    // [3] Varlıklar
+                    _tabLoaded[kTabAssets]
+                        ? _buildAssetsTab()
+                        : const SizedBox.shrink(),
+                    // [4] Borç/Alacak
+                    _tabLoaded[kTabDebt]
+                        ? DebtStatisticsTab(
+                            startDate: period.start,
+                            endDate: period.end,
+                          )
+                        : const SizedBox.shrink(),
+                    // [5] Kartlar
+                    _tabLoaded[kTabCards]
+                        ? CardReportingTab(
+                            startDate: period.start,
+                            endDate: period.end,
+                          )
+                        : const SizedBox.shrink(),
+                    // [6] Tekrarlayan
+                    _tabLoaded[kTabRecurring]
+                        ? RecurringStatisticsTab(
+                            startDate: period.start,
+                            endDate: period.end,
+                          )
+                        : const SizedBox.shrink(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Özet sekmesi — Finansal genel bakış.
+  Widget _buildSummaryTab() {
+    // Compute income/expense from filtered transactions
+    double income = 0;
+    double expense = 0;
+    for (var item in _filteredTransactions) {
+      if (item is Transaction) {
+        if (item.type == 'income') {
+          income += item.amount;
+        } else if (item.type == 'expense') {
+          expense += item.amount;
+        }
+      } else if (item is CreditCardTransaction) {
+        expense += item.amount;
+      }
+    }
+    final netCashFlow = income - expense;
+    final hasData = _filteredTransactions.isNotEmpty;
+
+    // Build payment method distribution data
+    final paymentMethodExpenses = <String, double>{};
+    final paymentMethodColors = <String, Color>{};
+    for (var item in _filteredTransactions) {
+      if (item is Transaction && item.type == 'expense') {
+        final wallet = widget.wallets.firstWhere(
+          (w) => w.id == item.walletId,
+          orElse: () => Wallet(
+            id: '',
+            name: 'Diğer',
+            balance: 0,
+            type: 'other',
+            color: '0xFF78909C',
+            icon: 'wallet',
+            creditLimit: 0.0,
+          ),
+        );
+        final walletName = wallet.name.isEmpty ? 'Diğer' : wallet.name;
+        Color walletColor;
+        try {
+          walletColor = Color(int.parse(wallet.color));
+        } catch (_) {
+          walletColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+        }
+        paymentMethodExpenses[walletName] =
+            (paymentMethodExpenses[walletName] ?? 0) + item.amount;
+        paymentMethodColors[walletName] = walletColor;
+      } else if (item is CreditCardTransaction) {
+        const walletName = 'Kredi Kartı';
+        paymentMethodExpenses[walletName] =
+            (paymentMethodExpenses[walletName] ?? 0) + item.amount;
+        paymentMethodColors[walletName] = AppColors.error;
+      }
+    }
+
+    // Income/debt ratio
+    final creditWallets = widget.wallets.where((w) => w.type == 'credit_card');
+    final totalDebt = creditWallets.fold(0.0, (sum, w) => sum + w.balance.abs());
+    final debtRatio = income > 0 ? (totalDebt / income) * 100 : 0.0;
+
+    // Previous period for comparison
+    final current = _getCurrentPeriod();
+    final duration = current.end.difference(current.start);
+    final previousEnd = current.start.subtract(const Duration(days: 1));
+    final previousStart = previousEnd.subtract(duration);
+
+    // Savings rate
+    final savingsRate = income > 0 ? ((income - expense) / income) * 100 : null;
+
+    // Build last 12 months savings rate trend data
+    final now = DateTime.now();
+    final trendData = List.generate(12, (i) {
+      final month = DateTime(now.year, now.month - 11 + i, 1);
+      final monthEnd = DateTime(month.year, month.month + 1, 0, 23, 59, 59);
+      double monthIncome = 0;
+      double monthExpense = 0;
+      for (var item in widget.transactions) {
+        if (item.date.isAfter(month.subtract(const Duration(seconds: 1))) &&
+            item.date.isBefore(monthEnd.add(const Duration(seconds: 1)))) {
+          if (item.type == 'income') {
+            monthIncome += item.amount;
+          } else if (item.type == 'expense') {
+            monthExpense += item.amount;
+          }
+        }
+      }
+      for (var item in widget.creditCardTransactions) {
+        if (item.transactionDate.isAfter(month.subtract(const Duration(seconds: 1))) &&
+            item.transactionDate.isBefore(monthEnd.add(const Duration(seconds: 1)))) {
+          monthExpense += item.amount;
+        }
+      }
+      return SavingsRateTrendData.fromMonthlyData(
+        month: month,
+        income: monthIncome,
+        expense: monthExpense,
+      );
+    });
+
+    // Empty state: no transactions
+    if (!hasData) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: StatisticsEmptyState(
+            icon: Icons.bar_chart_outlined,
+            title: 'Veri Bulunamadı',
+            message:
+                'Seçilen dönemde işlem bulunmuyor. İşlem ekleyerek istatistiklerinizi görüntüleyin.',
+          ),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Summary cards: income, expense, net cash flow
+            _buildSummarySectionCards(income, expense, netCashFlow, savingsRate),
+            const SizedBox(height: AppSpacing.md),
+
+            // 2. Financial Health Score Card
+            StatisticsFutureBuilder<AssetAnalysis>(
+              future: _statisticsService.analyzeAssets(),
+              onRetry: () => _retryTab(kTabSummary),
+              builder: (context, analysis) {
+                return FinancialHealthScoreCard(
+                  healthScore: analysis.healthScore,
+                );
+              },
+              loadingBuilder: (context) => const StatisticsLoadingState(
+                message: 'Finansal sağlık skoru hesaplanıyor...',
+                showLogo: false,
+              ),
+              errorBuilder: (context, error) => StatisticsErrorState(
+                message: 'Finansal Sağlık Skoru Yüklenemedi',
+                details: error.toString(),
+                onRetry: () => _retryTab(kTabSummary),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 3. Savings Rate Trend Chart
+            SavingsRateTrendChart(trendData: trendData),
+            const SizedBox(height: AppSpacing.md),
+
+            // 4. Budget Tracker Card
+            StatisticsFutureBuilder<SpendingAnalysis>(
+              future: _statisticsService.analyzeSpending(
+                startDate: current.start,
+                endDate: current.end,
+              ),
+              onRetry: () => _retryTab(kTabSummary),
+              builder: (context, spending) {
+                if (spending.budgetComparisons.isEmpty) {
+                  return BudgetTrackerCard(
+                    budgetComparisons: const {},
+                    categoryColors: const {},
+                  );
+                }
+                final colors = <String, Color>{};
+                for (final cat in spending.budgetComparisons.keys) {
+                  colors[cat] = _getCategoryColor(cat);
+                }
+                return Column(
+                  children: [
+                    BudgetSummaryCard(
+                      budgetComparisons: spending.budgetComparisons,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    BudgetTrackerCard(
+                      budgetComparisons: spending.budgetComparisons,
+                      categoryColors: colors,
+                    ),
+                  ],
+                );
+              },
+              loadingBuilder: (context) => const StatisticsLoadingState(
+                message: 'Bütçe verileri yükleniyor...',
+                showLogo: false,
+              ),
+              errorBuilder: (context, error) => StatisticsErrorState(
+                message: 'Bütçe Verileri Yüklenemedi',
+                details: error.toString(),
+                onRetry: () => _retryTab(kTabSummary),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 5. Period Comparison Card
+            StatisticsFutureBuilder<ComparisonData>(
+              future: _statisticsService.comparePeriods(
+                period1Start: previousStart,
+                period1End: previousEnd,
+                period2Start: current.start,
+                period2End: current.end,
+              ),
+              onRetry: () => _retryTab(kTabSummary),
+              builder: (context, comparison) {
+                return Column(
+                  children: [
+                    PeriodComparisonCard(
+                      title: 'Gelir Karşılaştırması',
+                      currentValue: comparison.income.period2Value,
+                      previousValue: comparison.income.period1Value,
+                      subtitle: '${comparison.period1Label} vs ${comparison.period2Label}',
+                      icon: Icons.trending_up,
+                      color: AppColors.success,
+                      higherIsBetter: true,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    PeriodComparisonCard(
+                      title: 'Gider Karşılaştırması',
+                      currentValue: comparison.expense.period2Value,
+                      previousValue: comparison.expense.period1Value,
+                      subtitle: '${comparison.period1Label} vs ${comparison.period2Label}',
+                      icon: Icons.trending_down,
+                      color: AppColors.error,
+                      higherIsBetter: false,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    PeriodComparisonCard(
+                      title: 'Net Nakit Akışı Karşılaştırması',
+                      currentValue: comparison.netCashFlow.period2Value,
+                      previousValue: comparison.netCashFlow.period1Value,
+                      subtitle: '${comparison.period1Label} vs ${comparison.period2Label}',
+                      icon: Icons.account_balance_wallet,
+                      color: AppColors.primary,
+                      higherIsBetter: true,
+                    ),
+                  ],
+                );
+              },
+              loadingBuilder: (context) => const StatisticsLoadingState(
+                message: 'Dönem karşılaştırması yükleniyor...',
+                showLogo: false,
+              ),
+              errorBuilder: (context, error) => StatisticsErrorState(
+                message: 'Dönem Karşılaştırması Yüklenemedi',
+                details: error.toString(),
+                onRetry: () => _retryTab(kTabSummary),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 6. Payment method distribution pie chart
+            _buildSummaryPaymentMethodCard(
+              paymentMethodExpenses,
+              paymentMethodColors,
+            ),
+            const SizedBox(height: AppSpacing.md),
+
+            // 7. Income/Debt ratio card
+            _buildSummaryIncomeDebtRatioCard(income, totalDebt, debtRatio),
+            const SizedBox(height: AppSpacing.md),
+
+            // 8. Bill History Summary Card
+            _buildSummaryBillHistoryCard(),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Summary section: income, expense, net cash flow, savings rate cards.
+  Widget _buildSummarySectionCards(
+    double income,
+    double expense,
+    double netCashFlow,
+    double? savingsRate,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Toplam Gelir',
+                amount: income,
+                color: AppColors.success,
+                icon: Icons.trending_up,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Toplam Gider',
+                amount: expense,
+                color: AppColors.error,
+                icon: Icons.trending_down,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Net Nakit Akışı',
+                amount: netCashFlow,
+                color: netCashFlow >= 0 ? AppColors.success : AppColors.error,
+                icon: netCashFlow >= 0 ? Icons.add_circle_outline : Icons.remove_circle_outline,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppColors.surfaceDark
+                      : AppColors.success.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isDark
+                        ? AppColors.success.withValues(alpha: 0.5)
+                        : AppColors.success.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.savings, color: AppColors.success, size: 16),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Tasarruf Oranı',
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: AppColors.success,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      savingsRate != null
+                          ? '%${savingsRate.toStringAsFixed(1)}'
+                          : 'Veri Yok',
+                      style: AppTextStyles.titleMedium.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: savingsRate != null
+                            ? (savingsRate >= 0 ? AppColors.success : AppColors.error)
+                            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Payment method distribution card for summary tab.
+  Widget _buildSummaryPaymentMethodCard(
+    Map<String, double> paymentMethodExpenses,
+    Map<String, Color> paymentMethodColors,
+  ) {
+    final sortedMethods = paymentMethodExpenses.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final totalExpense = paymentMethodExpenses.values.fold(0.0, (s, v) => s + v);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.pie_chart_outline, size: 20),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Ödeme Yöntemi Dağılımı',
+                  style: AppTextStyles.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Harcamaların hangi hesaptan/karttan yapıldığı',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (sortedMethods.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                child: Center(child: Text('Bu dönemde harcama bulunmamaktadır.')),
+              )
+            else ...[
+              Semantics(
+                label: 'Ödeme yöntemi dağılımı pasta grafiği. ${sortedMethods.length} farklı ödeme yöntemi.',
+                excludeSemantics: true,
+                child: SizedBox(
+                  height: 220,
+                  child: InteractivePieChart(
+                    data: Map.fromEntries(sortedMethods),
+                    colors: paymentMethodColors,
+                    radius: 70,
+                    centerSpaceRadius: 50,
+                    enableTouch: true,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              ...sortedMethods.map((entry) {
+                final percentage = totalExpense > 0
+                    ? (entry.value / totalExpense) * 100
+                    : 0.0;
+                final color = paymentMethodColors[entry.key] ?? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          entry.key,
+                          style: AppTextStyles.bodyMedium,
+                        ),
+                      ),
+                      Text(
+                        '₺${NumberFormat('#,##0', 'tr_TR').format(entry.value)}',
+                        style: AppTextStyles.bodyMedium.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        '%${percentage.toStringAsFixed(1)}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Income/debt ratio card for summary tab.
+  Widget _buildSummaryIncomeDebtRatioCard(
+    double income,
+    double totalDebt,
+    double debtRatio,
+  ) {
+    final chartValue = debtRatio > 100 ? 100.0 : debtRatio;
+    final remainingValue = (100 - debtRatio) < 0 ? 0.0 : (100 - debtRatio);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.balance, size: 20),
+                const SizedBox(width: AppSpacing.sm),
+                Text('Gelir / Borç Oranı', style: AppTextStyles.titleMedium),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Seçili dönemdeki gelire göre toplam borç oranı',
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Semantics(
+              label: 'Gelir borç oranı: %${debtRatio.toStringAsFixed(1)}. Toplam borç: ₺${NumberFormat('#,##0', 'tr_TR').format(totalDebt)}, Toplam gelir: ₺${NumberFormat('#,##0', 'tr_TR').format(income)}',
+              child: Row(
                 children: [
-                  _buildReportsView(),
-                  _buildSpendingTab(),
-                  _buildCreditTab(),
-                  _buildCashFlowTab(),
-                  _buildAssetsTab(),
+                  SizedBox(
+                    width: 100,
+                    height: 100,
+                    child: Stack(
+                      children: [
+                        PieChart(
+                          PieChartData(
+                            sections: [
+                              PieChartSectionData(
+                                value: chartValue,
+                                color: AppColors.error,
+                                radius: 15,
+                                showTitle: false,
+                              ),
+                              PieChartSectionData(
+                                value: remainingValue > 0 ? remainingValue : 0.001,
+                                color: AppColors.success.withValues(alpha: 0.3),
+                                radius: 15,
+                                showTitle: false,
+                              ),
+                            ],
+                            centerSpaceRadius: 35,
+                            sectionsSpace: 0,
+                          ),
+                        ),
+                        Center(
+                          child: Text(
+                            '%${debtRatio.toStringAsFixed(1)}',
+                            style: AppTextStyles.labelLarge.copyWith(
+                              color: AppColors.error,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Toplam Borç',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        Text(
+                          '₺${NumberFormat('#,##0', 'tr_TR').format(totalDebt)}',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(
+                          'Toplam Gelir',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        Text(
+                          '₺${NumberFormat('#,##0', 'tr_TR').format(income)}',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -231,24 +964,83 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
-  Widget _buildCashFlowTab() {
-    final period = _getCurrentPeriod();
+  /// Bill history summary card for summary tab.
+  Widget _buildSummaryBillHistoryCard() {
+    final billPaymentService = BillPaymentService();
+    final billTemplateService = BillTemplateService();
 
-    return CashFlowTab(
-      startDate: period.start,
-      endDate: period.end,
-      walletId: _selectedWalletId == 'all' ? null : _selectedWalletId,
-      category: _selectedCategory == 'all' ? null : _selectedCategory,
+    return StatisticsFutureBuilder<List<BillHistorySummary>>(
+      future: _loadBillHistorySummaries(billPaymentService, billTemplateService),
+      onRetry: () => _retryTab(kTabSummary),
+      builder: (context, summaries) {
+        return BillHistorySummaryCard(
+          summaries: summaries,
+        );
+      },
+      loadingBuilder: (context) => const StatisticsLoadingState(
+        message: 'Fatura geçmişi yükleniyor...',
+        showLogo: false,
+      ),
+      errorBuilder: (context, error) => StatisticsErrorState(
+        message: 'Fatura Geçmişi Yüklenemedi',
+        details: error.toString(),
+        onRetry: () => _retryTab(kTabSummary),
+      ),
     );
   }
 
-  // Eski nakit akışı grafik/tablo implementasyonu CashFlowTab ile değiştirildi.
+  /// Loads bill history summaries from bill payment and template services.
+  Future<List<BillHistorySummary>> _loadBillHistorySummaries(
+    BillPaymentService billPaymentService,
+    BillTemplateService billTemplateService,
+  ) async {
+    final templates = await billTemplateService.getActiveTemplates();
+    if (templates.isEmpty) return [];
 
-  Widget _buildSpendingTab() {
-    final period = _getCurrentPeriod();
+    final allPayments = await billPaymentService.getPayments();
+    final summaries = <BillHistorySummary>[];
 
-    return SpendingTab(startDate: period.start, endDate: period.end);
+    for (final template in templates) {
+      final templatePayments = allPayments
+          .where((p) => p.templateId == template.id)
+          .toList();
+      final totalPayments = templatePayments.length;
+      final paidPayments = templatePayments.where((p) => p.isPaid).length;
+      final paymentRate = BillHistorySummary.calculatePaymentRate(
+        paidPayments,
+        totalPayments,
+      );
+
+      // Last paid date
+      final paidList = templatePayments
+          .where((p) => p.isPaid && p.paidDate != null)
+          .toList()
+        ..sort((a, b) => b.paidDate!.compareTo(a.paidDate!));
+      final lastPaidDate = paidList.isNotEmpty ? paidList.first.paidDate : null;
+
+      // Next due date: earliest pending payment
+      final pendingList = templatePayments
+          .where((p) => !p.isPaid)
+          .toList()
+        ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+      final nextDueDate = pendingList.isNotEmpty ? pendingList.first.dueDate : null;
+
+      summaries.add(BillHistorySummary(
+        templateId: template.id,
+        templateName: template.name,
+        category: template.category,
+        totalPayments: totalPayments,
+        paidPayments: paidPayments,
+        paymentRate: paymentRate,
+        lastPaidDate: lastPaidDate,
+        nextDueDate: nextDueDate,
+      ));
+    }
+
+    return summaries;
   }
+
+  // Eski nakit akışı grafik/tablo implementasyonu CashFlowTab ile değiştirildi.
 
   Widget _buildCreditTab() {
     // Kredi kartları ve taksitler "Kredi Kartlarım" ekranında takip edildiği için
@@ -305,7 +1097,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             children: [
               const Text(
                 'Aktif Kredilerim',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: AppTextStyles.headlineMedium,
               ),
               const Spacer(),
               Container(
@@ -319,10 +1111,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 ),
                 child: Text(
                   '${activeLoans.length} Adet',
-                  style: const TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.blue,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
                   ),
                 ),
               ),
@@ -354,10 +1145,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
+            style: AppTextStyles.bodyLarge.copyWith(
               fontWeight: FontWeight.w500,
-              color: Colors.grey,
+              color: AppColors.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -400,18 +1190,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 children: [
                   Text(
                     'Toplam Kredi Borcu',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: AppColors.onPrimary.withValues(alpha: 0.8),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     '₺${NumberFormat('#,##0', 'tr_TR').format(totalDebt)}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                    style: AppTextStyles.displayMedium.copyWith(
+                      color: AppColors.onPrimary,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -420,12 +1207,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: AppColors.onPrimary.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
                   Icons.show_chart,
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   size: 24,
                 ),
               ),
@@ -440,18 +1227,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   children: [
                     Text(
                       'Aylık Ödeme',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
-                        fontSize: 12,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.onPrimary.withValues(alpha: 0.8),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       '₺${NumberFormat('#,##0', 'tr_TR').format(monthlyPayment)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                      style: AppTextStyles.titleLarge.copyWith(
+                        color: AppColors.onPrimary,
                       ),
                     ),
                   ],
@@ -460,7 +1244,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               Container(
                 width: 1,
                 height: 40,
-                color: Colors.white.withValues(alpha: 0.2),
+                color: AppColors.onPrimary.withValues(alpha: 0.2),
               ),
               Expanded(
                 child: Padding(
@@ -470,18 +1254,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     children: [
                       Text(
                         'Kredi Sayısı',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
-                          fontSize: 12,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: AppColors.onPrimary.withValues(alpha: 0.8),
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '$count Adet',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
+                        style: AppTextStyles.titleLarge.copyWith(
+                          color: AppColors.onPrimary,
                         ),
                       ),
                     ],
@@ -508,30 +1289,30 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
     // Kredi tipine göre ikon belirleme
     IconData loanIcon = Icons.request_quote;
-    Color iconBgColor = Colors.orange;
+    Color iconBgColor = AppColors.warning;
 
     final nameLower = loan.name.toLowerCase();
     if (nameLower.contains('konut') || nameLower.contains('ev')) {
       loanIcon = Icons.home;
-      iconBgColor = Colors.purple;
+      iconBgColor = AppColors.primaryVariant;
     } else if (nameLower.contains('taşıt') ||
         nameLower.contains('araç') ||
         nameLower.contains('araba')) {
       loanIcon = Icons.directions_car;
-      iconBgColor = Colors.blue;
+      iconBgColor = AppColors.primary;
     } else if (nameLower.contains('ihtiyaç')) {
       loanIcon = Icons.shopping_bag;
-      iconBgColor = Colors.teal;
+      iconBgColor = AppColors.success;
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: AppSpacing.xl),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E24) : Colors.white,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -558,17 +1339,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     children: [
                       Text(
                         loan.name,
-                        style: const TextStyle(
+                        style: AppTextStyles.bodyLarge.copyWith(
                           fontWeight: FontWeight.bold,
-                          fontSize: 16,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         loan.bankName,
-                        style: TextStyle(
-                          color: isDark ? Colors.grey[400] : Colors.grey[600],
-                          fontSize: 13,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
                         ),
                       ),
                     ],
@@ -579,17 +1358,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   children: [
                     Text(
                       '₺${NumberFormat('#,##0', 'tr_TR').format(loan.remainingAmount)}',
-                      style: const TextStyle(
+                      style: AppTextStyles.bodyLarge.copyWith(
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
                         color: Colors.redAccent,
                       ),
                     ),
                     Text(
                       'Kalan Borç',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isDark ? Colors.grey[500] : Colors.grey[400],
+                      style: AppTextStyles.labelSmall.copyWith(
+                        color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.4),
                       ),
                     ),
                   ],
@@ -609,17 +1386,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   children: [
                     Text(
                       'Ödenen: ${(progress * 100).toInt()}%',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.bodySmall.copyWith(
                         fontWeight: FontWeight.w600,
                         color: iconBgColor,
                       ),
                     ),
                     Text(
                       'Toplam: ₺${NumberFormat('#,##0', 'tr_TR').format(loan.totalAmount)}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
                       ),
                     ),
                   ],
@@ -631,8 +1406,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     value: progress,
                     minHeight: 8,
                     backgroundColor: isDark
-                        ? Colors.grey[800]
-                        : Colors.grey[100],
+                        ? AppColors.surfaceDark
+                        : AppColors.background,
                     color: iconBgColor,
                   ),
                 ),
@@ -647,7 +1422,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? Colors.black26 : Colors.grey[50],
+                color: isDark ? AppColors.surfaceDark : AppColors.background,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
@@ -658,23 +1433,21 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   Icon(
                     Icons.calendar_today_outlined,
                     size: 16,
-                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                    color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Sıradaki: ${DateFormat('d MMM yyyy', 'tr_TR').format(upcoming.dueDate)}',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTextStyles.bodySmall.copyWith(
                       fontWeight: FontWeight.w500,
-                      color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.8) : AppColors.onSurface.withValues(alpha: 0.8),
                     ),
                   ),
                   const Spacer(),
                   Text(
                     '₺${NumberFormat('#,##0', 'tr_TR').format(upcoming.amount)}',
-                    style: const TextStyle(
+                    style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
                     ),
                   ),
                 ],
@@ -685,110 +1458,415 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     );
   }
 
+  /// Varlıklar sekmesi — Net değer, cüzdanlar ve KMH hesapları.
   Widget _buildAssetsTab() {
-    final assetWallets = widget.wallets
+    // Cüzdan yoksa boş durum göster (Gereksinim 11.7)
+    if (widget.wallets.isEmpty) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: StatisticsEmptyState(
+            icon: Icons.account_balance_wallet_outlined,
+            title: 'Cüzdan Bulunamadı',
+            message:
+                'Varlık analizi için henüz cüzdan eklenmemiş. Cüzdan ekleyerek varlıklarınızı takip edin.',
+          ),
+        ),
+      );
+    }
+
+    // Varlık hesaplamaları (Gereksinim 11.1, 11.2)
+    final nonCreditWallets = widget.wallets
         .where((w) => w.type != 'credit_card')
         .toList();
-    final kmhWallets = assetWallets.where((w) => w.isKmhAccount).toList();
-    final totalPositiveAssets = assetWallets
+    final kmhWallets = nonCreditWallets.where((w) => w.isKmhAccount).toList();
+    final normalWallets =
+        nonCreditWallets.where((w) => !w.isKmhAccount).toList();
+
+    final totalPositiveAssets = nonCreditWallets
         .where((w) => w.balance > 0)
         .fold(0.0, (sum, w) => sum + w.balance);
     final totalKmhDebt = kmhWallets
         .where((w) => w.balance < 0)
         .fold(0.0, (sum, w) => sum + w.balance.abs());
-    final totalAssets = totalPositiveAssets - totalKmhDebt;
+    final netAssets = totalPositiveAssets - totalKmhDebt;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 1. Özet kartlar: toplam pozitif varlık, KMH borcu, net varlık (Gereksinim 11.2)
+            _buildAssetSummaryCards(
+              totalPositiveAssets: totalPositiveAssets,
+              totalKmhDebt: totalKmhDebt,
+              netAssets: netAssets,
+            ),
+            const SizedBox(height: AppSpacing.md),
 
-    return ResponsiveStatisticsLayout(
-      children: [
+            // 2. Normal cüzdanlar bölümü (Gereksinim 11.1, 11.3)
+            if (normalWallets.isNotEmpty) ...[
+              _buildWalletSection(
+                title: 'Cüzdanlar',
+                subtitle: 'Nakit ve banka hesapları',
+                icon: Icons.account_balance_wallet,
+                wallets: normalWallets,
+                isDark: isDark,
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
 
-        _buildFinancialAssetsCard(),
-        _buildCard(
-          title: 'Varlık Listesi',
-          subtitle:
-              'Net Toplam: ₺${NumberFormat('#,##0', 'tr_TR').format(totalAssets)}',
-          content: Column(
-            children: [
-              ...assetWallets
-                  .where((w) => w.balance >= 0)
-                  .map(
-                    (w) => ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Color(int.parse(w.color)),
-                        child: Icon(
-                          w.type == 'cash'
-                              ? Icons.money
-                              : Icons.account_balance,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      title: Text(w.name),
-                      subtitle: w.isKmhAccount
-                          ? Text(
-                              'KMH - Limit: ₺${NumberFormat('#,##0', 'tr_TR').format(w.creditLimit)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            )
-                          : null,
-                      trailing: Text(
-                        '₺${NumberFormat('#,##0', 'tr_TR').format(w.balance)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
-                    ),
-                  ),
-              if (totalKmhDebt > 0) ...[
-                const Divider(),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Text(
-                    'KMH Borçları',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-                ...kmhWallets
-                    .where((w) => w.balance < 0)
-                    .map(
-                      (w) => ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.red,
-                          child: const Icon(
+            // 3. KMH hesapları bölümü — KmhAssetCard ile (Gereksinim 11.1, 11.4, 11.6)
+            if (kmhWallets.isNotEmpty) ...[
+              Semantics(
+                label: 'KMH hesapları analizi. ${kmhWallets.length} hesap.',
+                child: KmhAssetCard(kmhAccounts: kmhWallets),
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+
+            // 4. KMH Dashboard — limit kullanım yüzdesi ve faiz bilgisi (Gereksinim 11.4, 11.6)
+            if (kmhWallets.isNotEmpty) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
                             Icons.account_balance,
-                            color: Colors.white,
+                            color: isDark
+                                ? AppColors.primaryDark
+                                : AppColors.primary,
                             size: 20,
                           ),
-                        ),
-                        title: Text(w.name),
-                        subtitle: Text(
-                          'KMH Borcu - Limit: ₺${NumberFormat('#,##0', 'tr_TR').format(w.creditLimit)}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            'KMH Analizi',
+                            style: AppTextStyles.titleMedium,
                           ),
-                        ),
-                        trailing: Text(
-                          '-₺${NumberFormat('#,##0', 'tr_TR').format(w.balance.abs())}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
-                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        'Kredili mevduat hesabı detayları ve faiz bilgisi',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
                         ),
                       ),
-                    ),
-              ],
+                      const SizedBox(height: AppSpacing.md),
+                      const SizedBox(
+                        height: 400,
+                        child: KmhDashboard(),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
             ],
-          ),
+
+            // 5. Net Varlık Trendi grafiği (Gereksinim 6.1, 11.5)
+            StatisticsFutureBuilder<AssetAnalysis>(
+              future: _statisticsService.analyzeAssets(),
+              onRetry: () => _retryTab(kTabAssets),
+              builder: (context, analysis) {
+                if (analysis.netWorthTrend.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+                return Semantics(
+                  label:
+                      'Net varlık trendi grafiği. Son 12 aya ait net varlık, toplam varlık ve borç değerleri.',
+                  excludeSemantics: true,
+                  child: NetWorthTrendChart(
+                    trendData: analysis.netWorthTrend,
+                  ),
+                );
+              },
+              loadingBuilder: (context) => const StatisticsLoadingState(
+                message: 'Net varlık trendi yükleniyor...',
+                showLogo: false,
+              ),
+              errorBuilder: (context, error) => StatisticsErrorState(
+                message: 'Net Varlık Trendi Yüklenemedi',
+                details: error.toString(),
+                onRetry: () => _retryTab(kTabAssets),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Varlıklar sekmesi özet kartları: toplam pozitif varlık, KMH borcu, net varlık.
+  Widget _buildAssetSummaryCards({
+    required double totalPositiveAssets,
+    required double totalKmhDebt,
+    required double netAssets,
+  }) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'Toplam Varlık',
+                amount: totalPositiveAssets,
+                color: AppColors.success,
+                icon: Icons.account_balance_wallet,
+                subtitle: 'Pozitif bakiyeler',
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: _buildSummaryCard(
+                title: 'KMH Borcu',
+                amount: totalKmhDebt,
+                color: AppColors.error,
+                icon: Icons.credit_card,
+                subtitle: 'Toplam KMH borcu',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _buildSummaryCard(
+          title: 'Net Varlık',
+          amount: netAssets,
+          color: netAssets >= 0 ? AppColors.primary : AppColors.warning,
+          icon: netAssets >= 0 ? Icons.trending_up : Icons.trending_down,
+          subtitle: netAssets >= 0
+              ? 'Varlıklar borçlardan fazla'
+              : 'Borçlar varlıklardan fazla',
         ),
       ],
     );
+  }
+
+  /// Normal cüzdanlar veya KMH hesapları için liste bölümü.
+  Widget _buildWalletSection({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required List<Wallet> wallets,
+    required bool isDark,
+  }) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  icon,
+                  color: isDark ? AppColors.primaryDark : AppColors.primary,
+                  size: 20,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: AppTextStyles.titleMedium),
+                      Text(
+                        subtitle,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: (isDark ? AppColors.primaryDark : AppColors.primary)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${wallets.length} hesap',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isDark ? AppColors.primaryDark : AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ...wallets.map((w) => _buildWalletListItem(w, isDark)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Tek bir cüzdan satırı — bakiye, ikon, renk ve KMH için limit kullanım çubuğu.
+  Widget _buildWalletListItem(Wallet w, bool isDark) {
+    Color walletColor;
+    try {
+      walletColor = Color(int.parse(w.color));
+    } catch (_) {
+      walletColor = AppColors.primary;
+    }
+
+    final isNegative = w.balance < 0;
+    final balanceColor = isNegative ? AppColors.error : AppColors.success;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Cüzdan ikonu (Gereksinim 11.3)
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: walletColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  w.type == 'cash'
+                      ? Icons.money
+                      : w.isKmhAccount
+                          ? Icons.account_balance
+                          : Icons.account_balance_wallet,
+                  color: walletColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      w.name,
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    if (w.isKmhAccount && w.creditLimit > 0)
+                      Text(
+                        'Limit: ₺${NumberFormat('#,##0', 'tr_TR').format(w.creditLimit)}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      )
+                    else
+                      Text(
+                        w.type == 'cash' ? 'Nakit' : 'Banka',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // Bakiye (Gereksinim 11.3)
+              Semantics(
+                label:
+                    '${w.name} bakiyesi: ${isNegative ? 'eksi' : ''} ${NumberFormat('#,##0', 'tr_TR').format(w.balance.abs())} lira',
+                child: Text(
+                  '${isNegative ? '-' : ''}₺${NumberFormat('#,##0', 'tr_TR').format(w.balance.abs())}',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: balanceColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // KMH limit kullanım çubuğu (Gereksinim 11.4)
+          if (w.isKmhAccount && w.creditLimit > 0) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Padding(
+              padding: const EdgeInsets.only(left: 48),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Limit kullanımı',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.6),
+                        ),
+                      ),
+                      Text(
+                        '%${w.utilizationRate.toStringAsFixed(1)}',
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: _kmhUtilizationColor(w.utilizationRate),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: (w.utilizationRate / 100).clamp(0.0, 1.0),
+                      minHeight: 6,
+                      backgroundColor:
+                          isDark ? AppColors.surfaceDark : AppColors.background,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        _kmhUtilizationColor(w.utilizationRate),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const Divider(height: AppSpacing.md),
+        ],
+      ),
+    );
+  }
+
+  /// KMH kullanım oranına göre renk döner.
+  Color _kmhUtilizationColor(double rate) {
+    if (rate <= 30) return AppColors.success;
+    if (rate <= 60) return AppColors.primary;
+    if (rate <= 80) return AppColors.warning;
+    return AppColors.error;
   }
 
 
@@ -855,7 +1933,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     Expanded(
                       child: Text(
                         '0-100 arası skor: 80+ çok iyi, 60-80 iyi, 40-60 geliştirmeye açık',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.onSurface.withValues(alpha: 0.6)),
                       ),
                     ),
                   ],
@@ -890,8 +1968,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                           child: Center(
                             child: Text(
                               score.overallScore.toStringAsFixed(0),
-                              style: TextStyle(
-                                fontSize: 22,
+                              style: AppTextStyles.headlineMedium.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: scoreColor,
                               ),
@@ -907,27 +1984,25 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         children: [
                           Text(
                             'Toplam Varlık: ₺${NumberFormat('#,##0', 'tr_TR').format(analysis.totalAssets)}',
-                            style: const TextStyle(fontSize: 13),
+                            style: AppTextStyles.bodySmall,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Toplam Borç: ₺${NumberFormat('#,##0', 'tr_TR').format(analysis.totalLiabilities)}',
-                            style: const TextStyle(fontSize: 13),
+                            style: AppTextStyles.bodySmall,
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Net Varlık: ₺${NumberFormat('#,##0', 'tr_TR').format(analysis.netWorth)}',
-                            style: const TextStyle(
-                              fontSize: 13,
+                            style: AppTextStyles.bodySmall.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Likidite Oranı: ${analysis.liquidityRatio.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.onSurface.withValues(alpha: 0.5),
                             ),
                           ),
                         ],
@@ -944,7 +2019,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(recommendation, style: const TextStyle(fontSize: 12)),
+                  Text(recommendation, style: AppTextStyles.bodySmall),
                 ],
               ],
             ),
@@ -988,21 +2063,20 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(label, style: const TextStyle(fontSize: 13)),
+                  child: Text(label, style: AppTextStyles.bodySmall),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       '₺${NumberFormat('#,##0', 'tr_TR').format(metric.period2Value)}',
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: AppTextStyles.bodySmall.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       '${isPositive ? '+' : ''}${change.toStringAsFixed(1)}% önceki döneme göre',
-                      style: TextStyle(fontSize: 11, color: color),
+                      style: AppTextStyles.labelSmall.copyWith(color: color),
                     ),
                   ],
                 ),
@@ -1030,7 +2104,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     Expanded(
                       child: Text(
                         'Seçili dönemi bir önceki eş dönemle karşılaştırır.',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.onSurface.withValues(alpha: 0.6)),
                       ),
                     ),
                   ],
@@ -1090,7 +2164,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     Expanded(
                       child: Text(
                         'Tasarruf / yatırım hedeflerinizin sayısı ve tamamlama oranı.',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.onSurface.withValues(alpha: 0.6)),
                       ),
                     ),
                   ],
@@ -1104,16 +2178,14 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         children: [
                           Text(
                             'Toplam Hedef',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             summary.totalGoals.toString(),
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: AppTextStyles.headlineMedium.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1126,16 +2198,14 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         children: [
                           Text(
                             'Tamamlanan',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             summary.achievedGoals.toString(),
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: AppTextStyles.headlineMedium.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.green,
                             ),
@@ -1149,16 +2219,14 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         children: [
                           Text(
                             'Geciken',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.onSurface.withValues(alpha: 0.6),
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             summary.overdueGoals.toString(),
-                            style: const TextStyle(
-                              fontSize: 18,
+                            style: AppTextStyles.headlineMedium.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.red,
                             ),
@@ -1174,12 +2242,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   children: [
                     Text(
                       'Genel Tamamlama Oranı',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                      style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurface.withValues(alpha: 0.6)),
                     ),
                     Text(
                       '%$achievedRate',
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: AppTextStyles.labelLarge.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -1189,7 +2256,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 LinearProgressIndicator(
                   value: summary.overallAchievementRate / 100,
                   minHeight: 8,
-                  backgroundColor: Colors.grey[200],
+                  backgroundColor: AppColors.background,
                   color: summary.overallAchievementRate >= 70
                       ? Colors.green
                       : (summary.overallAchievementRate >= 40
@@ -1206,7 +2273,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(insight, style: const TextStyle(fontSize: 12)),
+                  Text(insight, style: AppTextStyles.bodySmall),
                 ],
               ],
             ),
@@ -1245,21 +2312,20 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Expanded(
-                  child: Text(label, style: const TextStyle(fontSize: 13)),
+                  child: Text(label, style: AppTextStyles.bodyMedium),
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       'Net: ₺${NumberFormat('#,##0', 'tr_TR').format(benchmark.currentNetFlow)}',
-                      style: const TextStyle(
-                        fontSize: 13,
+                      style: AppTextStyles.bodySmall.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
                       '${isPositive ? '+' : ''}${deviation.toStringAsFixed(1)}% ortalamaya göre',
-                      style: TextStyle(fontSize: 11, color: color),
+                      style: AppTextStyles.labelSmall.copyWith(color: color),
                     ),
                   ],
                 ),
@@ -1283,7 +2349,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     Expanded(
                       child: Text(
                         'Net nakit akışınız, geçmiş ortalamalara göre ne durumda gösterir.',
-                        style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                        style: AppTextStyles.labelSmall.copyWith(color: AppColors.onSurface.withValues(alpha: 0.6)),
                       ),
                     ),
                   ],
@@ -1367,7 +2433,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           if (totalDebt > 0) ...[
             const Text(
               'Borç Detayları',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: AppTextStyles.labelLarge,
             ),
             const SizedBox(height: 8),
             if (creditCardDebts > 0)
@@ -1394,9 +2460,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             const SizedBox(height: 16),
           ],
           if (upcomingPayments.isNotEmpty) ...[
-            const Text(
+            Text(
               'Yaklaşan Ödemeler (30 gün)',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             ...upcomingPayments
@@ -1412,9 +2478,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             const SizedBox(height: 16),
           ],
           if (upcomingReceivables.isNotEmpty) ...[
-            const Text(
+            Text(
               'Yaklaşan Alacaklar (30 gün)',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             ...upcomingReceivables
@@ -1432,11 +2498,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               totalReceivables == 0 &&
               upcomingPayments.isEmpty &&
               upcomingReceivables.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16),
+            Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'Şu anda bekleyen borç veya alacak bulunmamaktadır.',
-                style: TextStyle(color: Colors.grey),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurface.withValues(alpha: 0.5)),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -1457,7 +2523,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isDark
-            ? const Color(0xFF1C1C1E)
+            ? AppColors.surfaceDark
             : (isDebt
                   ? Colors.red.withValues(alpha: 0.1)
                   : Colors.green.withValues(alpha: 0.1)),
@@ -1475,8 +2541,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         children: [
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTextStyles.bodySmall.copyWith(
               color: color,
               fontWeight: FontWeight.w500,
             ),
@@ -1484,8 +2549,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           const SizedBox(height: 8),
           Text(
             '₺${NumberFormat('#,##0', 'tr_TR').format(amount.abs())}',
-            style: TextStyle(
-              fontSize: 16,
+            style: AppTextStyles.titleMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -1507,10 +2571,10 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         children: [
           Icon(icon, size: 16, color: color),
           const SizedBox(width: 8),
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 14))),
+          Expanded(child: Text(title, style: AppTextStyles.bodyMedium)),
           Text(
             '₺${NumberFormat('#,##0', 'tr_TR').format(amount)}',
-            style: TextStyle(fontWeight: FontWeight.bold, color: color),
+            style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: color),
           ),
         ],
       ),
@@ -1542,21 +2606,20 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 13),
+                  style: AppTextStyles.bodyMedium,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   DateFormat('dd.MM.yyyy', 'tr_TR').format(date),
-                  style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  style: AppTextStyles.labelSmall.copyWith(color: AppColors.onSurface.withValues(alpha: 0.5)),
                 ),
               ],
             ),
           ),
           Text(
             '₺${NumberFormat('#,##0', 'tr_TR').format(amount)}',
-            style: TextStyle(
-              fontSize: 13,
+            style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: isDebt ? Colors.red : Colors.green,
             ),
@@ -1689,7 +2752,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.onSurface.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -1705,17 +2768,14 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               children: [
                 Text(
                   'Genel Bakış',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  style: AppTextStyles.headlineMedium.copyWith(
                     color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Seçili dönem özeti',
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
@@ -1792,7 +2852,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : color.withValues(alpha: 0.1),
+        color: isDark ? AppColors.surfaceDark : color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isDark
@@ -1810,8 +2870,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               Expanded(
                 child: Text(
                   title,
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: color,
                     fontWeight: FontWeight.w500,
                   ),
@@ -1824,8 +2883,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           const SizedBox(height: 8),
           Text(
             '₺${NumberFormat('#,##0', 'tr_TR').format(amount)}',
-            style: TextStyle(
-              fontSize: 16,
+            style: AppTextStyles.titleMedium.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -1833,9 +2891,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           if (subtitle != null)
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                color: isDark ? Colors.grey[400] : color.withValues(alpha: 0.8),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : color.withValues(alpha: 0.8),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -1854,11 +2911,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1C1C1E) : Theme.of(context).cardColor,
+        color: isDark ? AppColors.surfaceDark : Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: AppColors.onSurface.withValues(alpha: 0.05),
             blurRadius: 5,
             offset: const Offset(0, 2),
           ),
@@ -1878,21 +2935,18 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     Expanded(
                       child: Text(
                         title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                        style: AppTextStyles.headlineMedium.copyWith(
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                         ),
                       ),
                     ),
-                    if (headerAction != null) headerAction,
+                    if (headerAction != null) headerAction, // ignore: use_null_aware_elements
                   ],
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.color?.withValues(alpha: 0.6),
@@ -1903,10 +2957,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   _selectedTimeFilter == TimeFilter.custom
                       ? '${DateFormat('dd.MM.yyyy').format(_getCurrentPeriod().start)} - ${DateFormat('dd.MM.yyyy').format(_getCurrentPeriod().end)}'
                       : (_timeFilterLabels[_selectedTimeFilter] ?? '').toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTextStyles.labelSmall.copyWith(
                     fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.grey[400] : Colors.grey,
+                    color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.5),
                   ),
                 ),
               ],
@@ -1949,21 +3002,21 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   flex: 2,
                   child: Text(
                     'Hızlı genel bakış',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: AppTextStyles.labelLarge,
                   ),
                 ),
                 Expanded(
                   child: Text(
                     'Gelir',
                     textAlign: TextAlign.end,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurface.withValues(alpha: 0.6)),
                   ),
                 ),
                 Expanded(
                   child: Text(
                     'Gider',
                     textAlign: TextAlign.end,
-                    style: TextStyle(color: Colors.red[300]),
+                    style: AppTextStyles.bodyMedium.copyWith(color: Colors.red[300]),
                   ),
                 ),
               ],
@@ -2003,12 +3056,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                const Text('Nakit akışı', style: TextStyle(fontSize: 16)),
+                const Text('Nakit akışı', style: AppTextStyles.bodyLarge),
                 const SizedBox(width: 8),
                 Text(
                   CurrencyHelper.formatAmountCompact(cashFlow),
-                  style: const TextStyle(
-                    fontSize: 18,
+                  style: AppTextStyles.titleLarge.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -2030,8 +3082,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             flex: 2,
             child: Text(
               label,
-              style: TextStyle(
-                color: isDark ? Colors.grey[400] : Colors.grey[700],
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.8),
               ),
             ),
           ),
@@ -2039,9 +3091,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             child: Text(
               col1,
               textAlign: TextAlign.end,
-              style: TextStyle(
+              style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.grey[300] : Colors.black87,
+                color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.8) : AppColors.onSurface,
               ),
             ),
           ),
@@ -2049,7 +3101,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             child: Text(
               col2,
               textAlign: TextAlign.end,
-              style: const TextStyle(
+              style: AppTextStyles.bodyMedium.copyWith(
                 color: Colors.red,
                 fontWeight: FontWeight.w500,
               ),
@@ -2142,8 +3194,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               alignment: Alignment.centerLeft,
               child: Text(
                 '₺${NumberFormat('#,##0', 'tr_TR').format(income - expense)}',
-                style: const TextStyle(
-                  fontSize: 24,
+                style: AppTextStyles.displayMedium.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -2183,7 +3234,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return Column(
       children: [
         Container(
-          color: isDark ? const Color(0xFF2C2C2E) : Colors.grey[100],
+          color: isDark ? AppColors.surfaceDark : AppColors.background,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2198,20 +3249,18 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: TextStyle(
+                    style: AppTextStyles.titleMedium.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: isDark ? Colors.grey[200] : Colors.black87,
+                      color: isDark ? AppColors.background : AppColors.onSurface,
                     ),
                   ),
                 ],
               ),
               Text(
                 '₺${NumberFormat('#,##0', 'tr_TR').format(total)}',
-                style: TextStyle(
+                style: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: headerColor,
-                  fontSize: 16,
                 ),
               ),
             ],
@@ -2222,7 +3271,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             padding: const EdgeInsets.all(16),
             child: Text(
               isIncome ? 'Henüz gelir yok' : 'Henüz gider yok',
-              style: TextStyle(color: Colors.grey[500]),
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurfaceDark.withValues(alpha: 0.5)),
             ),
           )
         else
@@ -2275,8 +3324,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                                   Expanded(
                                     child: Text(
                                       categoryName,
-                                      style: const TextStyle(
-                                        fontSize: 15,
+                                      style: AppTextStyles.bodyLarge.copyWith(
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -2286,7 +3334,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                                       isExpanded
                                           ? Icons.keyboard_arrow_up
                                           : Icons.keyboard_arrow_down,
-                                      color: Colors.grey,
+                                      color: AppColors.onSurface.withValues(alpha: 0.5),
                                       size: 20,
                                     ),
                                 ],
@@ -2300,8 +3348,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                                       child: LinearProgressIndicator(
                                         value: percentage / 100,
                                         backgroundColor: isDark 
-                                            ? Colors.grey[800] 
-                                            : Colors.grey[200],
+                                            ? AppColors.surfaceDark 
+                                            : AppColors.background,
                                         valueColor: AlwaysStoppedAnimation(categoryColor),
                                         minHeight: 4,
                                       ),
@@ -2310,9 +3358,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                                   const SizedBox(width: 8),
                                   Text(
                                     '${percentage.toStringAsFixed(1)}%',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: AppColors.onSurface.withValues(alpha: 0.6),
                                     ),
                                   ),
                                 ],
@@ -2323,8 +3370,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         const SizedBox(width: 12),
                         Text(
                           '₺${NumberFormat('#,##0', 'tr_TR').format(categoryTotal)}',
-                          style: TextStyle(
-                            fontSize: 15,
+                          style: AppTextStyles.bodyLarge.copyWith(
                             fontWeight: FontWeight.w600,
                             color: categoryColor,
                           ),
@@ -2336,7 +3382,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 // Subcategories (expandable)
                 if (isExpanded && hasSubCategories)
                   Container(
-                    color: isDark ? const Color(0xFF1C1C1E) : Colors.grey[50],
+                    color: isDark ? AppColors.surfaceDark : AppColors.background,
                     child: Column(
                       children: subs.entries.map((subEntry) {
                         final subPercentage = categoryTotal > 0 
@@ -2360,26 +3406,23 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                               Expanded(
                                 child: Text(
                                   subEntry.key,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: isDark ? Colors.grey[400] : Colors.grey[700],
+                                  style: AppTextStyles.bodyMedium.copyWith(
+                                    color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.8),
                                   ),
                                 ),
                               ),
                               Text(
                                 '${subPercentage.toStringAsFixed(0)}%',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey[500],
+                                style: AppTextStyles.bodySmall.copyWith(
+                                  color: AppColors.onSurfaceDark.withValues(alpha: 0.5),
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Text(
                                 '₺${NumberFormat('#,##0', 'tr_TR').format(subEntry.value)}',
-                                style: TextStyle(
-                                  fontSize: 14,
+                                style: AppTextStyles.bodyMedium.copyWith(
                                   fontWeight: FontWeight.w500,
-                                  color: isDark ? Colors.grey[300] : Colors.grey[800],
+                                  color: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.8) : AppColors.surfaceDark,
                                 ),
                               ),
                             ],
@@ -2388,7 +3431,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       }).toList(),
                     ),
                   ),
-                Divider(height: 1, color: Colors.grey.withValues(alpha: 0.2)),
+                Divider(height: 1, color: AppColors.onSurface.withValues(alpha: 0.5).withValues(alpha: 0.2)),
               ],
             );
           }),
@@ -2480,7 +3523,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         ),
                         PieChartSectionData(
                           value: remainingValue,
-                          color: Colors.grey[200],
+                          color: AppColors.background,
                           radius: 15,
                           showTitle: false,
                         ),
@@ -2492,10 +3535,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   Center(
                     child: Text(
                       '${ratio.toStringAsFixed(1)}%',
-                      style: const TextStyle(
+                      style: AppTextStyles.bodyLarge.copyWith(
                         color: Colors.red,
                         fontWeight: FontWeight.bold,
-                        fontSize: 16,
                       ),
                     ),
                   ),
@@ -2507,27 +3549,29 @@ class _StatisticsScreenState extends State<StatisticsScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Toplam borçlar',
-                    style: TextStyle(color: Colors.grey),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.onSurface.withValues(alpha: 0.5),
+                    ),
                   ),
                   Text(
                     '₺${NumberFormat('#,##0', 'tr_TR').format(totalDebt)}',
-                    style: const TextStyle(
+                    style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
+                  Text(
                     'Toplam Gelir',
-                    style: TextStyle(color: Colors.grey),
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.onSurface.withValues(alpha: 0.5),
+                    ),
                   ),
                   Text(
                     '₺${NumberFormat('#,##0', 'tr_TR').format(totalIncome)}',
-                    style: const TextStyle(
+                    style: AppTextStyles.bodyLarge.copyWith(
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
                     ),
                   ),
                 ],
@@ -2617,7 +3661,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                              if (totalForChart == 0)
                                PieChartSectionData(
                                  value: 100,
-                                 color: Colors.grey[200],
+                                 color: AppColors.background,
                                  radius: 15,
                                  showTitle: false,
                                ),
@@ -2629,9 +3673,8 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       Center(
                         child: Text(
                           '₺${NumberFormat.compact(locale: 'tr_TR').format(positiveAssets)}',
-                          style: const TextStyle(
+                          style: AppTextStyles.labelLarge.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
                           ),
                         ),
                       ),
@@ -2649,7 +3692,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       if (otherPercentage > 0)
                          _buildLegendItem('Diğer', otherPercentage, Colors.orange),
                       if (totalForChart == 0)
-                         const Text('Varlık bulunamadı', style: TextStyle(color: Colors.grey)),
+                         Text('Varlık bulunamadı', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.onSurface.withValues(alpha: 0.5))),
                     ],
                   ),
                 ),
@@ -2678,14 +3721,13 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(fontSize: 14),
+              style: AppTextStyles.bodyMedium,
             ),
           ),
           Text(
             '${percentage.toStringAsFixed(1)}%',
-            style: const TextStyle(
+            style: AppTextStyles.bodyMedium.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 14,
             ),
           ),
         ],
@@ -2694,13 +3736,13 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }
 
   Widget _buildHeaderTimeFilter() {
-    final selectedLabel = _timeFilterLabels[_selectedTimeFilter]!;
-    final filters = _timeFilterLabels.values.toList();
-
     return TimeFilterBar(
-      selectedFilter: selectedLabel,
-      filters: filters,
-      onFilterChanged: _onTimeFilterChanged,
+      selectedFilter: _selectedTimeFilter,
+      onFilterChanged: _onFilterChanged,
+      customStartDate: _customStartDate,
+      customEndDate: _customEndDate,
+      onStartDateChanged: (d) => setState(() => _customStartDate = d),
+      onEndDateChanged: (d) => setState(() => _customEndDate = d),
     );
   }
 
@@ -2735,9 +3777,9 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF00BFA5),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
+              primary: AppColors.primary,
+              onPrimary: AppColors.onPrimary,
+              onSurface: AppColors.onSurface,
             ),
           ),
           child: child!,
@@ -2781,7 +3823,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
         try {
           paymentMethodColors[walletName] = Color(int.parse(wallet.color));
         } catch (_) {
-          paymentMethodColors[walletName] = Colors.grey;
+          paymentMethodColors[walletName] = AppColors.onSurface.withValues(alpha: 0.5);
         }
 
         totalExpense += item.amount;
@@ -2862,7 +3904,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   final percentage = totalExpense > 0
                       ? (entry.value / totalExpense) * 100
                       : 0.0;
-                  final color = paymentMethodColors[entry.key] ?? Colors.grey;
+                  final color = paymentMethodColors[entry.key] ?? AppColors.onSurface.withValues(alpha: 0.5);
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(
@@ -2879,25 +3921,22 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                         Expanded(
                           child: Text(
                             entry.key,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: AppTextStyles.bodyMedium.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
                         ),
                         Text(
                           '₺${NumberFormat('#,##0', 'tr_TR').format(entry.value)}',
-                          style: const TextStyle(
-                            fontSize: 14,
+                          style: AppTextStyles.bodyMedium.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           '${percentage.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
                       ],
@@ -2946,11 +3985,11 @@ class _StatisticsScreenState extends State<StatisticsScreen>
           return _buildCard(
             title: 'Fatura Takibi',
             subtitle: 'Bu dönemde fatura bulunmamaktadır',
-            content: const Padding(
-              padding: EdgeInsets.all(16),
+            content: Padding(
+              padding: const EdgeInsets.all(16),
               child: Text(
                 'Bu dönemde ödenen veya bekleyen fatura bulunmamaktadır.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppColors.onSurface.withValues(alpha: 0.5)),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -3076,15 +4115,15 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                               const SizedBox(width: 8),
                               Text(
                                 '${percentage.toStringAsFixed(1)}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey,
+                                  color: AppColors.onSurface.withValues(alpha: 0.5),
                                 ),
                               ),
-                              const Icon(
+                              Icon(
                                 Icons.arrow_forward_ios,
                                 size: 14,
-                                color: Colors.grey,
+                                color: AppColors.onSurface.withValues(alpha: 0.5),
                               ),
                             ],
                           ),
@@ -3322,12 +4361,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Bu kategorideki faturalar:',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: Colors.grey,
+                            color: AppColors.onSurface.withValues(alpha: 0.5),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -3370,7 +4409,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                   child: ElevatedButton(
                     onPressed: () => Navigator.pop(context),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5E5CE6),
+                      backgroundColor: AppColors.primary,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -3379,7 +4418,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                     child: const Text(
                       'Tamam',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

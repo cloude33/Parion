@@ -9,11 +9,14 @@ import 'l10n/app_localizations.dart';
 import 'services/theme_service.dart';
 import 'services/language_service.dart';
 import 'services/auto_backup_service.dart';
+import 'services/onboarding_service.dart';
 import 'services/auth/interfaces/auth_orchestrator_interface.dart';
 import 'models/security/security_models.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
+import 'core/design/app_theme.dart';
 import 'core/di/service_locator.dart';
 import 'services/credit_card_box_service.dart';
 import 'models/credit_card.dart';
@@ -36,24 +39,35 @@ void main() async {
   // Sistem navigasyon çubuğu rengini scaffold ile eşleştir
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
-      systemNavigationBarColor: Color(0xFFCAE3CA), // Scaffold arka plan rengi
+      systemNavigationBarColor: Color(0xFFF8F9FA), // Scaffold arka plan rengiyle uyumlu
       systemNavigationBarIconBrightness: Brightness.dark,
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.dark,
     ),
   );
 
-  // Firebase'i başlat (web için opsiyonel)
-  if (!kIsWeb) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } else {
-    debugPrint('Running on Web - Firebase initialization skipped');
+  debugPrint('Firebase initialization starting...');
+  try {
+    if (!kIsWeb) {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        ).timeout(const Duration(seconds: 10));
+        debugPrint('Firebase initialization completed.');
+      } else {
+        debugPrint('Firebase already initialized, skipping...');
+      }
+    } else {
+      debugPrint('Running on Web - Firebase initialization skipped');
+    }
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
   }
 
   await initializeDateFormatting('tr_TR', null);
+  debugPrint('Date formatting initialized.');
   await Hive.initFlutter();
+  debugPrint('Hive Flutter initialized.');
 
   try {
     Hive.registerAdapter(CreditCardAdapter());
@@ -86,6 +100,7 @@ void main() async {
 
   // Setup modern dependency injection
   try {
+    debugPrint('Dependency injection starting...');
     await setupDependencyInjection();
     debugPrint('Modern dependency injection initialized');
   } catch (e) {
@@ -123,10 +138,12 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
   final LanguageService _languageService = LanguageService();
   final AutoBackupService _autoBackupService = AutoBackupService();
   final BillPaymentService _billPaymentService = BillPaymentService();
+  final OnboardingService _onboardingService = OnboardingService();
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
 
   ThemeMode _themeMode = ThemeMode.system;
   AuthState _authState = AuthState.unauthenticated();
+  bool? _onboardingCompleted; // null = not yet checked
 
   @override
   void initState() {
@@ -134,6 +151,7 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _authOrchestrator = getIt<IAuthOrchestrator>(); // getIt is global
     _loadTheme();
+    _loadOnboardingStatus();
     _authOrchestrator.authStateStream.listen((authState) {
       if (mounted) {
         final wasAuthenticated = _authState.isAuthenticated;
@@ -163,6 +181,15 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
     if (mounted) {
       setState(() {
         _themeMode = themeMode;
+      });
+    }
+  }
+
+  Future<void> _loadOnboardingStatus() async {
+    final completed = await _onboardingService.isOnboardingCompleted();
+    if (mounted) {
+      setState(() {
+        _onboardingCompleted = completed;
       });
     }
   }
@@ -222,8 +249,8 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
           title: 'Parion',
           debugShowCheckedModeBanner: false,
           themeMode: _themeMode,
-          theme: ThemeService.lightTheme,
-          darkTheme: ThemeService.darkTheme,
+          theme: AppTheme.lightTheme(),
+          darkTheme: AppTheme.darkTheme(),
           locale: _languageService.locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
@@ -245,6 +272,16 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
 
   Widget _getInitialScreen() {
     if (_authState.isAuthenticated) {
+      // Onboarding durumu henüz yüklenmemişse yükleme göster
+      if (_onboardingCompleted == null) {
+        return const Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
+      // Onboarding tamamlanmamışsa onboarding ekranını göster
+      if (!_onboardingCompleted!) {
+        return const OnboardingScreen();
+      }
       return const HomeScreen();
     }
     return const WelcomeScreen();

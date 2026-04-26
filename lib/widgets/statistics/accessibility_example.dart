@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'accessibility_helpers.dart';
 
@@ -12,7 +13,7 @@ class AccessibilityExample extends StatelessWidget {
         title: const Text('Erişilebilirlik Özellikleri'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _buildSection(
             context,
@@ -181,7 +182,7 @@ class AccessibilityExample extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -324,7 +325,7 @@ class AccessibilityTestWidget extends StatelessWidget {
         title: const Text('Erişilebilirlik Testi'),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -387,7 +388,7 @@ class AccessibilityTestWidget extends StatelessWidget {
 
   Widget _buildChecklistItem(String text, Color color) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
           Icon(Icons.check_circle, color: color, size: 20),
@@ -400,9 +401,9 @@ class AccessibilityTestWidget extends StatelessWidget {
 
   Widget _buildTestScenario(String title, String description) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

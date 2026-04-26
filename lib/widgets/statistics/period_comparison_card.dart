@@ -1,5 +1,7 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../core/design/app_text_styles.dart';
 class PeriodComparisonCard extends StatelessWidget {
   final String title;
   final double currentValue;
@@ -43,7 +45,7 @@ class PeriodComparisonCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -62,7 +64,7 @@ class PeriodComparisonCard extends StatelessWidget {
                     size: 20,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,11 +76,10 @@ class PeriodComparisonCard extends StatelessWidget {
                         ),
                       ),
                       if (subtitle != null) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           subtitle!,
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: AppTextStyles.labelSmall.copyWith(
                             color: Colors.grey[600],
                           ),
                         ),
@@ -88,14 +89,13 @@ class PeriodComparisonCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Bu Dönem',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.grey[600],
                   ),
                 ),
@@ -108,14 +108,13 @@ class PeriodComparisonCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Önceki Dönem',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: Colors.grey[600],
                   ),
                 ),
@@ -127,11 +126,11 @@ class PeriodComparisonCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Divider(
               color: isDark ? Colors.white12 : Colors.black12,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -142,11 +141,10 @@ class PeriodComparisonCard extends StatelessWidget {
                       size: 20,
                       color: changeColor,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSpacing.xs),
                     Text(
                       'Değişim',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: Colors.grey[600],
                       ),
                     ),
@@ -157,16 +155,14 @@ class PeriodComparisonCard extends StatelessWidget {
                   children: [
                     Text(
                       '${change >= 0 ? '+' : ''}${_formatCurrency(change)}',
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: AppTextStyles.titleMedium.copyWith(
                         fontWeight: FontWeight.bold,
                         color: changeColor,
                       ),
                     ),
                     Text(
                       '${changePercentage >= 0 ? '+' : ''}${changePercentage.toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTextStyles.bodySmall.copyWith(
                         color: changeColor,
                       ),
                     ),
@@ -175,11 +171,11 @@ class PeriodComparisonCard extends StatelessWidget {
               ],
             ),
             if (change != 0) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
                   color: changeColor.withValues(alpha: 0.1),
@@ -193,11 +189,10 @@ class PeriodComparisonCard extends StatelessWidget {
                       size: 14,
                       color: changeColor,
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSpacing.xs),
                     Text(
                       isImprovement ? 'İyileşme' : 'Dikkat',
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: AppTextStyles.labelSmall.copyWith(
                         color: changeColor,
                         fontWeight: FontWeight.w600,
                       ),
@@ -231,7 +226,7 @@ class PeriodComparisonList extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -241,7 +236,7 @@ class PeriodComparisonList extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
 
             ...comparisons.map((comparison) {
               final change = comparison.currentValue - comparison.previousValue;
@@ -264,7 +259,7 @@ class PeriodComparisonList extends StatelessWidget {
                       : Icons.trending_down;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: 16.0),
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                 child: Column(
                   children: [
                     Row(
@@ -274,7 +269,7 @@ class PeriodComparisonList extends StatelessWidget {
                           size: 20,
                           color: comparison.color,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,11 +280,10 @@ class PeriodComparisonList extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: AppSpacing.xs),
                               Text(
                                 _formatCurrency(comparison.currentValue),
-                                style: TextStyle(
-                                  fontSize: 12,
+                                style: AppTextStyles.bodySmall.copyWith(
                                   color: Colors.grey[600],
                                 ),
                               ),
@@ -306,22 +300,20 @@ class PeriodComparisonList extends StatelessWidget {
                                   size: 16,
                                   color: changeColor,
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: AppSpacing.xs),
                                 Text(
                                   '${changePercentage >= 0 ? '+' : ''}${changePercentage.toStringAsFixed(1)}%',
-                                  style: TextStyle(
-                                    fontSize: 13,
+                                  style: AppTextStyles.bodySmall.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: changeColor,
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               '${change >= 0 ? '+' : ''}${_formatCurrency(change)}',
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: AppTextStyles.labelSmall.copyWith(
                                 color: changeColor,
                               ),
                             ),
@@ -330,11 +322,11 @@ class PeriodComparisonList extends StatelessWidget {
                       ],
                     ),
                     if (comparison != comparisons.last) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.md),
                       Divider(
                         color: isDark ? Colors.white12 : Colors.black12,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: AppSpacing.xs),
                     ],
                   ],
                 ),

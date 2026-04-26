@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class ChartLegend extends StatelessWidget {
   final Map<String, Color> items;
   final Map<String, String>? values;
@@ -86,9 +87,12 @@ class LegendItem extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xs,
+        ),
         child: Opacity(
-          opacity: isSelected ? 1.0 : 0.4,
+          opacity: isSelected ? 1.0 : 0.5,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [

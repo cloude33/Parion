@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class PaginatedListView<T> extends StatefulWidget {
   final List<T> items;
   final int itemsPerPage;
@@ -100,7 +101,7 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
       return widget.emptyWidget ??
           const Center(
             child: Padding(
-              padding: EdgeInsets.all(32.0),
+              padding: EdgeInsets.all(AppSpacing.xxxl),
               child: Text('Gösterilecek öğe bulunamadı'),
             ),
           );
@@ -113,7 +114,7 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
           if (widget.header != null) widget.header!,
           if (widget.showItemCount) ...[
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
               child: Text(
                 _getPageInfo(),
                 style: Theme.of(
@@ -128,7 +129,7 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
           if (_hasMore) ...[
             const SizedBox(height: 16),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: _isLoading
                   ? Center(
                       child: Column(
@@ -147,7 +148,7 @@ class _PaginatedListViewState<T> extends State<PaginatedListView<T>> {
                       icon: const Icon(Icons.expand_more),
                       label: Text(widget.loadMoreText),
                       style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                       ),
                     ),
             ),
@@ -240,7 +241,7 @@ class _StatisticsPaginatedTableState extends State<StatisticsPaginatedTable> {
     if (widget.rows.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.all(32.0),
+          padding: EdgeInsets.all(AppSpacing.xxxl),
           child: Text('Gösterilecek veri bulunamadı'),
         ),
       );
@@ -250,7 +251,7 @@ class _StatisticsPaginatedTableState extends State<StatisticsPaginatedTable> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
           decoration: BoxDecoration(
             color: isDark ? Colors.grey[850] : Colors.grey[100],
             borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
@@ -286,7 +287,7 @@ class _StatisticsPaginatedTableState extends State<StatisticsPaginatedTable> {
           }
 
           return Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
             decoration: BoxDecoration(
               color: index.isEven
                   ? (isDark ? Colors.grey[900] : Colors.white)
@@ -318,7 +319,7 @@ class _StatisticsPaginatedTableState extends State<StatisticsPaginatedTable> {
         }),
         if (widget.showPageNavigation && _totalPages > 1) ...[
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.lg),
             decoration: BoxDecoration(
               color: isDark ? Colors.grey[850] : Colors.grey[100],
               borderRadius: const BorderRadius.vertical(

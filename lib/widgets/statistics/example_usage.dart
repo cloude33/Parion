@@ -1,3 +1,4 @@
+import '../../core/design/app_spacing.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:parion/models/cash_flow_data.dart';
@@ -7,6 +8,9 @@ import 'interactive_pie_chart.dart';
 import 'interactive_bar_chart.dart';
 import 'custom_tooltip.dart';
 import 'chart_legend.dart';
+import 'time_filter_bar.dart';
+import '../../screens/statistics_screen.dart';
+
 class StatisticsWidgetsExample extends StatelessWidget {
   const StatisticsWidgetsExample({super.key});
 
@@ -17,11 +21,10 @@ class StatisticsWidgetsExample extends StatelessWidget {
         title: const Text('Statistics Widgets Example'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           TimeFilterBar(
-            selectedFilter: 'Monthly',
-            filters: const ['Daily', 'Weekly', 'Monthly', 'Yearly'],
+            selectedFilter: TimeFilter.monthly,
             onFilterChanged: (filter) {
               debugPrint('Filter changed to: $filter');
             },

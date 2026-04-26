@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'animations/fade_in_animation.dart';
 import 'animations/slide_transition_animation.dart';
 import 'animations/scale_animation.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 /// Animated version of SummaryCard with entrance animations
 class AnimatedSummaryCard extends StatelessWidget {
@@ -40,7 +41,7 @@ class AnimatedSummaryCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -48,7 +49,7 @@ class AnimatedSummaryCard extends StatelessWidget {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     decoration: BoxDecoration(
                       color: color.withValues(alpha: isDark ? 0.2 : 0.1),
                       borderRadius: BorderRadius.circular(8),

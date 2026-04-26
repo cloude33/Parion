@@ -5,6 +5,7 @@ import '../../models/transaction.dart';
 import '../../models/credit_card_transaction.dart';
 import '../../services/transaction_filter_service.dart';
 import 'filter_bar.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class FilterClearDemo extends StatefulWidget {
   const FilterClearDemo({super.key});
 
@@ -215,7 +216,7 @@ class _FilterClearDemoState extends State<FilterClearDemo> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: FilterBar(
               selectedTimeFilter: _selectedTimeFilter,
               selectedCategories: _selectedCategories,
@@ -242,13 +243,13 @@ class _FilterClearDemoState extends State<FilterClearDemo> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Card(
               color: _hasActiveFilters
                   ? const Color(0xFFFF9800).withValues(alpha: 0.1)
                   : const Color(0xFF4CAF50).withValues(alpha: 0.1),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -318,7 +319,7 @@ class _FilterClearDemoState extends State<FilterClearDemo> {
 
           const SizedBox(height: 16),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Row(
               children: [
                 Expanded(
@@ -384,7 +385,7 @@ class _FilterClearDemoState extends State<FilterClearDemo> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                     itemCount: _filteredTransactions.length,
                     itemBuilder: (context, index) {
                       final transaction =
@@ -395,7 +396,7 @@ class _FilterClearDemoState extends State<FilterClearDemo> {
                       );
 
                       return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
+                        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: ListTile(
                           leading: CircleAvatar(
                             backgroundColor: category.color,

@@ -10,6 +10,7 @@ import 'animations/slide_transition_animation.dart';
 import 'animations/scale_animation.dart';
 import 'interactive_line_chart.dart';
 import 'interactive_pie_chart.dart';
+import 'package:parion/core/design/app_spacing.dart';
 
 /// Example screen demonstrating all animation types
 class AnimationsExampleScreen extends StatelessWidget {
@@ -22,7 +23,7 @@ class AnimationsExampleScreen extends StatelessWidget {
         title: const Text('İstatistik Animasyonları'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           // Section 1: Fade In Animations
           FadeInAnimation(
@@ -115,7 +116,7 @@ class AnimationsExampleScreen extends StatelessWidget {
             beginScale: 0.8,
             child: Card(
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Row(
                   children: [
                     Icon(Icons.info_outline, color: Colors.blue),
@@ -208,7 +209,7 @@ class AnimationsExampleScreen extends StatelessWidget {
               index: index,
               staggerDelay: const Duration(milliseconds: 100),
               child: Card(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: ListTile(
                   leading: CircleAvatar(
                     child: Text('${index + 1}'),
@@ -228,7 +229,7 @@ class AnimationsExampleScreen extends StatelessWidget {
             child: Card(
               color: Colors.blue.withValues(alpha: 0.1),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -266,7 +267,7 @@ class AnimationsExampleScreen extends StatelessWidget {
 
   Widget _buildInfoRow(String name, String duration, String description) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
           SizedBox(

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../../models/category.dart';
 import '../../models/wallet.dart';
 import '../../utils/debounce_throttle.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class DebouncedFilterBar extends StatefulWidget {
   final String selectedTimeFilter;
   final List<String> selectedCategories;
@@ -177,7 +178,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
 
   Widget _buildTimeFilterRow(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -200,7 +201,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
 
   Widget _buildAdditionalFiltersRow(BuildContext context, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       child: Row(
         children: [
           Expanded(
@@ -246,7 +247,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
               widget.selectedWallets.isNotEmpty ||
               widget.selectedTransactionType != 'all')
             Container(
-              margin: const EdgeInsets.only(left: 4),
+              margin: const EdgeInsets.only(left: AppSpacing.xs),
               decoration: BoxDecoration(
                 color: const Color(0xFF00BFA5).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
@@ -330,7 +331,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -344,7 +345,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
     return GestureDetector(
       onTap: () => _debouncedTimeFilterChange(label),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: isSelected
               ? const Color(0xFF00BFA5)
@@ -374,7 +375,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
     return GestureDetector(
       onTap: widget.onCustomDateRange,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
         decoration: BoxDecoration(
           color: isSelected
               ? const Color(0xFF00BFA5)
@@ -419,7 +420,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
         decoration: BoxDecoration(
           color: isActive
               ? const Color(0xFF00BFA5).withValues(alpha: 0.1)
@@ -465,7 +466,7 @@ class _DebouncedFilterBarState extends State<DebouncedFilterBar> {
     required bool isDark,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
         color: const Color(0xFF00BFA5).withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
@@ -581,7 +582,7 @@ class _CategoryFilterSheetState extends State<_CategoryFilterSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
@@ -696,7 +697,7 @@ class _WalletFilterSheetState extends State<_WalletFilterSheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(
@@ -823,7 +824,7 @@ class _TransactionTypeFilterSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(

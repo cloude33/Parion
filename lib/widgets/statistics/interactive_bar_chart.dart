@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:parion/core/design/app_spacing.dart';
 class InteractiveBarChart extends StatefulWidget {
   final Map<String, double> data;
   final Color color;
@@ -64,7 +65,7 @@ class _InteractiveBarChartState extends State<InteractiveBarChart> {
       children: [
         if (widget.title != null) ...[
           Padding(
-            padding: const EdgeInsets.only(left: 16, bottom: 8),
+            padding: const EdgeInsets.only(left: AppSpacing.lg, bottom: AppSpacing.sm),
             child: Text(
               widget.title!,
               style: theme.textTheme.titleMedium?.copyWith(
@@ -84,7 +85,7 @@ class _InteractiveBarChartState extends State<InteractiveBarChart> {
                         size: 48,
                         color: Colors.grey[400],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSpacing.lg),
                       Text(
                         'Veri yok',
                         style: theme.textTheme.bodyLarge?.copyWith(
@@ -95,7 +96,11 @@ class _InteractiveBarChartState extends State<InteractiveBarChart> {
                   ),
                 )
               : Padding(
-                  padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+                  padding: const EdgeInsets.only(
+                    right: AppSpacing.lg,
+                    top: AppSpacing.sm,
+                    bottom: AppSpacing.sm,
+                  ),
                   child: BarChart(
                     _createBarChartData(minY, maxY, isDark),
                     // Increased animation duration for smoother chart animations
@@ -174,12 +179,12 @@ class _InteractiveBarChartState extends State<InteractiveBarChart> {
                 final label = labels[value.toInt()];
                 if (widget.labelBuilder != null) {
                   return Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: widget.labelBuilder!(label),
                   );
                 }
                 return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: AppSpacing.sm),
                   child: Text(
                     label,
                     style: TextStyle(
@@ -244,7 +249,7 @@ class _InteractiveBarChartState extends State<InteractiveBarChart> {
           getTooltipColor: (group) =>
               isDark ? Colors.grey[850]! : Colors.black87,
           tooltipBorderRadius: BorderRadius.circular(8),
-          tooltipPadding: const EdgeInsets.all(8),
+          tooltipPadding: const EdgeInsets.all(AppSpacing.sm),
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             final labels = widget.data.keys.toList();
             final label = groupIndex < labels.length ? labels[groupIndex] : '';
