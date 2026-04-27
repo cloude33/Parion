@@ -1,0 +1,5 @@
+# appfile, uygulamanızın paket adını ve servis hesabınızın JSON anahtar dosyasının yolunu tanımlar.
+
+json_key_file("./sec.json") # JSON dosyanızın yolu. "sec.json" dosyasını bir sonraki adımda oluşturacaksınız.
+
+package_name("com.bulut.wallet")  # Parion uygulamanızın paket adı.

@@ -1,0 +1,657 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:parion/models/transaction.dart';
+import 'package:parion/models/wallet.dart';
+import 'package:parion/models/loan.dart';
+import 'package:parion/models/credit_card_transaction.dart';
+import 'package:parion/screens/statistics_screen.dart';
+import 'package:parion/models/cash_flow_data.dart';
+import 'package:parion/models/asset_analysis.dart';
+import 'package:parion/models/credit_analysis.dart';
+import 'package:parion/services/data_service.dart';
+import 'package:parion/services/statistics_service.dart';
+import 'package:get_it/get_it.dart';
+import 'package:parion/models/category.dart';
+import 'package:mockito/mockito.dart';
+import '../test_setup.dart';
+
+void main() {
+  setUpAll(() async {
+    await TestSetup.initializeTestEnvironment();
+  });
+
+  tearDownAll(() async {
+    await TestSetup.cleanupTestEnvironment();
+  });
+
+  group('StatisticsScreen Widget Tests', () {
+    late List<Transaction> testTransactions;
+    late List<Wallet> testWallets;
+    late List<Loan> testLoans;
+    late List<CreditCardTransaction> testCreditCardTransactions;
+
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      // Stub dependencies with Fakes to prevent Hive errors
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+
+      // Setup test data
+      testTransactions = [
+        Transaction(
+          id: '1',
+          amount: 1000.0,
+          description: 'Test Income',
+          date: DateTime.now(),
+          type: 'income',
+          category: 'Salary',
+          walletId: 'wallet1',
+        ),
+        Transaction(
+          id: '2',
+          amount: 500.0,
+          description: 'Test Expense',
+          date: DateTime.now(),
+          type: 'expense',
+          category: 'Food',
+          walletId: 'wallet1',
+        ),
+      ];
+
+      testWallets = [
+        Wallet(
+          id: 'wallet1',
+          name: 'Test Wallet',
+          balance: 5000.0,
+          type: 'bank',
+          color: '0xFF2196F3',
+          icon: 'account_balance',
+        ),
+        Wallet(
+          id: 'wallet2',
+          name: 'Test Credit Card',
+          balance: -2000.0,
+          type: 'credit_card',
+          color: '0xFFF44336',
+          icon: 'credit_card',
+        ),
+      ];
+
+      testLoans = [];
+      testCreditCardTransactions = [];
+    });
+
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should render statistics screen with all tabs', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Verify all 7 tabs are present (new design)
+      expect(find.text('Özet'), findsOneWidget);
+      expect(find.text('Harcama'), findsOneWidget);
+      expect(find.text('Nakit Akışı'), findsOneWidget);
+      expect(find.text('Varlıklar'), findsOneWidget);
+      expect(find.text('Borç/Alacak'), findsOneWidget);
+      expect(find.text('Kartlar'), findsOneWidget);
+      expect(find.text('Tekrarlayan'), findsOneWidget);
+    });
+
+    testWidgets('should switch between tabs', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Tap on Harcama tab
+      await tester.tap(find.text('Harcama'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Verify tab switched (IndexedStack is used)
+      expect(find.byType(IndexedStack), findsOneWidget);
+
+      // Tap on Nakit Akışı tab
+      await tester.tap(find.text('Nakit Akışı'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Tap on Varlıklar tab
+      await tester.tap(find.text('Varlıklar'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+    });
+
+    testWidgets('should display time filter bar', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // TimeFilterBar should be visible
+      expect(find.byType(TabBar), findsOneWidget);
+    });
+
+    testWidgets('should render cash flow tab without errors', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      // Navigate to Nakit Akışı tab
+      await tester.tap(find.text('Nakit Akışı'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should not throw
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should render assets tab without errors', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      // Navigate to Varlıklar tab
+      await tester.tap(find.text('Varlıklar'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should not throw
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should render Özet tab (default) without errors', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      // Default tab is Özet (index 0)
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should not throw
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should handle empty transactions', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: [],
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: [],
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should still render without errors
+      expect(find.text('Özet'), findsOneWidget);
+    });
+
+    testWidgets('should handle empty wallets', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: [],
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should still render without errors
+      expect(find.text('Özet'), findsOneWidget);
+    });
+
+    testWidgets('should display KMH wallets in assets tab', (
+      WidgetTester tester,
+    ) async {
+      final kmhWallet = Wallet(
+        id: 'kmh1',
+        name: 'Test KMH',
+        balance: -1000.0,
+        type: 'bank',
+        color: '0xFF9C27B0',
+        icon: 'account_balance',
+        creditLimit: 5000.0,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: [kmhWallet],
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      // Navigate to Varlıklar tab
+      await tester.tap(find.text('Varlıklar'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should not throw
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should display loans in Borç/Alacak tab', (
+      WidgetTester tester,
+    ) async {
+      final testLoan = Loan(
+        id: 'loan1',
+        name: 'Test Loan',
+        bankName: 'Test Bank',
+        totalAmount: 10000.0,
+        remainingAmount: 5000.0,
+        totalInstallments: 12,
+        remainingInstallments: 6,
+        currentInstallment: 6,
+        installmentAmount: 833.33,
+        startDate: DateTime.now().subtract(const Duration(days: 180)),
+        endDate: DateTime.now().add(const Duration(days: 180)),
+        walletId: 'w1',
+        installments: [],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: [testLoan],
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      // Navigate to Borç/Alacak tab
+      await tester.tap(find.text('Borç/Alacak'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should not throw
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should handle dark mode', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.dark(),
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should render in dark mode without errors
+      expect(find.text('Özet'), findsOneWidget);
+    });
+
+    testWidgets('should handle light mode', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData.light(),
+          home: StatisticsScreen(
+            transactions: testTransactions,
+            wallets: testWallets,
+            loans: testLoans,
+            creditCardTransactions: testCreditCardTransactions,
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should render in light mode without errors
+      expect(find.text('Özet'), findsOneWidget);
+    });
+  });
+
+  group('StatisticsScreen Chart Rendering Tests', () {
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+    });
+
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should render line chart in cash flow tab without errors', (
+      WidgetTester tester,
+    ) async {
+      final transactions = List.generate(
+        12,
+        (index) => Transaction(
+          id: 'trans$index',
+          amount: 1000.0 + (index * 100),
+          description: 'Transaction $index',
+          date: DateTime(2024, index + 1, 15),
+          type: index % 2 == 0 ? 'income' : 'expense',
+          category: 'Test',
+          walletId: 'wallet1',
+        ),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: transactions,
+            wallets: [
+              Wallet(
+                id: 'wallet1',
+                name: 'Test',
+                balance: 5000.0,
+                type: 'bank',
+                color: '0xFF2196F3',
+                icon: 'account_balance',
+              ),
+            ],
+            loans: [],
+            creditCardTransactions: [],
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Nakit Akışı'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should not throw
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should render assets tab without errors', (
+      WidgetTester tester,
+    ) async {
+      final wallets = <Wallet>[
+        Wallet(
+          id: 'w1',
+          name: 'Wallet 1',
+          balance: 3000.0,
+          type: 'bank',
+          color: '0xFF2196F3',
+          icon: 'account_balance',
+        ),
+        Wallet(
+          id: 'w2',
+          name: 'Wallet 2',
+          balance: 2000.0,
+          type: 'cash',
+          color: '0xFF4CAF50',
+          icon: 'money',
+        ),
+      ];
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: [],
+            wallets: wallets,
+            loans: [],
+            creditCardTransactions: [],
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Varlıklar'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // Should not throw
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('StatisticsScreen Filter Interaction Tests', () {
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+    });
+
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should have TabBar visible', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: [],
+            wallets: [],
+            loans: [],
+            creditCardTransactions: [],
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      // TabBar should be visible
+      expect(find.byType(TabBar), findsOneWidget);
+    });
+  });
+
+  group('StatisticsScreen Export Button Tests', () {
+    setUp(() async {
+      await TestSetup.setupTest();
+
+      GetIt.I.allowReassignment = true;
+      GetIt.I.registerSingleton<DataService>(FakeDataService());
+      GetIt.I.registerSingleton<StatisticsService>(FakeStatisticsService());
+    });
+
+    tearDown(() async {
+      await TestSetup.tearDownTest();
+    });
+
+    testWidgets('should render without errors', (
+      WidgetTester tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: StatisticsScreen(
+            transactions: [
+              Transaction(
+                id: '1',
+                amount: 1000.0,
+                description: 'Test',
+                date: DateTime.now(),
+                type: 'income',
+                category: 'Salary',
+                walletId: 'w1',
+              ),
+            ],
+            wallets: [],
+            loans: [],
+            creditCardTransactions: [],
+          ),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(tester.takeException(), isNull);
+    });
+  });
+}
+
+class FakeDataService extends Fake implements DataService {
+  @override
+  Future<List<Category>> getCategories() async => [];
+
+  @override
+  Future<List<Wallet>> getWallets() async => [];
+
+  @override
+  Future<List<Transaction>> getTransactions() async => [];
+}
+
+class FakeStatisticsService extends Fake implements StatisticsService {
+  @override
+  Future<AssetAnalysis> analyzeAssets() async => AssetAnalysis(
+    totalAssets: 0,
+    totalLiabilities: 0,
+    netWorth: 0,
+    liquidityRatio: 0,
+    assetBreakdown: {},
+    netWorthTrend: [],
+    cashAndEquivalents: 0,
+    bankAccounts: 0,
+    positiveKmhBalances: 0,
+    investments: 0,
+    healthScore: FinancialHealthScore(
+      liquidityScore: 0,
+      debtManagementScore: 0,
+      savingsScore: 0,
+      investmentScore: 0,
+      overallScore: 0,
+      recommendations: [],
+    ),
+  );
+
+  @override
+  Future<CreditAnalysis> analyzeCreditAndKmh() async => CreditAnalysis(
+    totalCreditCardDebt: 0,
+    totalCreditLimit: 0,
+    creditUtilization: 0,
+    creditCards: [],
+    totalKmhDebt: 0,
+    totalKmhLimit: 0,
+    kmhUtilization: 0,
+    kmhAccounts: [],
+    dailyInterest: 0,
+    monthlyInterest: 0,
+    annualInterest: 0,
+    totalDebt: 0,
+    debtTrend: [],
+  );
+
+  @override
+  Future<SpendingAnalysis> analyzeSpending({
+    required DateTime startDate,
+    required DateTime endDate,
+    List<String>? categories,
+    Map<String, double>? budgets,
+  }) async => SpendingAnalysis(
+    totalSpending: 0,
+    categoryBreakdown: {},
+    paymentMethodBreakdown: {},
+    categoryTrends: [],
+    budgetComparisons: {},
+    topCategory: '',
+    topCategoryAmount: 0,
+    mostSpendingDay: DayOfWeek.monday,
+    mostSpendingHour: 0,
+    dailySpending: {},
+    hourlySpending: {},
+  );
+
+  @override
+  Future<CashFlowData> calculateCashFlow({
+    required DateTime startDate,
+    required DateTime endDate,
+    String? walletId,
+    String? category,
+    bool includePreviousPeriod = false,
+  }) async => CashFlowData(
+    totalIncome: 0,
+    totalExpense: 0,
+    netCashFlow: 0,
+    averageDaily: 0,
+    averageMonthly: 0,
+    monthlyData: [],
+    trend: TrendDirection.stable,
+  );
+}

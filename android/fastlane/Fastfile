@@ -1,0 +1,13 @@
+default_platform(:android)
+
+platform :android do
+  desc "Deploy new version to Google Play"
+  lane :deploy do
+    # Build etmeden SADECE yükle
+    upload_to_play_store(
+      track: 'internal',           # internal, alpha, beta veya production
+      release_status: 'completed', # 'draft' veya 'completed'
+      aab: '../build/app/outputs/bundle/release/app-release.aab'  # AAB dosyanızın yolu
+    )
+  end
+end
