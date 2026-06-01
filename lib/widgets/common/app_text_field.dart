@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:parion/core/design/app_colors.dart';
 import 'package:parion/core/design/app_spacing.dart';
 import 'package:parion/core/design/app_text_styles.dart';
@@ -14,6 +15,8 @@ class AppTextField extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.obscureText = false,
+    this.onChanged,
+    this.inputFormatters,
   });
 
   final String label;
@@ -22,6 +25,8 @@ class AppTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final bool obscureText;
+  final ValueChanged<String>? onChanged;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   Widget build(BuildContext context) {
@@ -30,6 +35,8 @@ class AppTextField extends StatelessWidget {
       validator: validator,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      onChanged: onChanged,
+      inputFormatters: inputFormatters,
       style: AppTextStyles.bodyLarge,
       decoration: InputDecoration(
         labelText: label,

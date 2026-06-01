@@ -7,6 +7,7 @@ class MainActivity : FlutterFragmentActivity() {
     
     private lateinit var biometricChannelHandler: BiometricChannelHandler
     private lateinit var securityChannelHandler: SecurityChannelHandler
+    private lateinit var batteryOptimizationHandler: BatteryOptimizationHandler
     
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -18,5 +19,9 @@ class MainActivity : FlutterFragmentActivity() {
         // Security channel handler'ı register et
         securityChannelHandler = SecurityChannelHandler(this, this)
         securityChannelHandler.configureFlutterEngine(flutterEngine)
+        
+        // Battery optimization handler'ı register et
+        batteryOptimizationHandler = BatteryOptimizationHandler(this)
+        batteryOptimizationHandler.registerWith(flutterEngine)
     }
 }

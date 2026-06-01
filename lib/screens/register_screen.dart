@@ -5,6 +5,9 @@ import '../services/auth/interfaces/auth_orchestrator_interface.dart';
 import '../models/security/security_models.dart';
 import '../services/auth/interfaces/data_sync_interface.dart';
 import '../utils/auth_navigation.dart';
+import '../models/user.dart' as user_models;
+import '../services/user_service.dart';
+import '../services/data_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -64,7 +67,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (password.isEmpty) {
         _passwordError = null; // Don't show error for empty field until form submission
       } else if (!_isPasswordStrong(password)) {
-        _passwordError = 'Şifre en az 8 karakter olmalı, büyük/küçük harf ve rakam içermelidir';
+        _passwordError = 'Şifre en az 6 karakter olmalıdır';
       } else {
         _passwordError = null;
       }
@@ -103,63 +106,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   bool _isPasswordStrong(String password) {
-    if (password.length < 8) return false;
-    // En az 1 büyük harf
-    if (!password.contains(RegExp(r'[A-Z]'))) return false;
-    // En az 1 küçük harf
-    if (!password.contains(RegExp(r'[a-z]'))) return false;
-    // En az 1 rakam
-    if (!password.contains(RegExp(r'[0-9]'))) return false;
+    if (password.length < 6) return false;
     return true;
   }
 
   Color _getPasswordStrengthColor() {
     final password = _passwordController.text;
     if (password.isEmpty) return Colors.grey;
+    if (password.length < 6) return Colors.red;
     
-    int score = 0;
+    int score = 1;
     if (password.length >= 8) score++;
     if (password.contains(RegExp(r'[A-Z]'))) score++;
     if (password.contains(RegExp(r'[a-z]'))) score++;
     if (password.contains(RegExp(r'[0-9]'))) score++;
     if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) score++;
     
-    if (score <= 2) return Colors.red;
-    if (score == 3) return Colors.orange;
-    if (score == 4) return Colors.green;
+    if (score <= 2) return Colors.orange;
+    if (score == 3) return Colors.green;
     return Colors.green.shade700;
   }
 
   IconData _getPasswordStrengthIcon() {
     final password = _passwordController.text;
     if (password.isEmpty) return Icons.help_outline;
+    if (password.length < 6) return Icons.warning;
     
-    int score = 0;
+    int score = 1;
     if (password.length >= 8) score++;
     if (password.contains(RegExp(r'[A-Z]'))) score++;
     if (password.contains(RegExp(r'[a-z]'))) score++;
     if (password.contains(RegExp(r'[0-9]'))) score++;
     if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) score++;
     
-    if (score <= 2) return Icons.warning;
-    if (score == 3) return Icons.info;
+    if (score <= 2) return Icons.info;
     return Icons.check_circle;
   }
 
   String _getPasswordStrengthText() {
     final password = _passwordController.text;
     if (password.isEmpty) return 'Şifre girin';
+    if (password.length < 6) return 'En az 6 karakter (PIN vb.)';
     
-    int score = 0;
+    int score = 1;
     if (password.length >= 8) score++;
     if (password.contains(RegExp(r'[A-Z]'))) score++;
     if (password.contains(RegExp(r'[a-z]'))) score++;
     if (password.contains(RegExp(r'[0-9]'))) score++;
     if (password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) score++;
     
-    if (score <= 2) return 'Zayıf şifre';
-    if (score == 3) return 'Orta güçlükte şifre';
-    if (score == 4) return 'Güçlü şifre';
+    if (score <= 2) return 'Orta güçlükte şifre';
+    if (score == 3) return 'Güçlü şifre';
     return 'Çok güçlü şifre';
   }
 
@@ -211,8 +208,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (result.isSuccess) {
+        // Create local user first
+        final userId = result.metadata?['userId'] ?? '';
+        
+        final dataService = getIt<DataService>();
+        await dataService.init();
+        
+        final newUser = user_models.User(
+          id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
+          name: _nameController.text.trim(),
+          email: _emailController.text.trim(),
+          authMethod: user_models.AuthMethod.email,
+        );
+        await dataService.saveUser(newUser);
+
+        // Also save to UserService for backward compatibility
+        final userService = getIt<UserService>();
+        await userService.init();
+        await userService.saveUserProfile(UserProfile(
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email ?? '',
+          createdAt: DateTime.now(),
+          authMethod: user_models.AuthMethod.email.toString(),
+        ));
+
         // Sync user data
-        await _dataSyncService.syncAllUserData(result.metadata?['userId'] ?? '');
+        await _dataSyncService.syncAllUserData(newUser.id);
         
         if (mounted) {
           _showSuccessSnackBar('Hesabınız başarıyla oluşturuldu!');
@@ -246,8 +268,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (result.isSuccess) {
+        // Create local user first
+        final userId = result.metadata?['userId'] ?? '';
+        final email = result.metadata?['email'] ?? '';
+        final displayName = result.metadata?['displayName'] ?? 'Google Kullanıcısı';
+        final photoUrl = result.metadata?['photoUrl'];
+        
+        final dataService = getIt<DataService>();
+        await dataService.init();
+        
+        final newUser = user_models.User(
+          id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
+          name: displayName,
+          email: email,
+          avatar: photoUrl,
+          authMethod: user_models.AuthMethod.google,
+        );
+        await dataService.saveUser(newUser);
+
+        final userService = getIt<UserService>();
+        await userService.init();
+        await userService.saveUserProfile(UserProfile(
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email ?? '',
+          photoUrl: newUser.avatar,
+          createdAt: DateTime.now(),
+          authMethod: user_models.AuthMethod.google.toString(),
+        ));
+
         // Sync user data
-        await _dataSyncService.syncAllUserData(result.metadata?['userId'] ?? '');
+        await _dataSyncService.syncAllUserData(newUser.id);
         
         if (mounted) {
           _showSuccessSnackBar('Google ile kayıt başarılı!');
@@ -256,7 +307,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       } else {
         if (mounted) {
-          _showErrorSnackBar(result.errorMessage ?? 'Google ile kayıt başarısız');
+          final errorMsg = result.errorMessage ?? 'Google ile kayıt başarısız';
+          debugPrint('❌ RegisterScreen: Google Sign-In failed: $errorMsg');
+          _showErrorSnackBar(errorMsg);
         }
       }
     } catch (e) {
@@ -280,8 +333,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (result.isSuccess) {
+        // Create local user first
+        final userId = result.metadata?['userId'] ?? '';
+        final email = result.metadata?['email'] ?? '';
+        final displayName = result.metadata?['displayName'] ?? 'Apple Kullanıcısı';
+        
+        final dataService = getIt<DataService>();
+        await dataService.init();
+        
+        final newUser = user_models.User(
+          id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
+          name: displayName,
+          email: email,
+          authMethod: user_models.AuthMethod.apple,
+        );
+        await dataService.saveUser(newUser);
+
+        final userService = getIt<UserService>();
+        await userService.init();
+        await userService.saveUserProfile(UserProfile(
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email ?? '',
+          createdAt: DateTime.now(),
+          authMethod: user_models.AuthMethod.apple.toString(),
+        ));
+
         // Sync user data
-        await _dataSyncService.syncAllUserData(result.metadata?['userId'] ?? '');
+        await _dataSyncService.syncAllUserData(newUser.id);
         
         if (mounted) {
           _showSuccessSnackBar('Apple ile kayıt başarılı!');
@@ -600,7 +679,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return 'Lütfen şifre girin';
                     }
                     if (!_isPasswordStrong(value)) {
-                      return 'Şifre en az 8 karakter olmalı, büyük/küçük harf ve rakam içermelidir';
+                      return 'Şifre en az 6 karakter olmalıdır';
                     }
                     return null;
                   },

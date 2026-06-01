@@ -18,10 +18,6 @@ class GoogleDriveService {
     _isTestMode = value;
   }
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: [drive.DriveApi.driveAppdataScope],
-  );
-
   drive.DriveApi? _driveApi;
 
   String? _lastConnectionError;
@@ -39,15 +35,16 @@ class GoogleDriveService {
         debugPrint('CLOUD_BACKUP: 📡 Checking general connectivity...');
         final connectivityResult = await Connectivity().checkConnectivity();
         debugPrint('CLOUD_BACKUP: 📡 Connectivity result: $connectivityResult');
-        if (connectivityResult.contains(ConnectivityResult.none)) {
+        
+        // If we have any active connection, immediately return true to avoid flaky DNS checks
+        if (!connectivityResult.contains(ConnectivityResult.none) && connectivityResult.isNotEmpty) {
+          debugPrint('CLOUD_BACKUP: ✅ General connectivity check passed (has active connection)');
+          return true;
+        } else {
           debugPrint(
             'CLOUD_BACKUP: ⚠️ No network connection detected by Connectivity package',
           );
-          // Don't return false immediately, try DNS just in case connectivity_plus is wrong
-          // But log it as a potential cause
           _lastConnectionError = 'Connectivity check returned none';
-        } else {
-          debugPrint('CLOUD_BACKUP: ✅ General connectivity check passed');
         }
       } catch (e) {
         // If connectivity check fails, continue with DNS/HTTP checks
@@ -135,7 +132,12 @@ class GoogleDriveService {
 
   Future<bool> isAuthenticated() async {
     if (_isTestMode) return true;
-    return await _googleSignIn.isSignedIn();
+    final GoogleSignInAccount? account = await GoogleSignIn.instance.attemptLightweightAuthentication();
+    if (account == null) {
+      await GoogleSignIn.instance.authenticate();
+      return true;
+    }
+    return true;
   }
 
   Future<void> signIn() async {
@@ -144,7 +146,10 @@ class GoogleDriveService {
       debugPrint('CLOUD_BACKUP: 🔐 Starting Google Drive sign-in process...');
       _driveApi = null;
 
-      // 0. First check if we can actually reach Google services
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
+      );
+
       debugPrint(
         'CLOUD_BACKUP: 🔍 Checking Google connectivity before sign-in...',
       );
@@ -162,68 +167,34 @@ class GoogleDriveService {
         'CLOUD_BACKUP: ✅ Google connectivity verified, proceeding with sign-in',
       );
 
-      // 1. Try silent sign-in first
       try {
         debugPrint('CLOUD_BACKUP: 🔍 Attempting silent sign-in...');
-        await _googleSignIn.signInSilently();
-        debugPrint('CLOUD_BACKUP: ✅ Silent sign-in completed');
+        final GoogleSignInAccount? account = await GoogleSignIn.instance.attemptLightweightAuthentication();
+        if (account != null) {
+          final auth = await account.authorizationClient.authorizeScopes([drive.DriveApi.driveAppdataScope]);
+          _driveApi = drive.DriveApi(auth.authClient(scopes: [drive.DriveApi.driveAppdataScope]));
+          debugPrint('CLOUD_BACKUP: ✅ Google Drive silent sign-in successful');
+          return;
+        }
+        debugPrint('CLOUD_BACKUP: ⚠️ Silent sign-in failed');
       } catch (e) {
         debugPrint('CLOUD_BACKUP: ⚠️ Silent sign-in failed: $e');
       }
 
-      // 2. Check if we have a user and can get a client
-      if (_googleSignIn.currentUser != null) {
-        try {
-          debugPrint('CLOUD_BACKUP: 🔍 Getting authenticated HTTP client...');
-          final httpClient = await _googleSignIn.authenticatedClient();
-          if (httpClient != null) {
-            _driveApi = drive.DriveApi(httpClient);
-            debugPrint(
-              'CLOUD_BACKUP: ✅ Google Drive silent sign-in successful',
-            );
-            return;
-          } else {
-            debugPrint(
-              'CLOUD_BACKUP: ❌ Failed to get authenticated HTTP client',
-            );
-          }
-        } catch (e) {
-          debugPrint('CLOUD_BACKUP: ⚠️ Silent sign-in client error: $e');
-        }
-      }
-
-      // 3. Force explicit sign out to clear state if silent failed
       try {
         debugPrint('CLOUD_BACKUP: 🔍 Signing out to clear state...');
-        await _googleSignIn.signOut();
+        await GoogleSignIn.instance.signOut();
         debugPrint('CLOUD_BACKUP: ✅ Sign out completed');
       } catch (e) {
         debugPrint('CLOUD_BACKUP: ⚠️ Sign out error (ignorable): $e');
       }
 
-      // 4. Explicit sign-in
       debugPrint('CLOUD_BACKUP: 🔍 Starting explicit sign-in...');
-      final account = await _googleSignIn.signIn();
-      if (account != null) {
-        debugPrint('CLOUD_BACKUP: ✅ Google account selected: ${account.email}');
-        final httpClient = await _googleSignIn.authenticatedClient();
-        if (httpClient != null) {
-          _driveApi = drive.DriveApi(httpClient);
-          debugPrint(
-            'CLOUD_BACKUP: ✅ Google Drive explicit sign-in successful: ${account.email}',
-          );
-        } else {
-          debugPrint(
-            'CLOUD_BACKUP: ❌ Failed to get authenticated HTTP client after explicit sign-in',
-          );
-          throw Exception(
-            'Google Sign-In succeeded but failed to obtain authenticated HTTP client. Please try again.',
-          );
-        }
-      } else {
-        debugPrint('CLOUD_BACKUP: ❌ Google Sign-In canceled by user');
-        throw Exception('Google Sign-In canceled by user.');
-      }
+      final GoogleSignInAccount account = await GoogleSignIn.instance.authenticate();
+      debugPrint('CLOUD_BACKUP: ✅ Google account selected: ${account.email}');
+      final auth = await account.authorizationClient.authorizeScopes([drive.DriveApi.driveAppdataScope]);
+      _driveApi = drive.DriveApi(auth.authClient(scopes: [drive.DriveApi.driveAppdataScope]));
+      debugPrint('CLOUD_BACKUP: ✅ Google Drive explicit sign-in successful: ${account.email}');
     } catch (e) {
       debugPrint('CLOUD_BACKUP: ❌ Google Drive Sign In Error: $e');
       _driveApi = null;
@@ -233,13 +204,11 @@ class GoogleDriveService {
 
   Future<bool> isOnline() async {
     try {
-      // Check general connectivity
       final connectivityResult = await Connectivity().checkConnectivity();
       if (connectivityResult.contains(ConnectivityResult.none)) {
         return false;
       }
 
-      // If there's a connection, verify we can reach external services
       return await checkGoogleConnectivity();
     } catch (e) {
       debugPrint('CLOUD_BACKUP: ⚠️ Online status check failed: $e');
@@ -248,7 +217,7 @@ class GoogleDriveService {
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    await GoogleSignIn.instance.signOut();
     _driveApi = null;
   }
 

@@ -13,6 +13,7 @@ import 'kmh_withdraw_screen.dart';
 import 'kmh_deposit_screen.dart';
 import 'kmh_payment_planner_screen.dart';
 import 'kmh_transaction_screen.dart';
+import 'kmh_interest_calculator_screen.dart';
 
 class KmhAccountDetailScreen extends StatefulWidget {
   final Wallet account;
@@ -546,6 +547,20 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: _navigateToInterestCalculator,
+            icon: const Icon(Icons.monetization_on),
+            label: const Text('Faiz Hesaplama'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              foregroundColor: Colors.teal,
+              side: const BorderSide(color: Colors.teal),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -904,6 +919,18 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => KmhTransactionScreen(account: widget.account),
+      ),
+    );
+  }
+
+  void _navigateToInterestCalculator() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KmhInterestCalculatorScreen(
+          initialAmount: _summary?.usedCredit,
+          initialRate: widget.account.interestRate,
+        ),
       ),
     );
   }

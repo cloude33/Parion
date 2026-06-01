@@ -699,4 +699,253 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noTransactionsThisMonth => 'No transactions found for this month';
+
+  @override
+  String get familyPackage => 'Family Package';
+
+  @override
+  String get familyPackageDesc => 'Multi-user, shared budget and debt tracking';
+
+  @override
+  String get createFamilyGroup => 'Create New Group';
+
+  @override
+  String get familyGroupName => 'Group name';
+
+  @override
+  String get familyGroupDescription => 'Description';
+
+  @override
+  String get noFamilyGroups => 'No family/group yet';
+
+  @override
+  String get noFamilyGroupsDesc =>
+      'Create a new group to share budgets, split expenses and track debts with family members or friends.';
+
+  @override
+  String memberCount(Object count) {
+    return '$count members';
+  }
+
+  @override
+  String get sharedExpense => 'Shared Expense';
+
+  @override
+  String get addSharedExpense => 'Add Shared Expense';
+
+  @override
+  String get splitEqually => 'Split Equally';
+
+  @override
+  String get splitByAmount => 'Split by Amount';
+
+  @override
+  String get splitByPercentage => 'Split by Percentage';
+
+  @override
+  String get splitByShares => 'Split by Shares';
+
+  @override
+  String get paidBy => 'Paid by';
+
+  @override
+  String get whoPaid => 'Who paid?';
+
+  @override
+  String get splitMethod => 'Split method';
+
+  @override
+  String get memberContributions => 'Member Contributions';
+
+  @override
+  String get sharedBudgets => 'Shared Budgets';
+
+  @override
+  String get sharedBudget => 'Shared Budget';
+
+  @override
+  String get createSharedBudget => 'Create Budget';
+
+  @override
+  String get noSharedBudgets => 'No budgets yet';
+
+  @override
+  String get noSharedBudgetsDesc => 'Create a shared budget for the group.';
+
+  @override
+  String get totalBudget => 'Total Budget';
+
+  @override
+  String get totalSpent => 'Spent';
+
+  @override
+  String get totalRemaining => 'Remaining';
+
+  @override
+  String get budgetExceeded => 'Over Budget';
+
+  @override
+  String budgetUsage(Object percentage) {
+    return '$percentage% used';
+  }
+
+  @override
+  String get weekly => 'Weekly';
+
+  @override
+  String get monthly => 'Monthly';
+
+  @override
+  String get yearly => 'Yearly';
+
+  @override
+  String get distributeEqually => 'Distribute Equally';
+
+  @override
+  String get familyDebts => 'Member Debts';
+
+  @override
+  String get familyDebtsDesc => 'Track debts between family/group members';
+
+  @override
+  String get pendingDebts => 'Pending Debts';
+
+  @override
+  String get paidDebts => 'Paid Debts';
+
+  @override
+  String settledDebts(Object count) {
+    return 'Settled ($count)';
+  }
+
+  @override
+  String pendingCount(Object count) {
+    return 'Pending ($count)';
+  }
+
+  @override
+  String get addMemberDebt => 'Add Debt';
+
+  @override
+  String get noPendingDebts => 'No pending debts';
+
+  @override
+  String get noPendingDebtsDesc => 'Add a new debt record between members.';
+
+  @override
+  String get noSettledDebts => 'No settled debts';
+
+  @override
+  String get noSettledDebtsDesc => 'No debts have been paid yet.';
+
+  @override
+  String get fromMember => 'Debtor';
+
+  @override
+  String get toMember => 'Creditor';
+
+  @override
+  String get debtDescription => 'Description';
+
+  @override
+  String get debtDescriptionHint => 'e.g. Dinner, Gasoline';
+
+  @override
+  String get markAsPaid => 'Paid';
+
+  @override
+  String get debtRecorded => 'Debt record added';
+
+  @override
+  String get debtSettled => 'Debt marked as paid';
+
+  @override
+  String get debtDeleted => 'Debt record deleted';
+
+  @override
+  String get optimalSettlements => 'Suggested Settlements';
+
+  @override
+  String get noSettlements => 'All balances are even';
+
+  @override
+  String get balanceCreditor => 'Creditor';
+
+  @override
+  String get balanceDebtor => 'Debtor';
+
+  @override
+  String get balanceEqual => 'Even';
+
+  @override
+  String get familyMembers => 'Members';
+
+  @override
+  String get addMember => 'Add Member';
+
+  @override
+  String get editMember => 'Edit Member';
+
+  @override
+  String get removeMember => 'Remove Member';
+
+  @override
+  String get noMembers => 'No members';
+
+  @override
+  String get noMembersDesc => 'Add the first member to the group.';
+
+  @override
+  String get memberName => 'Full Name';
+
+  @override
+  String get memberEmail => 'Email';
+
+  @override
+  String get memberPhone => 'Phone';
+
+  @override
+  String get memberMonthlyBudget => 'Monthly Budget';
+
+  @override
+  String get memberRole => 'Role';
+
+  @override
+  String get roleMember => 'Member';
+
+  @override
+  String get roleAdmin => 'Admin';
+
+  @override
+  String get roleOwner => 'Owner';
+
+  @override
+  String get transferOwnership => 'Transfer Ownership';
+
+  @override
+  String get cannotDeleteOwner => 'Group owner cannot be deleted';
+
+  @override
+  String get cannotDeleteOwnerDebt =>
+      'Debtor and creditor cannot be the same person';
+
+  @override
+  String get debtor => 'Debtor';
+
+  @override
+  String get creditor => 'Creditor';
+
+  @override
+  String get groupColor => 'Group color';
+
+  @override
+  String get deleteGroup => 'Delete Group';
+
+  @override
+  String deleteGroupConfirm(Object name) {
+    return '$name group and all shared expenses, budgets and debts will be deleted. Do you want to continue?';
+  }
+
+  @override
+  String get recordSettlement => 'Record Settlement';
 }

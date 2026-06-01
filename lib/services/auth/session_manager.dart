@@ -104,8 +104,9 @@ class SessionManager implements ISessionManager {
         return false;
       }
       
-      // Stop any existing session
-      await stopSession();
+      // Stop any existing session without notifying to prevent race conditions
+      // where the inactive event is processed after the new auth state is set
+      await stopSession(notify: false);
       
       // Create new session state
       _currentSessionState = SessionState.active(
@@ -143,7 +144,7 @@ class SessionManager implements ISessionManager {
   /// Cancels all timers and clears session data
   /// 
   /// Implements Requirements 5.2, 5.3: Session termination and cleanup
-  Future<void> stopSession() async {
+  Future<void> stopSession({bool notify = true}) async {
     try {
       await _ensureInitialized();
       
@@ -164,8 +165,10 @@ class SessionManager implements ISessionManager {
         await _clearStoredSessionState();
         await _storage.clearBackgroundTimestamp();
         
-        // Notify listeners
-        _sessionStateController.add(_currentSessionState);
+        // Notify listeners if requested
+        if (notify) {
+          _sessionStateController.add(_currentSessionState);
+        }
         
         debugPrint('Session terminated and cleaned up');
       }

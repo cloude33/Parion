@@ -9,8 +9,10 @@ class AppColors {
   static const Color primary = Color(0xFF2C6BED);
   static const Color primaryVariant = Color(0xFF1A56D6);
   static const Color secondary = Color(0xFFFFD60A);
-  static const Color background = Color(0xFFF8F9FA);
+  static const Color background = Color(0xFFF8F7F3);
   static const Color surface = Colors.white;
+  static const Color cardBorder = Color(0xFFE0E0E0);
+  static const Color priceBarAccent = Color(0xFFC9A227);
   static const Color onPrimary = Colors.white;
   static const Color onSurface = Color(0xFF1C1C1E);
   static const Color error = Color(0xFFFF3B30);

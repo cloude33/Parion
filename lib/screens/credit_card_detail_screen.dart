@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../models/credit_card.dart';
 import '../models/credit_card_transaction.dart';
@@ -344,17 +345,37 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
         child: Row(
           children: [
             Container(
-              width: 60,
-              height: 60,
+              width: 100,
+              height: 63, // Card ratio 1.58 (100 / 1.58 = 63.3)
               decoration: BoxDecoration(
                 color: widget.card.color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(8),
+                image: widget.card.cardImagePath != null
+                    ? DecorationImage(
+                        image: widget.card.cardImagePath!.startsWith('assets/')
+                            ? AssetImage(widget.card.cardImagePath!)
+                                as ImageProvider
+                            : MemoryImage(
+                                base64Decode(widget.card.cardImagePath!),
+                              ),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.card.color.withValues(alpha: 0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(
-                Icons.credit_card,
-                color: widget.card.color,
-                size: 32,
-              ),
+              child: widget.card.cardImagePath == null
+                  ? Icon(
+                      Icons.credit_card,
+                      color: widget.card.color,
+                      size: 32,
+                    )
+                  : null,
             ),
             const SizedBox(width: 16),
             Expanded(

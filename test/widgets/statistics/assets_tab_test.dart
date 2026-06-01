@@ -42,7 +42,7 @@ void main() {
       await TestSetup.tearDownTest();
     });
 
-    Widget _buildScreen({
+    Widget buildScreen({
       List<Wallet> wallets = const [],
       List<Transaction> transactions = const [],
     }) {
@@ -56,7 +56,7 @@ void main() {
       );
     }
 
-    Future<void> _navigateToAssetsTab(WidgetTester tester) async {
+    Future<void> navigateToAssetsTab(WidgetTester tester) async {
       // Tap the "Varlıklar" tab (index 3)
       await tester.tap(find.text('Varlıklar'));
       await tester.pumpAndSettle();
@@ -70,10 +70,10 @@ void main() {
       GetIt.I.registerSingleton<DataService>(_FakeDataService());
       GetIt.I.registerSingleton<StatisticsService>(_FakeStatisticsService());
 
-      await tester.pumpWidget(_buildScreen(wallets: const []));
+      await tester.pumpWidget(buildScreen(wallets: const []));
       await tester.pumpAndSettle();
 
-      await _navigateToAssetsTab(tester);
+      await navigateToAssetsTab(tester);
 
       expect(
         find.byType(StatisticsEmptyState),
@@ -89,10 +89,10 @@ void main() {
       GetIt.I.registerSingleton<DataService>(_FakeDataService());
       GetIt.I.registerSingleton<StatisticsService>(_FakeStatisticsService());
 
-      await tester.pumpWidget(_buildScreen(wallets: const []));
+      await tester.pumpWidget(buildScreen(wallets: const []));
       await tester.pumpAndSettle();
 
-      await _navigateToAssetsTab(tester);
+      await navigateToAssetsTab(tester);
 
       expect(
         find.text('Cüzdan Bulunamadı'),
@@ -130,10 +130,10 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(wallets: wallets));
+      await tester.pumpWidget(buildScreen(wallets: wallets));
       await tester.pumpAndSettle();
 
-      await _navigateToAssetsTab(tester);
+      await navigateToAssetsTab(tester);
 
       expect(
         find.text('Cüzdanlar'),
@@ -161,10 +161,10 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(wallets: wallets));
+      await tester.pumpWidget(buildScreen(wallets: wallets));
       await tester.pumpAndSettle();
 
-      await _navigateToAssetsTab(tester);
+      await navigateToAssetsTab(tester);
 
       expect(
         find.byType(KmhAssetCard),
@@ -201,10 +201,10 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(wallets: wallets));
+      await tester.pumpWidget(buildScreen(wallets: wallets));
       await tester.pumpAndSettle();
 
-      await _navigateToAssetsTab(tester);
+      await navigateToAssetsTab(tester);
 
       // Normal cüzdanlar bölümü
       expect(
@@ -241,10 +241,10 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(wallets: wallets));
+      await tester.pumpWidget(buildScreen(wallets: wallets));
       await tester.pumpAndSettle();
 
-      await _navigateToAssetsTab(tester);
+      await navigateToAssetsTab(tester);
 
       expect(
         find.text('Toplam Varlık'),

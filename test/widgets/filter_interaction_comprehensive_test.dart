@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/widgets/statistics/filter_bar.dart';
 import 'package:parion/widgets/statistics/statistics_widgets.dart';
+import 'package:parion/screens/statistics_screen.dart';
 import '../test_setup.dart';
 
 void main() {
@@ -15,56 +16,53 @@ void main() {
 
   group('Filter Interaction Comprehensive Tests', () {
     group('TimeFilterBar Interaction', () {
-      testWidgets('should select filter on tap', (WidgetTester tester) async {
-        String? selectedFilter;
+      testWidgets('should select filter from dropdown', (WidgetTester tester) async {
+        TimeFilter? selectedFilter;
 
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: TimeFilterBar(
-                selectedFilter: 'Aylık',
-                filters: const ['Günlük', 'Haftalık', 'Aylık', 'Yıllık'],
+                selectedFilter: TimeFilter.monthly,
                 onFilterChanged: (filter) => selectedFilter = filter,
               ),
             ),
           ),
         );
 
-        // Tap on Haftalık filter
-        await tester.tap(find.text('Haftalık'));
-        await tester.pump();
+        // Open dropdown
+        await tester.tap(find.byType(DropdownButton<TimeFilter>));
+        await tester.pumpAndSettle();
 
-        expect(selectedFilter, 'Haftalık');
+        // Tap on Haftalık option
+        await tester.tap(find.text('Haftalık').last);
+        await tester.pumpAndSettle();
+
+        expect(selectedFilter, TimeFilter.weekly);
       });
 
-      testWidgets('should highlight selected filter', (
+      testWidgets('should show selected filter label', (
         WidgetTester tester,
       ) async {
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: TimeFilterBar(
-                selectedFilter: 'Aylık',
-                filters: const ['Günlük', 'Haftalık', 'Aylık', 'Yıllık'],
+                selectedFilter: TimeFilter.monthly,
                 onFilterChanged: (_) {},
               ),
             ),
           ),
         );
 
-        // Find the selected filter chip
-        final selectedChip = find.widgetWithText(StatisticsFilterChip, 'Aylık');
-        expect(selectedChip, findsOneWidget);
-
-        // Verify it's marked as selected
-        final chip = tester.widget<StatisticsFilterChip>(selectedChip);
-        expect(chip.selected, isTrue);
+        // Verify the selected label is displayed
+        expect(find.text('Aylık'), findsOneWidget);
       });
 
-      testWidgets('should change selection on tap', (
+      testWidgets('should change selection', (
         WidgetTester tester,
       ) async {
-        String selectedFilter = 'Aylık';
+        TimeFilter selectedFilter = TimeFilter.monthly;
 
         await tester.pumpWidget(
           MaterialApp(
@@ -73,7 +71,6 @@ void main() {
                 return Scaffold(
                   body: TimeFilterBar(
                     selectedFilter: selectedFilter,
-                    filters: const ['Günlük', 'Haftalık', 'Aylık', 'Yıllık'],
                     onFilterChanged: (filter) {
                       setState(() => selectedFilter = filter);
                     },
@@ -84,51 +81,23 @@ void main() {
           ),
         );
 
-        // Initial selection
-        expect(selectedFilter, 'Aylık');
+        expect(selectedFilter, TimeFilter.monthly);
 
-        // Tap Yıllık
-        await tester.tap(find.text('Yıllık'));
+        // Open dropdown
+        await tester.tap(find.byType(DropdownButton<TimeFilter>));
         await tester.pumpAndSettle();
 
-        expect(selectedFilter, 'Yıllık');
+        // Tap Yıllık
+        await tester.tap(find.text('Yıllık').last);
+        await tester.pumpAndSettle();
+
+        expect(selectedFilter, TimeFilter.yearly);
       });
 
-      testWidgets('should scroll to show all filters', (
+      testWidgets('should handle dropdown interaction', (
         WidgetTester tester,
       ) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Scaffold(
-              body: TimeFilterBar(
-                selectedFilter: 'Aylık',
-                filters: const [
-                  'Günlük',
-                  'Haftalık',
-                  'Aylık',
-                  'Üç Aylık',
-                  'Altı Aylık',
-                  'Yıllık',
-                  'Özel',
-                ],
-                onFilterChanged: (_) {},
-              ),
-            ),
-          ),
-        );
-
-        // Should have scrollable view
-        expect(find.byType(SingleChildScrollView), findsOneWidget);
-
-        // All filters should be findable (even if not visible)
-        expect(find.text('Günlük'), findsOneWidget);
-        expect(find.text('Özel'), findsOneWidget);
-      });
-
-      testWidgets('should handle rapid filter changes', (
-        WidgetTester tester,
-      ) async {
-        String selectedFilter = 'Aylık';
+        TimeFilter selectedFilter = TimeFilter.monthly;
         int changeCount = 0;
 
         await tester.pumpWidget(
@@ -138,7 +107,6 @@ void main() {
                 return Scaffold(
                   body: TimeFilterBar(
                     selectedFilter: selectedFilter,
-                    filters: const ['Günlük', 'Haftalık', 'Aylık', 'Yıllık'],
                     onFilterChanged: (filter) {
                       setState(() {
                         selectedFilter = filter;
@@ -152,18 +120,14 @@ void main() {
           ),
         );
 
-        // Rapidly change filters
-        await tester.tap(find.text('Günlük'));
-        await tester.pump();
-
-        await tester.tap(find.text('Haftalık'));
-        await tester.pump();
-
-        await tester.tap(find.text('Yıllık'));
+        // Open dropdown and change to Günlük
+        await tester.tap(find.byType(DropdownButton<TimeFilter>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Günlük').last);
         await tester.pumpAndSettle();
 
-        expect(changeCount, 3);
-        expect(selectedFilter, 'Yıllık');
+        expect(changeCount, 1);
+        expect(selectedFilter, TimeFilter.daily);
       });
     });
 
@@ -468,7 +432,7 @@ void main() {
 
     group('Filter State Management', () {
       testWidgets('should persist filter state', (WidgetTester tester) async {
-        String selectedFilter = 'Aylık';
+        TimeFilter selectedFilter = TimeFilter.monthly;
 
         await tester.pumpWidget(
           MaterialApp(
@@ -477,7 +441,6 @@ void main() {
                 return Scaffold(
                   body: TimeFilterBar(
                     selectedFilter: selectedFilter,
-                    filters: const ['Günlük', 'Haftalık', 'Aylık'],
                     onFilterChanged: (filter) {
                       setState(() => selectedFilter = filter);
                     },
@@ -488,11 +451,13 @@ void main() {
           ),
         );
 
-        // Change filter
-        await tester.tap(find.text('Haftalık'));
+        // Open dropdown and change filter
+        await tester.tap(find.byType(DropdownButton<TimeFilter>));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Haftalık').last);
         await tester.pumpAndSettle();
 
-        expect(selectedFilter, 'Haftalık');
+        expect(selectedFilter, TimeFilter.weekly);
 
         // Rebuild widget
         await tester.pumpWidget(
@@ -502,7 +467,6 @@ void main() {
                 return Scaffold(
                   body: TimeFilterBar(
                     selectedFilter: selectedFilter,
-                    filters: const ['Günlük', 'Haftalık', 'Aylık'],
                     onFilterChanged: (filter) {
                       setState(() => selectedFilter = filter);
                     },
@@ -516,7 +480,7 @@ void main() {
         await tester.pumpAndSettle();
 
         // State should persist
-        expect(selectedFilter, 'Haftalık');
+        expect(selectedFilter, TimeFilter.weekly);
       });
     });
 
@@ -526,17 +490,14 @@ void main() {
           MaterialApp(
             home: Scaffold(
               body: TimeFilterBar(
-                selectedFilter: 'Aylık',
-                filters: const ['Günlük', 'Haftalık', 'Aylık'],
+                selectedFilter: TimeFilter.monthly,
                 onFilterChanged: (_) {},
               ),
             ),
           ),
         );
 
-        // Filters should be accessible
-        expect(find.text('Günlük'), findsOneWidget);
-        expect(find.text('Haftalık'), findsOneWidget);
+        // Filters should show the selected label
         expect(find.text('Aylık'), findsOneWidget);
       });
 

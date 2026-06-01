@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -10,20 +12,36 @@ class AuthService {
   factory AuthService() => _instance;
 
   final LocalAuthentication _localAuth = LocalAuthentication();
-  late final GoogleSignIn _googleSignIn;
+  bool _isInitialized = false;
 
-  AuthService._internal() {
-    _googleSignIn = GoogleSignIn(
-      scopes: ['email', 'profile'],
-      serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-    );
-  }
+  AuthService._internal();
 
   SharedPreferences? _prefs;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+
+    if (_isInitialized) return;
+    _isInitialized = true;
+
+    unawaited(() async {
+      try {
+        debugPrint('AuthService: Pre-loading Google Sign-In library...');
+        if (kIsWeb) {
+          await GoogleSignIn.instance.initialize(
+            clientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
+          ).timeout(const Duration(seconds: 5));
+        } else {
+          await GoogleSignIn.instance.initialize(
+            serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
+          ).timeout(const Duration(seconds: 5));
+        }
+        debugPrint('✅ AuthService: Google Sign-In library pre-loaded');
+      } catch (e) {
+        debugPrint('⚠️ AuthService: Google Sign-In pre-load failed (will retry on first sign-in): $e');
+      }
+    }());
   }
 
   Future<void> savePinCode(String pin) async {
@@ -98,20 +116,56 @@ class AuthService {
 
   Future<GoogleSignInAccount?> signInWithGoogle() async {
     try {
-      final GoogleSignInAccount? account = await _googleSignIn.signIn();
-      if (account != null) {
-        await _prefs?.setString('google_email', account.email);
-        await _prefs?.setString('google_name', account.displayName ?? '');
-        await _prefs?.setString('google_photo', account.photoUrl ?? '');
+      // Ensure initialization
+      if (!_isInitialized) {
+        await init();
       }
+      
+      debugPrint('🔄 AuthService: Starting Google Sign-In...');
+      
+      // Clear any existing session to prevent conflicts
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (e) {
+        debugPrint('⚠️ AuthService: Sign out error (ignorable): $e');
+      }
+      
+      final GoogleSignInAccount account = await GoogleSignIn.instance.authenticate();
+      
+      debugPrint('✅ AuthService: Google Sign-In successful: ${account.email}');
+      
+      // Save user data
+      await _prefs?.setString('google_email', account.email);
+      await _prefs?.setString('google_name', account.displayName ?? '');
+      await _prefs?.setString('google_photo', account.photoUrl ?? '');
+      
       return account;
+    } on PlatformException catch (e) {
+      debugPrint('❌ AuthService: Platform Exception in Google Sign-In: ${e.code} - ${e.message}');
+      
+      // Handle specific platform errors
+      if (e.code == 'sign_in_failed') {
+        if (e.message?.contains('10') == true) {
+          debugPrint('❌ AuthService: Google Play Services configuration error');
+        }
+      }
+      
+      return null;
     } catch (e) {
+      debugPrint('❌ AuthService: Unexpected error in Google Sign-In: $e');
       return null;
     }
   }
 
   Future<void> signOutGoogle() async {
-    await _googleSignIn.signOut();
+    try {
+      await GoogleSignIn.instance.signOut();
+      debugPrint('✅ AuthService: Signed out from Google');
+    } catch (e) {
+      debugPrint('⚠️ AuthService: Google sign out error (ignorable): $e');
+    }
+    
+    // Clear stored data regardless of sign-out success
     await _prefs?.remove('google_email');
     await _prefs?.remove('google_name');
     await _prefs?.remove('google_photo');

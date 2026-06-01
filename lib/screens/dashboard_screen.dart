@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../core/design/app_colors.dart';
 import '../core/design/app_spacing.dart';
@@ -23,6 +23,9 @@ import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_error_state.dart';
 import '../widgets/common/app_loading_state.dart';
 import '../widgets/common/section_header.dart';
+import 'budget_list_screen.dart';
+import 'subscription_list_screen.dart';
+import 'net_worth_screen.dart';
 
 /// Dashboard screen that shows the user's financial summary at a glance.
 ///
@@ -272,6 +275,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _buildThisMonthSection(),
               const SizedBox(height: AppSpacing.lg),
               _buildMetricsRow(),
+              const SizedBox(height: AppSpacing.lg),
+              _buildQuickAccessCards(),
               const SizedBox(height: AppSpacing.xl),
               _buildLastTransactionsSection(),
               const SizedBox(height: AppSpacing.xxl),
@@ -626,6 +631,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
             overflow: TextOverflow.ellipsis,
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Quick Access Cards ─────────────────────────────────────────────────────
+
+  Widget _buildQuickAccessCards() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SectionHeader(title: 'Hızlı Erişim'),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(child: _buildQuickCard(
+              icon: Icons.account_balance_wallet_outlined,
+              label: 'Bütçe',
+              color: Colors.teal,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BudgetListScreen())),
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: _buildQuickCard(
+              icon: Icons.subscriptions_outlined,
+              label: 'Abonelikler',
+              color: const Color(0xFFE91E63),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionListScreen())),
+            )),
+            Expanded(child: _buildQuickCard(
+              icon: Icons.show_chart,
+              label: 'Net Değer',
+              color: Colors.purple,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NetWorthScreen())),
+            )),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuickCard({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 6),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+          ],
+        ),
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/credit_card.dart';
-import '../models/wallet.dart';
 import '../services/credit_card_service.dart';
 import '../services/data_service.dart';
 import 'add_credit_card_screen.dart';
@@ -35,6 +34,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
   double _totalDebt = 0;
   double _totalAvailableCredit = 0;
   double _totalDueThisMonth = 0;
+  String _userName = '';
 
   @override
   void initState() {
@@ -54,6 +54,8 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
       for (var card in cards) {
         details[card.id] = await _cardService.getCardWithDetails(card.id);
       }
+      
+      final user = await _dataService.getCurrentUser();
 
       setState(() {
         _cards = cards;
@@ -61,6 +63,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
         _totalDebt = totalDebt;
         _totalAvailableCredit = totalAvailable;
         _totalDueThisMonth = totalDue;
+        _userName = user?.name ?? 'KART SAHİBİ';
         _isLoading = false;
       });
     } catch (e) {
@@ -362,15 +365,12 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     return ReorderableListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _cards.length,
-      onReorder: (oldIndex, newIndex) async {
+      onReorderItem: (oldIndex, newIndex) async {
         setState(() {
-          if (newIndex > oldIndex) {
-            newIndex -= 1;
-          }
           final item = _cards.removeAt(oldIndex);
           _cards.insert(newIndex, item);
         });
-
+ 
         // Save the new order
         await _cardService.reorderCards(_cards);
       },
@@ -411,6 +411,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
 
     final currentDebt = details['currentDebt'] as double;
     final nextDueDate = details['nextDueDate'] as DateTime;
+    final cardImage = card.cardImagePath;
 
     return BankCardVisualWidget(
       bankName: card.bankName,
@@ -421,6 +422,9 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
       colorHex: card.cardColor.toString(),
       cutOffDay: card.statementDay,
       fullPaymentDate: nextDueDate,
+      cardImagePath: cardImage,
+      cardHolderName: _userName,
+      expirationDate: card.expirationDate,
       onTap: () => _navigateToCardDetail(card),
       action: Row(
         mainAxisSize: MainAxisSize.min,
@@ -460,23 +464,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     );
   }
 
-  Widget _buildInfoColumn(String label, String value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Future<void> _navigateToAddCard() async {
     final result = await Navigator.push(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:parion/models/cash_flow_data.dart';
 import 'package:parion/widgets/statistics/statistics_widgets.dart';
+import 'package:parion/screens/statistics_screen.dart';
 import '../test_setup.dart';
 
 void main() {
@@ -225,53 +226,45 @@ void main() {
   });
 
   group('TimeFilterBar', () {
-    testWidgets('renders all filters', (WidgetTester tester) async {
-      String? selectedFilter;
+    testWidgets('renders selected filter and handles selection', (WidgetTester tester) async {
+      TimeFilter? selectedFilter;
 
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: TimeFilterBar(
-              selectedFilter: 'Monthly',
-              filters: const ['Daily', 'Weekly', 'Monthly', 'Yearly'],
+              selectedFilter: TimeFilter.monthly,
               onFilterChanged: (filter) => selectedFilter = filter,
             ),
           ),
         ),
       );
 
-      expect(find.text('Daily'), findsOneWidget);
-      expect(find.text('Weekly'), findsOneWidget);
-      expect(find.text('Monthly'), findsOneWidget);
-      expect(find.text('Yearly'), findsOneWidget);
+      expect(find.text('Aylık'), findsOneWidget);
 
-      await tester.tap(find.text('Weekly'));
-      await tester.pump();
+      await tester.tap(find.byType(DropdownButton<TimeFilter>));
+      await tester.pumpAndSettle();
 
-      expect(selectedFilter, 'Weekly');
+      await tester.tap(find.text('Haftalık').last);
+      await tester.pumpAndSettle();
+
+      expect(selectedFilter, TimeFilter.weekly);
     });
 
-    testWidgets('scrolls horizontally', (WidgetTester tester) async {
+    testWidgets('renders calendar icon and dropdown', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: TimeFilterBar(
-              selectedFilter: 'Monthly',
-              filters: const [
-                'Daily',
-                'Weekly',
-                'Monthly',
-                'Quarterly',
-                'Yearly',
-                'Custom'
-              ],
+              selectedFilter: TimeFilter.monthly,
               onFilterChanged: (_) {},
             ),
           ),
         ),
       );
 
-      expect(find.byType(SingleChildScrollView), findsOneWidget);
+      expect(find.byIcon(Icons.calendar_today), findsOneWidget);
+      expect(find.byType(DropdownButton<TimeFilter>), findsOneWidget);
     });
   });
 }

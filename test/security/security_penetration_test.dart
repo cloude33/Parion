@@ -26,7 +26,7 @@ void main() {
       // Mock MethodChannel for SecurityService
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('com.example.money/security'),
+        const MethodChannel('com.bulut.wallet/security'),
         (MethodCall methodCall) async {
           switch (methodCall.method) {
             case 'enableScreenshotBlocking':
@@ -80,7 +80,7 @@ void main() {
     tearDown(() {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('com.example.money/security'),
+        const MethodChannel('com.bulut.wallet/security'),
         null,
       );
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -148,7 +148,7 @@ void main() {
       // Mock root detection to return true
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-        const MethodChannel('com.example.money/security'),
+        const MethodChannel('com.bulut.wallet/security'),
         (MethodCall methodCall) async {
           if (methodCall.method == 'detectRoot' || methodCall.method == 'detectJailbreak') {
             return true; // Simulate rooted device

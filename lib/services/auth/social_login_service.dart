@@ -28,8 +28,7 @@ class SocialLoginService implements ISocialLoginService {
   // Firebase Auth Service for integration
   final FirebaseAuthService _firebaseAuthService = FirebaseAuthService();
   
-  // Google Sign-In instance
-  late GoogleSignIn _googleSignIn;
+  // Google Sign-In instance (uses singleton GoogleSignIn.instance)
   
   // Initialization flag
   bool _isInitialized = false;
@@ -48,23 +47,23 @@ class SocialLoginService implements ISocialLoginService {
     
     _initCompleter = Completer<void>();
     
-    try {
-      // Initialize Google Sign-In with proper configuration
-      _googleSignIn = GoogleSignIn(
-        scopes: ['email', 'profile'],
-        // Use the same server client ID as Firebase Auth Service
-        serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-      );
-      
-      _isInitialized = true;
-      _initCompleter!.complete();
-      
-      debugPrint('✅ SocialLoginService initialized successfully');
-    } catch (e) {
-      debugPrint('❌ SocialLoginService initialization failed: $e');
-      _initCompleter!.completeError(e);
-      rethrow;
-    }
+    // Initialize in background to prevent blocking application startup/main thread
+    unawaited(() async {
+      try {
+        debugPrint('SocialLoginService: Initializing Google Sign-In in background...');
+        await GoogleSignIn.instance.initialize(
+          serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
+        ).timeout(const Duration(seconds: 5));
+        
+        _isInitialized = true;
+        _initCompleter!.complete();
+        debugPrint('✅ SocialLoginService initialized successfully');
+      } catch (e) {
+        debugPrint('❌ SocialLoginService initialization failed or timed out: $e');
+        _isInitialized = true; // Mark as initialized anyway to prevent blocking dependent services
+        _initCompleter!.complete();
+      }
+    }());
   }
 
   /// Ensures service is initialized before operations
@@ -345,7 +344,7 @@ class SocialLoginService implements ISocialLoginService {
         case 'google':
           providerId = 'google.com';
           // Also sign out from Google Sign-In
-          await _googleSignIn.signOut();
+          await GoogleSignIn.instance.signOut();
           break;
         case 'apple':
           providerId = 'apple.com';
@@ -414,7 +413,7 @@ class SocialLoginService implements ISocialLoginService {
       
       // Sign out from Google
       try {
-        await _googleSignIn.signOut();
+        await GoogleSignIn.instance.signOut();
       } catch (e) {
         debugPrint('⚠️ Google sign out error (ignorable): $e');
       }
@@ -441,22 +440,13 @@ class SocialLoginService implements ISocialLoginService {
   /// Creates Google credential for account linking
   Future<AuthCredential?> _createGoogleCredential() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
       
-      if (googleUser == null) {
-        debugPrint('❌ Google Sign-In cancelled for linking');
-        return null;
-      }
-      
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
-      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-        debugPrint('❌ Google auth tokens not available for linking');
-        return null;
-      }
-      
+      final auth = await googleUser.authorizationClient.authorizeScopes(['email']);
+      final googleAuth = googleUser.authentication;
+
       return GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
+        accessToken: auth.accessToken,
         idToken: googleAuth.idToken,
       );
     } catch (e) {
@@ -518,7 +508,8 @@ class SocialLoginService implements ISocialLoginService {
       case 'requires-recent-login':
         return 'Güvenliğiniz için bu işlemi yapmadan önce tekrar giriş yapmanız gerekiyor.';
       case 'network-request-failed':
-        return 'İnternet bağlantısı sorunu yaşanıyor. Lütfen bağlantınızı kontrol edin.';
+        return 'Firebase sunucularına bağlanılamadı. Lütfen internet bağlantınızı kontrol edin,'
+            ' VPN varsa kapatın ve Firebase Console ayarlarını doğrulayın.';
       case 'too-many-requests':
         return 'Çok fazla istek gönderildi. Güvenliğiniz için lütfen biraz bekleyip tekrar deneyin.';
       default:
@@ -530,8 +521,12 @@ class SocialLoginService implements ISocialLoginService {
   String _handlePlatformException(PlatformException e) {
     switch (e.code) {
       case 'sign_in_failed':
-        if (e.message?.contains('10') == true) {
-          return 'Google girişi yapılandırılamadı. Lütfen internetinizi kontrol edip uygulamayı yeniden başlatın.';
+        final msg = e.message ?? '';
+        if (msg.contains('12500') || msg.contains('10')) {
+          return 'Google Sign-In yapılandırma hatası.\n'
+              '• SHA-1 sertifika parmak izi Firebase konsoluna eklenmemiş\n'
+              '• google-services.json dosyası güncel değil\n'
+              '• Firebase projesinde Destek E-postası ayarlanmamış';
         }
         return 'Giriş işlemi başarısız oldu. Lütfen tekrar deneyin.';
       case 'network_error':

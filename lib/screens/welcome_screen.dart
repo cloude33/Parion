@@ -8,6 +8,7 @@ import '../widgets/auth_loading_widget.dart';
 import '../widgets/auth_error_widget.dart';
 import '../utils/auth_navigation.dart';
 import '../services/user_service.dart';
+import '../services/guest_mode_service.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -51,12 +52,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       await userService.init();
       final userProfile = await userService.getUserProfile();
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _userProfile = userProfile;
       });
     } catch (e) {
       debugPrint('❌ Failed to initialize auth services: $e');
+      if (!mounted) return;
       // Set biometric as unavailable on error
       setState(() {
         _isLoading = false;
@@ -268,7 +271,53 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           onPressed: _isLoading ? null : () => context.toRegister(),
           icon: Icons.person_add,
         ),
+        const SizedBox(height: 16),
+        _buildDemoButton(context),
       ],
+    );
+  }
+
+  Future<void> _enterDemoMode(BuildContext context) async {
+    setState(() => _isLoading = true);
+    try {
+      await GuestModeService().enableGuestMode();
+      if (context.mounted) {
+        context.toHome();
+      }
+    } catch (e) {
+      debugPrint('Demo mode error: \$e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Widget _buildDemoButton(BuildContext context) {
+    return TextButton(
+      onPressed: _isLoading ? null : () => _enterDemoMode(context),
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.play_circle_outline,
+            color: Colors.white.withValues(alpha: 0.7),
+            size: 18,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Demo Olarak Dene',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              decoration: TextDecoration.underline,
+              decorationColor: Colors.white.withValues(alpha: 0.4),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

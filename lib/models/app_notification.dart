@@ -21,6 +21,10 @@ enum NotificationType {
   securitySettingsChange,
   securitySuspiciousActivity,
   securityAccountLocked,
+  fcmBackupError,
+  fcmCampaign,
+  fcmTransactionAlert,
+  fcmLimitWarning,
 }
 
 enum NotificationPriority { low, normal, high, urgent }
@@ -182,6 +186,14 @@ class AppNotification {
         return Icons.warning_amber;
       case NotificationType.securityAccountLocked:
         return Icons.lock;
+      case NotificationType.fcmBackupError:
+        return Icons.cloud_off;
+      case NotificationType.fcmCampaign:
+        return Icons.campaign;
+      case NotificationType.fcmTransactionAlert:
+        return Icons.swap_vert;
+      case NotificationType.fcmLimitWarning:
+        return Icons.trending_down;
     }
   }
 
@@ -224,6 +236,14 @@ class AppNotification {
         return Colors.red;
       case NotificationType.securityAccountLocked:
         return Colors.red;
+      case NotificationType.fcmBackupError:
+        return Colors.orange;
+      case NotificationType.fcmCampaign:
+        return Colors.pink;
+      case NotificationType.fcmTransactionAlert:
+        return Colors.teal;
+      case NotificationType.fcmLimitWarning:
+        return Colors.deepOrange;
     }
   }
 }

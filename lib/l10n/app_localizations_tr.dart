@@ -700,4 +700,252 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get noTransactionsThisMonth => 'Bu ay için işlem bulunamadı';
+
+  @override
+  String get familyPackage => 'Aile Paketi';
+
+  @override
+  String get familyPackageDesc => 'Çok kullanıcı, ortak bütçe ve borç takibi';
+
+  @override
+  String get createFamilyGroup => 'Yeni Grup Oluştur';
+
+  @override
+  String get familyGroupName => 'Grup adı';
+
+  @override
+  String get familyGroupDescription => 'Açıklama';
+
+  @override
+  String get noFamilyGroups => 'Henüz bir aile/grup yok';
+
+  @override
+  String get noFamilyGroupsDesc =>
+      'Aile üyeleri veya arkadaşlarınızla ortak bütçe, paylaşımlı harcamalar ve borç takibi için yeni bir grup oluşturun.';
+
+  @override
+  String memberCount(Object count) {
+    return '$count üye';
+  }
+
+  @override
+  String get sharedExpense => 'Paylaşımlı Harcama';
+
+  @override
+  String get addSharedExpense => 'Paylaşımlı Harcama Ekle';
+
+  @override
+  String get splitEqually => 'Eşit Bölüştür';
+
+  @override
+  String get splitByAmount => 'Tutar ile Böl';
+
+  @override
+  String get splitByPercentage => 'Yüzde ile Böl';
+
+  @override
+  String get splitByShares => 'Pay ile Böl';
+
+  @override
+  String get paidBy => 'Ödeyen';
+
+  @override
+  String get whoPaid => 'Kim ödedi?';
+
+  @override
+  String get splitMethod => 'Bölüşme şekli';
+
+  @override
+  String get memberContributions => 'Üye Katkıları';
+
+  @override
+  String get sharedBudgets => 'Ortak Bütçeler';
+
+  @override
+  String get sharedBudget => 'Ortak Bütçe';
+
+  @override
+  String get createSharedBudget => 'Bütçe Oluştur';
+
+  @override
+  String get noSharedBudgets => 'Henüz bütçe yok';
+
+  @override
+  String get noSharedBudgetsDesc => 'Grup için ortak bir bütçe oluşturun.';
+
+  @override
+  String get totalBudget => 'Toplam Bütçe';
+
+  @override
+  String get totalSpent => 'Harcanan';
+
+  @override
+  String get totalRemaining => 'Kalan';
+
+  @override
+  String get budgetExceeded => 'Aşım';
+
+  @override
+  String budgetUsage(Object percentage) {
+    return '%$percentage kullanıldı';
+  }
+
+  @override
+  String get weekly => 'Haftalık';
+
+  @override
+  String get monthly => 'Aylık';
+
+  @override
+  String get yearly => 'Yıllık';
+
+  @override
+  String get distributeEqually => 'Eşit Böl';
+
+  @override
+  String get familyDebts => 'Üyeler Arası Borçlar';
+
+  @override
+  String get familyDebtsDesc => 'Aile/grup üyeleri arası borç takibi';
+
+  @override
+  String get pendingDebts => 'Bekleyen Borç';
+
+  @override
+  String get paidDebts => 'Ödenen Borç';
+
+  @override
+  String settledDebts(Object count) {
+    return 'Ödenen ($count)';
+  }
+
+  @override
+  String pendingCount(Object count) {
+    return 'Bekleyen ($count)';
+  }
+
+  @override
+  String get addMemberDebt => 'Borç Ekle';
+
+  @override
+  String get noPendingDebts => 'Bekleyen borç yok';
+
+  @override
+  String get noPendingDebtsDesc => 'Üyeler arası yeni bir borç kaydı ekleyin.';
+
+  @override
+  String get noSettledDebts => 'Ödenen borç yok';
+
+  @override
+  String get noSettledDebtsDesc => 'Henüz ödenmiş borç bulunmuyor.';
+
+  @override
+  String get fromMember => 'Borçlu';
+
+  @override
+  String get toMember => 'Alacaklı';
+
+  @override
+  String get debtDescription => 'Açıklama';
+
+  @override
+  String get debtDescriptionHint => 'Örn: Akşam yemeği, Benzin';
+
+  @override
+  String get markAsPaid => 'Ödendi';
+
+  @override
+  String get debtRecorded => 'Borç kaydı eklendi';
+
+  @override
+  String get debtSettled => 'Borç ödendi olarak işaretlendi';
+
+  @override
+  String get debtDeleted => 'Borç kaydı silindi';
+
+  @override
+  String get optimalSettlements => 'Önerilen Ödemeler';
+
+  @override
+  String get noSettlements => 'Tüm bakiyeler eşit';
+
+  @override
+  String get balanceCreditor => 'Alacaklı';
+
+  @override
+  String get balanceDebtor => 'Borçlu';
+
+  @override
+  String get balanceEqual => 'Eşit';
+
+  @override
+  String get familyMembers => 'Üyeler';
+
+  @override
+  String get addMember => 'Üye Ekle';
+
+  @override
+  String get editMember => 'Üyeyi Düzenle';
+
+  @override
+  String get removeMember => 'Üyeyi Sil';
+
+  @override
+  String get noMembers => 'Üye yok';
+
+  @override
+  String get noMembersDesc => 'Gruba ilk üyeyi ekleyin.';
+
+  @override
+  String get memberName => 'Ad Soyad';
+
+  @override
+  String get memberEmail => 'E-posta';
+
+  @override
+  String get memberPhone => 'Telefon';
+
+  @override
+  String get memberMonthlyBudget => 'Aylık Bütçe';
+
+  @override
+  String get memberRole => 'Rol';
+
+  @override
+  String get roleMember => 'Üye';
+
+  @override
+  String get roleAdmin => 'Yönetici';
+
+  @override
+  String get roleOwner => 'Sahip';
+
+  @override
+  String get transferOwnership => 'Sahipliği Devret';
+
+  @override
+  String get cannotDeleteOwner => 'Grup sahibi silinemez';
+
+  @override
+  String get cannotDeleteOwnerDebt => 'Borçlu ve alacaklı aynı kişi olamaz';
+
+  @override
+  String get debtor => 'Borçlu';
+
+  @override
+  String get creditor => 'Alacaklı';
+
+  @override
+  String get groupColor => 'Grup rengi';
+
+  @override
+  String get deleteGroup => 'Grubu Sil';
+
+  @override
+  String deleteGroupConfirm(Object name) {
+    return '$name grubu ve tüm paylaşımlı harcamalar, bütçeler ve borçlar silinecek. Devam etmek istiyor musunuz?';
+  }
+
+  @override
+  String get recordSettlement => 'Ödemeyi Kaydet';
 }

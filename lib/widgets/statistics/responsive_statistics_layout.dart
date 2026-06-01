@@ -236,7 +236,7 @@ class ResponsiveChartContainer extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (actions != null) ...actions!,
+                ...?actions,
               ],
             ),
             SizedBox(height: ResponsiveHelper.getSpacing(context)),

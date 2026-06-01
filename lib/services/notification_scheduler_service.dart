@@ -2,10 +2,14 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'daily_summary_service.dart';
+import '../utils/global_navigator.dart';
+import '../screens/quick_transaction_screen.dart';
+import '../screens/notification_history_screen.dart';
 
 enum NotificationPriority { low, normal, high, urgent }
 
@@ -289,13 +293,49 @@ class NotificationSchedulerService {
   }
 
   void _onNotificationTapped(NotificationResponse response) {
-    debugPrint('Notification tapped: ${response.payload}');
-    
+    debugPrint('Notification tapped: payload=${response.payload}, action=${response.actionId}');
+
+    // Handle quick transaction action
+    if (response.actionId == 'quick_transaction') {
+      GlobalNavigator.push(const QuickTransactionScreen());
+      return;
+    }
+
     // Handle daily summary notification tap
     if (response.payload == 'daily_summary') {
-      // Show updated summary when user taps the notification
       DailySummaryService().showDailySummaryNotification();
+      return;
     }
+
+    // Handle FCM push notification tap - navigate to notification history
+    if (response.payload != null && response.payload!.startsWith('{')) {
+      try {
+        final data = json.decode(response.payload!);
+        final type = data['type']?.toString();
+        if (type != null && [
+          'backup_error', 'campaign', 'transaction_alert', 'limit_warning'
+        ].contains(type)) {
+          GlobalNavigator.push(const NotificationHistoryScreen());
+          return;
+        }
+      } catch (_) {}
+    }
+  }
+
+  Future<void> showQuickTransactionNotification() async {
+    await showNotification(
+      id: 9999,
+      title: 'Hızlı Harcama Ekle',
+      body: 'Yeni bir harcama eklemek için dokunun.',
+      actions: [
+        const AndroidNotificationAction(
+          'quick_transaction',
+          'Harcama Ekle',
+          showsUserInterface: true,
+        ),
+      ],
+      priority: NotificationPriority.high,
+    );
   }
 
   Importance _getImportance(NotificationPriority priority) {

@@ -19,7 +19,7 @@ void main() {
       // Mock MethodChannel
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-            const MethodChannel('com.example.money/security'),
+            const MethodChannel('com.bulut.wallet/security'),
             (MethodCall methodCall) async {
               switch (methodCall.method) {
                 case 'enableScreenshotBlocking':
@@ -73,7 +73,7 @@ void main() {
       // Don't dispose the service in tearDown to avoid stream closure issues
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
           .setMockMethodCallHandler(
-            const MethodChannel('com.example.money/security'),
+            const MethodChannel('com.bulut.wallet/security'),
             null,
           );
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

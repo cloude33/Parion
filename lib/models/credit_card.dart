@@ -72,6 +72,9 @@ class CreditCard extends HiveObject {
   double? minimumPaymentRate;
 
   @HiveField(22)
+  String? expirationDate;
+
+  @HiveField(23)
   int sortOrder;
 
   CreditCard({
@@ -97,6 +100,7 @@ class CreditCard extends HiveObject {
     this.overLimitInterestRate,
     this.cashAdvanceOverdueInterestRate,
     this.minimumPaymentRate,
+    this.expirationDate,
     this.sortOrder = 0,
   });
   Color get color => Color(cardColor);
@@ -151,6 +155,7 @@ class CreditCard extends HiveObject {
     double? overLimitInterestRate,
     double? cashAdvanceOverdueInterestRate,
     double? minimumPaymentRate,
+    String? expirationDate,
     int? sortOrder,
   }) {
     return CreditCard(
@@ -176,6 +181,7 @@ class CreditCard extends HiveObject {
       overLimitInterestRate: overLimitInterestRate ?? this.overLimitInterestRate,
       cashAdvanceOverdueInterestRate: cashAdvanceOverdueInterestRate ?? this.cashAdvanceOverdueInterestRate,
       minimumPaymentRate: minimumPaymentRate ?? this.minimumPaymentRate,
+      expirationDate: expirationDate ?? this.expirationDate,
       sortOrder: sortOrder ?? this.sortOrder,
     );
   }
@@ -204,6 +210,7 @@ class CreditCard extends HiveObject {
       'overLimitInterestRate': overLimitInterestRate,
       'cashAdvanceOverdueInterestRate': cashAdvanceOverdueInterestRate,
       'minimumPaymentRate': minimumPaymentRate,
+      'expirationDate': expirationDate,
       'sortOrder': sortOrder,
     };
   }
@@ -232,6 +239,7 @@ class CreditCard extends HiveObject {
       overLimitInterestRate: (json['overLimitInterestRate'] as num?)?.toDouble(),
       cashAdvanceOverdueInterestRate: (json['cashAdvanceOverdueInterestRate'] as num?)?.toDouble(),
       minimumPaymentRate: (json['minimumPaymentRate'] as num?)?.toDouble(),
+      expirationDate: json['expirationDate'] as String?,
       sortOrder: json['sortOrder'] as int? ?? 0,
     );
   }

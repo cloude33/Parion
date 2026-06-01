@@ -1423,6 +1423,480 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu ay için işlem bulunamadı'**
   String get noTransactionsThisMonth;
+
+  /// No description provided for @familyPackage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aile Paketi'**
+  String get familyPackage;
+
+  /// No description provided for @familyPackageDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok kullanıcı, ortak bütçe ve borç takibi'**
+  String get familyPackageDesc;
+
+  /// No description provided for @createFamilyGroup.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni Grup Oluştur'**
+  String get createFamilyGroup;
+
+  /// No description provided for @familyGroupName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grup adı'**
+  String get familyGroupName;
+
+  /// No description provided for @familyGroupDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açıklama'**
+  String get familyGroupDescription;
+
+  /// No description provided for @noFamilyGroups.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz bir aile/grup yok'**
+  String get noFamilyGroups;
+
+  /// No description provided for @noFamilyGroupsDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aile üyeleri veya arkadaşlarınızla ortak bütçe, paylaşımlı harcamalar ve borç takibi için yeni bir grup oluşturun.'**
+  String get noFamilyGroupsDesc;
+
+  /// No description provided for @memberCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} üye'**
+  String memberCount(Object count);
+
+  /// No description provided for @sharedExpense.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylaşımlı Harcama'**
+  String get sharedExpense;
+
+  /// No description provided for @addSharedExpense.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylaşımlı Harcama Ekle'**
+  String get addSharedExpense;
+
+  /// No description provided for @splitEqually.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşit Bölüştür'**
+  String get splitEqually;
+
+  /// No description provided for @splitByAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tutar ile Böl'**
+  String get splitByAmount;
+
+  /// No description provided for @splitByPercentage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüzde ile Böl'**
+  String get splitByPercentage;
+
+  /// No description provided for @splitByShares.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pay ile Böl'**
+  String get splitByShares;
+
+  /// No description provided for @paidBy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödeyen'**
+  String get paidBy;
+
+  /// No description provided for @whoPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kim ödedi?'**
+  String get whoPaid;
+
+  /// No description provided for @splitMethod.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bölüşme şekli'**
+  String get splitMethod;
+
+  /// No description provided for @memberContributions.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üye Katkıları'**
+  String get memberContributions;
+
+  /// No description provided for @sharedBudgets.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak Bütçeler'**
+  String get sharedBudgets;
+
+  /// No description provided for @sharedBudget.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak Bütçe'**
+  String get sharedBudget;
+
+  /// No description provided for @createSharedBudget.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bütçe Oluştur'**
+  String get createSharedBudget;
+
+  /// No description provided for @noSharedBudgets.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz bütçe yok'**
+  String get noSharedBudgets;
+
+  /// No description provided for @noSharedBudgetsDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grup için ortak bir bütçe oluşturun.'**
+  String get noSharedBudgetsDesc;
+
+  /// No description provided for @totalBudget.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toplam Bütçe'**
+  String get totalBudget;
+
+  /// No description provided for @totalSpent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Harcanan'**
+  String get totalSpent;
+
+  /// No description provided for @totalRemaining.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kalan'**
+  String get totalRemaining;
+
+  /// No description provided for @budgetExceeded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aşım'**
+  String get budgetExceeded;
+
+  /// No description provided for @budgetUsage.
+  ///
+  /// In tr, this message translates to:
+  /// **'%{percentage} kullanıldı'**
+  String budgetUsage(Object percentage);
+
+  /// No description provided for @weekly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haftalık'**
+  String get weekly;
+
+  /// No description provided for @monthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık'**
+  String get monthly;
+
+  /// No description provided for @yearly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık'**
+  String get yearly;
+
+  /// No description provided for @distributeEqually.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşit Böl'**
+  String get distributeEqually;
+
+  /// No description provided for @familyDebts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üyeler Arası Borçlar'**
+  String get familyDebts;
+
+  /// No description provided for @familyDebtsDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aile/grup üyeleri arası borç takibi'**
+  String get familyDebtsDesc;
+
+  /// No description provided for @pendingDebts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekleyen Borç'**
+  String get pendingDebts;
+
+  /// No description provided for @paidDebts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödenen Borç'**
+  String get paidDebts;
+
+  /// No description provided for @settledDebts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödenen ({count})'**
+  String settledDebts(Object count);
+
+  /// No description provided for @pendingCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekleyen ({count})'**
+  String pendingCount(Object count);
+
+  /// No description provided for @addMemberDebt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borç Ekle'**
+  String get addMemberDebt;
+
+  /// No description provided for @noPendingDebts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bekleyen borç yok'**
+  String get noPendingDebts;
+
+  /// No description provided for @noPendingDebtsDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üyeler arası yeni bir borç kaydı ekleyin.'**
+  String get noPendingDebtsDesc;
+
+  /// No description provided for @noSettledDebts.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödenen borç yok'**
+  String get noSettledDebts;
+
+  /// No description provided for @noSettledDebtsDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz ödenmiş borç bulunmuyor.'**
+  String get noSettledDebtsDesc;
+
+  /// No description provided for @fromMember.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borçlu'**
+  String get fromMember;
+
+  /// No description provided for @toMember.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alacaklı'**
+  String get toMember;
+
+  /// No description provided for @debtDescription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açıklama'**
+  String get debtDescription;
+
+  /// No description provided for @debtDescriptionHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Örn: Akşam yemeği, Benzin'**
+  String get debtDescriptionHint;
+
+  /// No description provided for @markAsPaid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödendi'**
+  String get markAsPaid;
+
+  /// No description provided for @debtRecorded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borç kaydı eklendi'**
+  String get debtRecorded;
+
+  /// No description provided for @debtSettled.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borç ödendi olarak işaretlendi'**
+  String get debtSettled;
+
+  /// No description provided for @debtDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borç kaydı silindi'**
+  String get debtDeleted;
+
+  /// No description provided for @optimalSettlements.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önerilen Ödemeler'**
+  String get optimalSettlements;
+
+  /// No description provided for @noSettlements.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm bakiyeler eşit'**
+  String get noSettlements;
+
+  /// No description provided for @balanceCreditor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alacaklı'**
+  String get balanceCreditor;
+
+  /// No description provided for @balanceDebtor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borçlu'**
+  String get balanceDebtor;
+
+  /// No description provided for @balanceEqual.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşit'**
+  String get balanceEqual;
+
+  /// No description provided for @familyMembers.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üyeler'**
+  String get familyMembers;
+
+  /// No description provided for @addMember.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üye Ekle'**
+  String get addMember;
+
+  /// No description provided for @editMember.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üyeyi Düzenle'**
+  String get editMember;
+
+  /// No description provided for @removeMember.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üyeyi Sil'**
+  String get removeMember;
+
+  /// No description provided for @noMembers.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üye yok'**
+  String get noMembers;
+
+  /// No description provided for @noMembersDesc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gruba ilk üyeyi ekleyin.'**
+  String get noMembersDesc;
+
+  /// No description provided for @memberName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ad Soyad'**
+  String get memberName;
+
+  /// No description provided for @memberEmail.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta'**
+  String get memberEmail;
+
+  /// No description provided for @memberPhone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefon'**
+  String get memberPhone;
+
+  /// No description provided for @memberMonthlyBudget.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık Bütçe'**
+  String get memberMonthlyBudget;
+
+  /// No description provided for @memberRole.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rol'**
+  String get memberRole;
+
+  /// No description provided for @roleMember.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üye'**
+  String get roleMember;
+
+  /// No description provided for @roleAdmin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yönetici'**
+  String get roleAdmin;
+
+  /// No description provided for @roleOwner.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sahip'**
+  String get roleOwner;
+
+  /// No description provided for @transferOwnership.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sahipliği Devret'**
+  String get transferOwnership;
+
+  /// No description provided for @cannotDeleteOwner.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grup sahibi silinemez'**
+  String get cannotDeleteOwner;
+
+  /// No description provided for @cannotDeleteOwnerDebt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borçlu ve alacaklı aynı kişi olamaz'**
+  String get cannotDeleteOwnerDebt;
+
+  /// No description provided for @debtor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Borçlu'**
+  String get debtor;
+
+  /// No description provided for @creditor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alacaklı'**
+  String get creditor;
+
+  /// No description provided for @groupColor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grup rengi'**
+  String get groupColor;
+
+  /// No description provided for @deleteGroup.
+  ///
+  /// In tr, this message translates to:
+  /// **'Grubu Sil'**
+  String get deleteGroup;
+
+  /// No description provided for @deleteGroupConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} grubu ve tüm paylaşımlı harcamalar, bütçeler ve borçlar silinecek. Devam etmek istiyor musunuz?'**
+  String deleteGroupConfirm(Object name);
+
+  /// No description provided for @recordSettlement.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödemeyi Kaydet'**
+  String get recordSettlement;
 }
 
 class _AppLocalizationsDelegate

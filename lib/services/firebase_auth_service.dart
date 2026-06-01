@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import '../firebase_options.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -20,11 +22,6 @@ class FirebaseAuthService {
   FirebaseAuthService._internal();
 
   FirebaseAuth get _auth => FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-    // Web client ID'yi manuel olarak belirt
-    serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-  );
 
   // Retry configuration
   static const int _maxRetryAttempts = 3;
@@ -69,16 +66,6 @@ class FirebaseAuthService {
     
     if (password.length < 6) {
       return 'Şifre en az 6 karakter olmalıdır';
-    }
-    
-    // Check for at least one letter and one number for stronger passwords
-    if (password.length >= 8) {
-      final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
-      final hasNumber = RegExp(r'[0-9]').hasMatch(password);
-      
-      if (!hasLetter || !hasNumber) {
-        return 'Güçlü şifre için harf ve rakam kullanın';
-      }
     }
     
     return null;
@@ -250,6 +237,18 @@ class FirebaseAuthService {
     try {
       debugPrint('🔄 Google Sign-In başlatılıyor...');
 
+      // Firebase'in başlatıldığından emin ol
+      try {
+        if (Firebase.apps.isEmpty) {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          ).timeout(const Duration(seconds: 10));
+          debugPrint('✅ Firebase lazily initialized for Google Sign-In');
+        }
+      } catch (initError) {
+        debugPrint('❌ Firebase initialization in signInWithGoogle failed: $initError');
+      }
+
       if (kIsWeb) {
         // Web için Google Identity Services (GIS) veya signInWithPopup kullan
         final googleProvider = GoogleAuthProvider();
@@ -267,9 +266,14 @@ class FirebaseAuthService {
       } else {
         // Mobil için mevcut GoogleSignIn akışını kullan
         
+        // Initialize GoogleSignIn
+        await GoogleSignIn.instance.initialize(
+          serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
+        );
+        
         // Önce mevcut oturumu temizle
         try {
-          await _googleSignIn.signOut();
+          await GoogleSignIn.instance.signOut();
           await _auth.signOut();
         } catch (e) {
           debugPrint('⚠️ Sign out error (ignorable): $e');
@@ -277,46 +281,49 @@ class FirebaseAuthService {
         
         debugPrint('🔄 Google Sign-In başlatılıyor...');
         
-        // Google Play Services kontrolü
-        final isAvailable = await _googleSignIn.isSignedIn();
-        debugPrint('📱 Google Play Services durumu: $isAvailable');
+        final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
         
-        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-        
-        if (googleUser == null) {
-          debugPrint('❌ Google Sign-In iptal edildi');
-          return null;
-        }
-
         debugPrint('✅ Google kullanıcısı seçildi: ${googleUser.email}');
 
         // Google kimlik doğrulama detaylarını al
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
+        final auth = await googleUser.authorizationClient.authorizeScopes(['email']);
+        final googleAuth = googleUser.authentication;
 
-        if (googleAuth.accessToken == null || googleAuth.idToken == null) {
-          debugPrint('❌ Google auth tokens alınamadı');
-          debugPrint('Access Token: ${googleAuth.accessToken != null ? 'OK' : 'NULL'}');
-          debugPrint('ID Token: ${googleAuth.idToken != null ? 'OK' : 'NULL'}');
-          
-          // Token alınamadıysa tekrar dene
-          await _googleSignIn.signOut();
-          throw Exception('Google authentication tokens not available. Please try again.');
-        }
+        debugPrint('Access Token: ${auth.accessToken.isNotEmpty ? 'OK' : 'EMPTY'}');
+        debugPrint('ID Token: ${googleAuth.idToken?.isNotEmpty ?? false ? 'OK' : 'EMPTY'}');
 
         debugPrint('✅ Google auth tokens alındı');
 
         // Firebase credential oluştur
         final credential = GoogleAuthProvider.credential(
-          accessToken: googleAuth.accessToken,
+          accessToken: auth.accessToken,
           idToken: googleAuth.idToken,
         );
 
         debugPrint('🔄 Firebase ile giriş yapılıyor...');
-        final userCredential = await _auth.signInWithCredential(credential);
-
-        debugPrint('✅ Google Sign-In başarılı: ${userCredential.user?.email}');
-        return userCredential;
+        debugPrint('   Firebase Auth proje: ${_auth.app.options.projectId}');
+        debugPrint('   Credential provider: ${credential.providerId}');
+        
+        try {
+          final userCredential = await _auth.signInWithCredential(credential);
+          debugPrint('✅ Google Sign-In başarılı: ${userCredential.user?.email}');
+          return userCredential;
+        } on FirebaseAuthException catch (e) {
+          debugPrint('❌ Firebase signInWithCredential failed: ${e.code}');
+          debugPrint('   Message: ${e.message}');
+          debugPrint('   Credential: accessToken=${auth.accessToken.isNotEmpty ? 'OK' : 'EMPTY'}, idToken=${googleAuth.idToken?.isNotEmpty ?? false ? 'OK' : 'EMPTY'}');
+          
+          // Özel olarak network-request-failed için daha açıklayıcı hata
+          if (e.code == 'network-request-failed') {
+            throw 'Firebase sunucularına bağlanılamadı (network-request-failed).\n'
+                'Muhtemel nedenler:\n'
+                '• Firebase Console\'da Authentication > Sign-in method > Google oturum açma etkinleştirilmemiş\n'
+                '• Firebase Console\'da Authentication ayarlarında Destek E-postası belirtilmemiş\n'
+                '• google-services.json güncel değil (flutterfire configure komutunu çalıştırın)\n'
+                '• Cihaz Firebase sunucularına erişemiyor (VPN, güvenlik duvarı veya DNS sorunu)';
+          }
+          rethrow;
+        }
       }
     } on FirebaseAuthException catch (e) {
       debugPrint('❌ Firebase Auth Error: ${e.code} - ${e.message}');
@@ -326,18 +333,21 @@ class FirebaseAuthService {
       debugPrint('❌ Platform Exception Details: ${e.details}');
       
       if (e.code == 'sign_in_failed') {
-        if (e.message?.contains('10') == true) {
-          throw 'Google Sign-In yapılandırma hatası. Lütfen:\n'
-              '• Uygulamayı tamamen kapatıp açın\n'
-              '• Google Play Services\'i güncelleyin\n'
-              '• Cihazınızı yeniden başlatın\n'
-              '• İnternet bağlantınızı kontrol edin';
+        final msg = e.message ?? '';
+        if (msg.contains('12500') || msg.contains('10')) {
+          throw 'Google Sign-In yapılandırma hatası (${msg.contains('12500') ? '12500' : '10'}). Muhtemel nedenler:\n'
+              '• SHA-1 sertifika parmak izi Firebase konsoluna eklenmemiş\n'
+              '• google-services.json dosyası güncel değil\n'
+              '• Firebase projesinde Destek E-postası ayarlanmamış';
         }
         throw 'Google Sign-In başarısız. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.';
       }
       throw 'Google Sign-In hatası: ${e.message ?? e.code}';
     } catch (e) {
       debugPrint('❌ Google sign in error: $e');
+      if (e is String && e.isNotEmpty) {
+        rethrow;
+      }
       throw 'Google Sign-In sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.';
     }
   }
@@ -347,7 +357,7 @@ class FirebaseAuthService {
       if (kIsWeb) {
         await _auth.signOut();
       } else {
-        await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
+        await Future.wait([_auth.signOut(), GoogleSignIn.instance.signOut()]);
       }
     } catch (e) {
       debugPrint('Sign out error: $e');
@@ -485,59 +495,62 @@ class FirebaseAuthService {
       try {
         // Add timeout to prevent hanging
         return await operation().timeout(_networkTimeout);
-      } on FirebaseAuthException catch (e) {
-        lastError = e;
-        final errorMessage = handleAuthException(e);
-        
-        // Don't retry for certain error types
-        if (shouldNotRetry(e.code)) {
-          onError(errorMessage);
-          throw errorMessage;
-        }
-        
-        debugPrint('$operationName attempt $attempts failed: ${e.code} - ${e.message}');
-        
-        // If this is the last attempt, throw the error
-        if (attempts >= _maxRetryAttempts) {
-          onError(errorMessage);
-          throw errorMessage;
-        }
-        
-        // Wait before retrying
-        await Future.delayed(_retryDelay * attempts);
-      } on TimeoutException catch (e) {
-        lastError = e;
-        debugPrint('$operationName attempt $attempts timed out');
-        
-        if (attempts >= _maxRetryAttempts) {
-          const errorMessage = 'İşlem zaman aşımına uğradı. İnternet bağlantınızı kontrol edin.';
-          onError(errorMessage);
-          throw errorMessage;
-        }
-        
-        await Future.delayed(_retryDelay * attempts);
-      } on SocketException catch (e) {
-        lastError = e;
-        debugPrint('$operationName attempt $attempts failed: Network error');
-        
-        if (attempts >= _maxRetryAttempts) {
-          const errorMessage = 'İnternet bağlantısı yok. Lütfen bağlantınızı kontrol edin.';
-          onError(errorMessage);
-          throw errorMessage;
-        }
-        
-        await Future.delayed(_retryDelay * attempts);
       } catch (e) {
         lastError = e;
-        debugPrint('$operationName attempt $attempts failed: $e');
-        
-        if (attempts >= _maxRetryAttempts) {
-          final errorMessage = 'Beklenmeyen bir hata oluştu: ${e.toString()}';
-          onError(errorMessage);
-          throw errorMessage;
+
+        // On Flutter Web, FirebaseAuthException may not be caught by typed catch blocks
+        // due to JS interop. Check the type explicitly.
+        if (e is FirebaseAuthException) {
+          final errorMessage = handleAuthException(e);
+          
+          if (shouldNotRetry(e.code)) {
+            onError(errorMessage);
+            throw errorMessage;
+          }
+          
+          debugPrint('$operationName attempt $attempts failed: ${e.code} - ${e.message}');
+          
+          if (attempts >= _maxRetryAttempts) {
+            onError(errorMessage);
+            throw errorMessage;
+          }
+          
+          await Future.delayed(_retryDelay * attempts);
+        } else if (e is TimeoutException) {
+          debugPrint('$operationName attempt $attempts timed out');
+          
+          if (attempts >= _maxRetryAttempts) {
+            const errorMessage = 'İşlem zaman aşımına uğradı. İnternet bağlantınızı kontrol edin.';
+            onError(errorMessage);
+            throw errorMessage;
+          }
+          
+          await Future.delayed(_retryDelay * attempts);
+        } else if (e is SocketException) {
+          debugPrint('$operationName attempt $attempts failed: Network error');
+          
+          if (attempts >= _maxRetryAttempts) {
+            const errorMessage = 'İnternet bağlantısı yok. Lütfen bağlantınızı kontrol edin.';
+            onError(errorMessage);
+            throw errorMessage;
+          }
+          
+          await Future.delayed(_retryDelay * attempts);
+        } else if (e is String) {
+          // Already a localized error message thrown from within operation
+          onError(e);
+          rethrow;
+        } else {
+          debugPrint('$operationName attempt $attempts failed: $e');
+          
+          if (attempts >= _maxRetryAttempts) {
+            final errorMessage = 'Beklenmeyen bir hata oluştu: ${e.toString()}';
+            onError(errorMessage);
+            throw errorMessage;
+          }
+          
+          await Future.delayed(_retryDelay * attempts);
         }
-        
-        await Future.delayed(_retryDelay * attempts);
       }
     }
 
@@ -658,7 +671,8 @@ class FirebaseAuthService {
       
       // Network and service errors
       case 'network-request-failed':
-        return 'İnternet bağlantısı sorunu. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.';
+        return 'Firebase sunucularına bağlanılamadı. Lütfen internet bağlantınızı kontrol edin,'
+            ' VPN varsa kapatın ve Firebase Console\'da Authentication ayarlarını doğrulayın.';
       case 'too-many-requests':
         return 'Çok fazla başarısız deneme yapıldı. Güvenlik nedeniyle geçici olarak engellendiniz. Lütfen daha sonra tekrar deneyin.';
       case 'operation-not-allowed':

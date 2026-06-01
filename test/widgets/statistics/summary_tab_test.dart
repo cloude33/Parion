@@ -44,7 +44,7 @@ void main() {
       await TestSetup.tearDownTest();
     });
 
-    Widget _buildScreen({
+    Widget buildScreen({
       List<Transaction> transactions = const [],
       List<Wallet> wallets = const [],
     }) {
@@ -78,7 +78,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       // Pump once without settling — futures are still pending → loading state
       await tester.pump();
 
@@ -99,7 +99,7 @@ void main() {
       GetIt.I.registerSingleton<StatisticsService>(_FakeStatisticsService());
 
       // No transactions → empty state
-      await tester.pumpWidget(_buildScreen(transactions: const []));
+      await tester.pumpWidget(buildScreen(transactions: const []));
       await tester.pumpAndSettle();
 
       expect(
@@ -116,7 +116,7 @@ void main() {
       GetIt.I.registerSingleton<DataService>(_FakeDataService());
       GetIt.I.registerSingleton<StatisticsService>(_FakeStatisticsService());
 
-      await tester.pumpWidget(_buildScreen(transactions: const []));
+      await tester.pumpWidget(buildScreen(transactions: const []));
       await tester.pumpAndSettle();
 
       expect(
@@ -146,7 +146,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       await tester.pumpAndSettle();
 
       expect(
@@ -175,7 +175,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       await tester.pumpAndSettle();
 
       expect(
@@ -204,7 +204,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Tekrar Dene').first);

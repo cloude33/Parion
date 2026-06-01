@@ -1,5 +1,4 @@
 // ignore_for_file: use_build_context_synchronously
-
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
@@ -12,10 +11,15 @@ import '../models/goal.dart';
 import '../models/user.dart';
 import '../models/category.dart';
 import '../models/loan.dart';
+import '../services/exchange_rate_service.dart';
+import '../services/truncgil_service.dart';
+import '../services/guest_mode_service.dart';
 import '../services/data_service.dart';
 import '../services/notification_service.dart';
 import '../utils/currency_helper.dart';
+import 'welcome_screen.dart';
 import '../utils/app_icons.dart';
+import '../core/design/app_colors.dart';
 import 'notification_history_screen.dart';
 import 'add_transaction_screen.dart';
 import 'add_wallet_screen.dart';
@@ -41,6 +45,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../widgets/common/app_bottom_nav_bar.dart';
 import '../widgets/inactivity_monitor_widget.dart';
 import '../widgets/simple_auth_debug_widget.dart';
+import 'exchange_rates_screen.dart';
+import 'add_investment_screen.dart';
+import 'ocr_scan_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -65,6 +72,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Map<String, CreditCard> _creditCards = {};
   List<Loan> _loans = [];
   bool _loading = true;
+  bool _isGuestMode = false;
   bool _showFabMenu = false;
   Timer? _fabMenuTimer;
   int _unreadNotificationCount = 0;
@@ -77,7 +85,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentPage = 0;
   int _homeViewMode = 0; // 0: List, 1: Calendar
   DateTime _selectedMonth = DateTime.now();
-  bool _showAllHistory = false;
+  double? _usdRate;
+  double? _eurRate;
+  double? _goldOnsUsd;
+  double? _gramAltinTl;
 
   @override
   void initState() {
@@ -93,6 +104,18 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     });
     WidgetsBinding.instance.addObserver(this);
     _loadData();
+    _loadGuestMode();
+    _fetchExchangeRates();
+    _fetchMarketData();
+  }
+
+  Future<void> _loadGuestMode() async {
+    final isGuest = await GuestModeService().isGuestMode();
+    if (mounted) {
+      setState(() {
+        _isGuestMode = isGuest;
+      });
+    }
   }
 
   @override
@@ -251,6 +274,34 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _fetchExchangeRates() async {
+    try {
+      final service = ExchangeRateService();
+      final rates = await service.fetchRates();
+      if (mounted && rates.isNotEmpty) {
+        setState(() {
+          _usdRate = rates.where((r) => r.code == 'USD').map((r) => 1.0 / r.rate).firstOrNull;
+          _eurRate = rates.where((r) => r.code == 'EUR').map((r) => 1.0 / r.rate).firstOrNull;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _fetchMarketData() async {
+    try {
+      final service = TruncgilService();
+      final data = await service.fetchAll();
+      if (mounted && data != null) {
+        setState(() {
+          _usdRate = data.usdSell();
+          _eurRate = data.eurSell();
+          _goldOnsUsd = data.onsUsdSell();
+          _gramAltinTl = data.gramAltinSell();
+        });
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
@@ -275,13 +326,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           appBar: _selectedIndex == 0
               ? AppBar(
                   automaticallyImplyLeading: false,
-                  title: _buildHomeToggle(),
+                  title: Center(child: _buildHomeToggle()),
                   centerTitle: true,
                   actions: [
                     Stack(
                       children: [
                         IconButton(
-                          icon: FaIcon(AppIcons.notification, size: 20),
+                          icon: Icon(AppIcons.notification, size: 20),
                           onPressed: () async {
                             await Navigator.push(
                               context,
@@ -293,6 +344,20 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                             _loadData();
                           },
                         ),
+                        if (_isGuestMode)
+                          IconButton(
+                            icon: const Icon(Icons.logout, size: 20, color: Colors.redAccent),
+                            tooltip: 'Demo modundan çık',
+                            onPressed: () async {
+                              await GuestModeService().disableGuestMode();
+                              if (mounted) {
+                                Navigator.of(context).pushAndRemoveUntil(
+                                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                                  (route) => false,
+                                );
+                              }
+                            },
+                          ),
                         if (_unreadNotificationCount > 0)
                           Positioned(
                             right: 8,
@@ -354,6 +419,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+
   Widget _buildHomeToggle() {
     return Container(
       height: 36,
@@ -362,10 +428,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: Colors.grey.withAlpha(50),
-        ), // using withAlpha for cleaner look options
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _buildToggleOption(AppLocalizations.of(context)!.list, 0),
           _buildToggleOption(AppLocalizations.of(context)!.calendar, 1),
@@ -380,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       onTap: () => setState(() => _homeViewMode = mode),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: 24),
         alignment: Alignment.center,
         height: double.infinity,
         decoration: BoxDecoration(
@@ -391,6 +458,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
         child: Text(
           text,
+          textAlign: TextAlign.center,
           style: TextStyle(
             color: isSelected
                 ? Colors.white
@@ -417,23 +485,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
-              // Debug mode'da auth debug widgets göster
+              const SizedBox(height: 4),
               if (kDebugMode) ...[
                 const SimpleAuthDebugWidget(),
                 const InactivityMonitorWidget(),
+                const SizedBox(height: 4),
               ],
-              const SizedBox(height: 20),
               _buildSummaryCard(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+              _buildPriceBar(),
+              const SizedBox(height: 8),
               if (_kmhAlerts.isNotEmpty) ...[
                 _buildKmhAlertsSection(),
-                const SizedBox(height: 20),
+                const SizedBox(height: 8),
               ],
               _buildAllTransactions(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
               _buildGoalsSection(),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -466,20 +535,43 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       });
     }
 
-    if (!_showAllHistory) {
-      allTransactions = allTransactions.where((item) {
-        final date = item['date'] as DateTime;
-        return date.year == _selectedMonth.year &&
-            date.month == _selectedMonth.month;
-      }).toList();
-    }
+    allTransactions = allTransactions.where((item) {
+      final date = item['date'] as DateTime;
+      return date.year == _selectedMonth.year &&
+          date.month == _selectedMonth.month;
+    }).toList();
 
     allTransactions.sort(
       (a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime),
     );
 
     if (allTransactions.isEmpty) {
-      return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AppLocalizations.of(context)!.transactions,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).textTheme.displayLarge?.color,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _buildDateFilter(),
+            const SizedBox(height: 24),
+            Center(
+              child: Text(
+                'Bu ayda işlem bulunmuyor',
+                style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      );
     }
     Map<String, List<Map<String, dynamic>>> groupedTransactions = {};
     for (var item in allTransactions) {
@@ -496,7 +588,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         : 0.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -513,7 +605,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               if (_creditCards.isNotEmpty)
                 IconButton(
-                  icon: FaIcon(
+                  icon: Icon(
                     AppIcons.filter,
                     color: _isFilterActive
                         ? const Color(0xFF00BFA5)
@@ -726,8 +818,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
@@ -922,8 +1014,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 16,
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
               offset: const Offset(0, 4),
             ),
           ],
@@ -1072,6 +1164,173 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildPriceBar() {
+    final usdPrice = _usdRate;
+    final eurPrice = _eurRate;
+    final onsUsd = _goldOnsUsd;
+    final gramTl = _gramAltinTl;
+
+    final priceColor = AppColors.priceBarAccent;
+    final marketClosed = TruncgilService.isFreeMarketClosed(DateTime.now());
+    final marketText = TruncgilService.freeMarketStatusMessage(DateTime.now());
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Material(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(20),
+            elevation: 0,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ExchangeRatesScreen(),
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildPriceItem(
+                        label: 'Gram',
+                        value: gramTl,
+                        prefix: '₺',
+                        color: priceColor,
+                      ),
+                    ),
+                    _buildPriceDivider(),
+                    Expanded(
+                      child: _buildPriceItem(
+                        label: 'Ons',
+                        value: onsUsd,
+                        prefix: r'$',
+                        color: priceColor,
+                      ),
+                    ),
+                    _buildPriceDivider(),
+                    Expanded(
+                      child: _buildPriceItem(
+                        label: 'USD',
+                        value: usdPrice,
+                        prefix: '₺',
+                        color: priceColor,
+                      ),
+                    ),
+                    _buildPriceDivider(),
+                    Expanded(
+                      child: _buildPriceItem(
+                        label: 'EUR',
+                        value: eurPrice,
+                        prefix: '₺',
+                        color: priceColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 8, right: 8),
+            child: Row(
+              children: [
+                Icon(
+                  marketClosed ? Icons.access_time : Icons.sync,
+                  size: 11,
+                  color: marketClosed
+                      ? Colors.orange.shade700
+                      : Colors.green.shade700,
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    marketText,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: marketClosed
+                          ? Colors.orange.shade800
+                          : Colors.green.shade800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceItem({
+    required String label,
+    required double? value,
+    required String prefix,
+    required Color color,
+  }) {
+    final display = value != null
+        ? '$prefix${NumberFormat('#,##0.00', 'tr_TR').format(value)}'
+        : '—';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Color(0xFF8E8E93),
+              fontWeight: FontWeight.w500,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              display,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: color,
+                letterSpacing: 0.1,
+              ),
+              maxLines: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceDivider() {
+    return Container(
+      width: 1,
+      height: 28,
+      color: const Color(0xFFE5E5EA),
+      margin: const EdgeInsets.symmetric(vertical: 2),
+    );
+  }
+
   Widget _buildSummaryCard() {
     final now = DateTime.now();
     final monthlyTransactions = transactions.where(
@@ -1177,7 +1436,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final monthName = DateFormat.MMMM().format(now);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Column(
         children: [
           SizedBox(
@@ -1202,15 +1461,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               2,
               (index) => Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: _currentPage == index ? 24 : 8,
-                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width: _currentPage == index ? 20 : 6,
+                height: 6,
                 decoration: BoxDecoration(
                   color: _currentPage == index
                       ? const Color(0xFF00BFA5)
@@ -1237,7 +1496,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.15),
+          color: const Color(0xFFE0E0E0),
           width: 1.5,
         ),
         boxShadow: [
@@ -1263,7 +1522,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               child: Row(
                 children: [
-                  FaIcon(AppIcons.income, color: Colors.white, size: 24),
+                  Icon(AppIcons.income, color: Colors.white, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1334,7 +1593,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.grey.withValues(alpha: 0.15),
+          color: const Color(0xFFE0E0E0),
           width: 1.5,
         ),
         boxShadow: [
@@ -1356,7 +1615,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               ),
               child: Row(
                 children: [
-                  const FaIcon(AppIcons.wallet, color: Colors.white, size: 24),
+                  Icon(AppIcons.wallet, color: Colors.white, size: 24),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -1437,7 +1696,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FaIcon(icon, color: const Color(0xFFEB372A), size: 18),
+          Icon(icon, color: const Color(0xFFEB372A), size: 18),
           const SizedBox(height: 6),
           Text(
             label,
@@ -1474,7 +1733,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   ) {
     return Column(
       children: [
-        FaIcon(icon, color: color, size: 20),
+        Icon(icon, color: color, size: 20),
         const SizedBox(height: 8),
         Text(
           label,
@@ -1503,7 +1762,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1726,78 +1985,64 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildDateFilter() {
+    final now = DateTime.now();
+    final currentMonth = DateTime(now.year, now.month);
+    final minMonth = DateTime(2020, 1);
+    final canGoBack = _selectedMonth.isAfter(minMonth) || _selectedMonth.month > 1 || _selectedMonth.year > 2020;
+    final canGoForward = _selectedMonth.isBefore(currentMonth);
+
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withAlpha(30)),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (!_showAllHistory) ...[
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () => setState(() {
-                    _selectedMonth = DateTime(
-                      _selectedMonth.year,
-                      _selectedMonth.month - 1,
-                    );
-                  }),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  DateFormat('MMMM yyyy', 'tr_TR').format(_selectedMonth),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () => setState(() {
-                    _selectedMonth = DateTime(
-                      _selectedMonth.year,
-                      _selectedMonth.month + 1,
-                    );
-                  }),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                  splashRadius: 20,
-                ),
-              ],
-            ),
-          ] else ...[
-            Text(
-              'Tüm Zamanlar',
+          IconButton(
+            icon: Icon(Icons.chevron_left, color: canGoBack ? null : Colors.transparent),
+            onPressed: canGoBack ? () => setState(() {
+              _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month - 1);
+            }) : null,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 20,
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _selectedMonth,
+                firstDate: DateTime(2020),
+                lastDate: now,
+                helpText: 'Ay seçin',
+              );
+              if (picked != null) {
+                setState(() => _selectedMonth = DateTime(picked.year, picked.month));
+              }
+            },
+            child: Text(
+              DateFormat('MMMM yyyy', 'tr_TR').format(_selectedMonth),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 15,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
-          ],
-          TextButton.icon(
-            onPressed: () => setState(() => _showAllHistory = !_showAllHistory),
-            icon: Icon(
-              _showAllHistory ? Icons.calendar_month : Icons.history,
-              size: 18,
-            ),
-            label: Text(_showAllHistory ? 'Bu Ay' : 'Tümü'),
-            style: TextButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Icons.chevron_right, color: canGoForward ? null : Colors.transparent),
+            onPressed: canGoForward ? () => setState(() {
+              _selectedMonth = DateTime(_selectedMonth.year, _selectedMonth.month + 1);
+            }) : null,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            splashRadius: 20,
           ),
         ],
       ),
@@ -1818,7 +2063,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               '${card.bankName} •••• ${card.last4Digits}',
               style: const TextStyle(fontSize: 12),
             ),
-            deleteIcon: FaIcon(FontAwesomeIcons.xmark, size: 14),
+            deleteIcon: Icon(FontAwesomeIcons.xmark.data, size: 14),
             onDeleted: () {
               setState(() {
                 _selectedCardIds.remove(cardId);
@@ -1850,7 +2095,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildKmhAlertsSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1886,7 +2131,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
       child: Row(
         children: [
-          FaIcon(icon, color: color, size: 24),
+          Icon(icon, color: color, size: 24),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1912,7 +2157,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
           IconButton(
-            icon: FaIcon(FontAwesomeIcons.chevronRight, size: 14),
+            icon: Icon(FontAwesomeIcons.chevronRight.data, size: 14),
             color: color,
             onPressed: () {
               Navigator.push(
@@ -1989,6 +2234,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               if (result == true) _loadData();
             },
           ),
+          const SizedBox(height: 12),
+          _buildFabMenuItem(
+            label: 'Fatura Oku',
+            icon: Icons.document_scanner,
+            color: const Color(0xFF1565C0),
+            onTap: () async {
+              setState(() => _showFabMenu = false);
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const OcrScanScreen()),
+              );
+            },
+          ),
 
           const SizedBox(height: 12),
           _buildFabMenuItem(
@@ -2001,6 +2259,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const AddWalletScreen(),
+                ),
+              );
+              if (result == true) _loadData();
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildFabMenuItem(
+            label: 'Yatırım Ekle',
+            icon: Icons.show_chart,
+            color: const Color(0xFF9C27B0),
+            onTap: () async {
+              setState(() => _showFabMenu = false);
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AddInvestmentScreen(),
                 ),
               );
               if (result == true) _loadData();
@@ -2026,7 +2300,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           child: AnimatedRotation(
             turns: _showFabMenu ? 0.125 : 0,
             duration: const Duration(milliseconds: 200),
-            child: FaIcon(
+            child: Icon(
               _showFabMenu ? AppIcons.delete : AppIcons.add,
               color: Colors.white,
               size: 24,
@@ -2074,7 +2348,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           onPressed: onTap,
           backgroundColor: color,
           mini: false,
-          child: FaIcon(icon, color: Colors.white, size: 20),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
       ],
     );

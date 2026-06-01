@@ -160,14 +160,14 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: Theme.of(context).appBarTheme.backgroundColor,
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black12,
@@ -179,9 +179,9 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.arrow_back,
-                      color: Color(0xFF1C1C1E),
+                      color: Theme.of(context).appBarTheme.foregroundColor,
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -192,12 +192,11 @@ class _ManageLoansScreenState extends State<ManageLoansScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1C1C1E),
                       ),
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.add, color: Color(0xFF1C1C1E)),
+                    icon: Icon(Icons.add, color: Theme.of(context).appBarTheme.foregroundColor),
                     onPressed: _addLoan,
                   ),
                 ],

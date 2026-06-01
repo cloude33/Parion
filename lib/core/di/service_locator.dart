@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 import '../../services/auth_service.dart';
 import '../../services/backup_service.dart';
 import '../../services/data_service.dart';
+import '../../services/user_service.dart';
 import '../../services/statistics_service.dart';
 import '../../services/auth/auth_orchestrator.dart';
 import '../../services/auth/interfaces/auth_orchestrator_interface.dart';
@@ -15,6 +16,7 @@ import '../../services/auth/biometric_auth_service.dart';
 import '../../services/auth/social_login_service.dart';
 import '../../services/auth/security_controller.dart';
 import '../../services/auth/data_sync_service.dart';
+import '../../services/family_service.dart';
 import '../utils/app_logger.dart';
 
 /// Global service locator instance
@@ -78,9 +80,19 @@ Future<void> setupDependencyInjection() async {
     getIt.registerLazySingleton<DataService>(() => DataService());
   }
 
+  // User services
+  if (!getIt.isRegistered<UserService>()) {
+    getIt.registerLazySingleton<UserService>(() => UserService());
+  }
+
   // Statistics services
   if (!getIt.isRegistered<StatisticsService>()) {
     getIt.registerLazySingleton<StatisticsService>(() => StatisticsService());
+  }
+
+  // Family / Multi-User services
+  if (!getIt.isRegistered<FamilyService>()) {
+    getIt.registerLazySingleton<FamilyService>(() => FamilyService());
   }
 
   // Initialize services that need async initialization
@@ -92,6 +104,12 @@ Future<void> setupDependencyInjection() async {
 
   try {
     await getIt<DataService>().init();
+  } catch (e) {
+    // Service might already be initialized
+  }
+
+  try {
+    await getIt<UserService>().init();
   } catch (e) {
     // Service might already be initialized
   }
@@ -137,8 +155,14 @@ extension GetItExtensions on GetIt {
   /// Get DataService instance
   DataService get dataService => get<DataService>();
 
+  /// Get UserService instance
+  UserService get userService => get<UserService>();
+
   /// Get StatisticsService instance
   StatisticsService get statisticsService => get<StatisticsService>();
+
+  /// Get FamilyService instance
+  FamilyService get familyService => get<FamilyService>();
 
   /// Get AppLogger instance
   AppLogger get logger => get<AppLogger>();

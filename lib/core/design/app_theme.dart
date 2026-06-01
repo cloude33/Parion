@@ -35,9 +35,11 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
-        elevation: 0,
+        elevation: 2,
+        shadowColor: Colors.black12,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.lg),
+          side: const BorderSide(color: AppColors.cardBorder, width: 1),
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
@@ -52,6 +54,7 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+      dividerColor: const Color(0xFFE0E0E0),
       textTheme: TextTheme(
         displayLarge: AppTextStyles.displayLarge.copyWith(
           color: AppColors.onSurface,
@@ -139,9 +142,11 @@ class AppTheme {
       ),
       cardTheme: CardThemeData(
         color: AppColors.surfaceDark,
-        elevation: 0,
+        elevation: 2,
+        shadowColor: Colors.black38,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppSpacing.lg),
+          side: BorderSide(color: Colors.grey.shade700, width: 1),
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(

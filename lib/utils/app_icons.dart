@@ -1,161 +1,161 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:line_icons/line_icons.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 /// Uygulama genelinde kullanılan renkli ikonlar
 class AppIcons {
   // ==================== FİNANSAL İKONLAR ====================
 
   /// Para ve finans ikonları
-  static const IconData money = FontAwesomeIcons.moneyBill;
-  static const IconData wallet = FontAwesomeIcons.wallet;
-  static const IconData creditCard = FontAwesomeIcons.creditCard;
-  static const IconData bank = FontAwesomeIcons.buildingColumns;
-  static const IconData coins = FontAwesomeIcons.coins;
-  static const IconData piggyBank = FontAwesomeIcons.piggyBank;
-  static const IconData handHoldingDollar = FontAwesomeIcons.handHoldingDollar;
-  static const IconData receipt = FontAwesomeIcons.receipt;
-  static const IconData invoice = FontAwesomeIcons.fileInvoiceDollar;
+  static final IconData money = FontAwesomeIcons.moneyBill.data;
+  static final IconData wallet = FontAwesomeIcons.wallet.data;
+  static final IconData creditCard = FontAwesomeIcons.creditCard.data;
+  static final IconData bank = FontAwesomeIcons.buildingColumns.data;
+  static final IconData coins = FontAwesomeIcons.coins.data;
+  static final IconData piggyBank = FontAwesomeIcons.piggyBank.data;
+  static final IconData handHoldingDollar = FontAwesomeIcons.handHoldingDollar.data;
+  static final IconData receipt = FontAwesomeIcons.receipt.data;
+  static final IconData invoice = FontAwesomeIcons.fileInvoiceDollar.data;
 
   /// Gelir/Gider ikonları
-  static const IconData income = FontAwesomeIcons.arrowTrendUp;
-  static const IconData expense = FontAwesomeIcons.arrowTrendDown;
-  static const IconData transfer = FontAwesomeIcons.rightLeft;
-  static const IconData exchange = FontAwesomeIcons.arrowsRotate;
+  static final IconData income = FontAwesomeIcons.arrowTrendUp.data;
+  static final IconData expense = FontAwesomeIcons.arrowTrendDown.data;
+  static final IconData transfer = FontAwesomeIcons.rightLeft.data;
+  static final IconData exchange = FontAwesomeIcons.arrowsRotate.data;
 
   // ==================== KATEGORİ İKONLARI ====================
 
   /// Yemek ve içecek
-  static const IconData food = FontAwesomeIcons.utensils;
-  static const IconData coffee = FontAwesomeIcons.mugHot;
-  static const IconData pizza = FontAwesomeIcons.pizzaSlice;
-  static const IconData burger = FontAwesomeIcons.burger;
+  static final IconData food = FontAwesomeIcons.utensils.data;
+  static final IconData coffee = FontAwesomeIcons.mugHot.data;
+  static final IconData pizza = FontAwesomeIcons.pizzaSlice.data;
+  static final IconData burger = FontAwesomeIcons.burger.data;
 
   /// Ulaşım
-  static const IconData car = FontAwesomeIcons.car;
-  static const IconData bus = FontAwesomeIcons.bus;
-  static const IconData plane = FontAwesomeIcons.plane;
-  static const IconData train = FontAwesomeIcons.train;
-  static const IconData bicycle = FontAwesomeIcons.bicycle;
-  static const IconData motorcycle = FontAwesomeIcons.motorcycle;
-  static const IconData taxi = FontAwesomeIcons.taxi;
-  static const IconData gasStation = FontAwesomeIcons.gasPump;
+  static final IconData car = FontAwesomeIcons.car.data;
+  static final IconData bus = FontAwesomeIcons.bus.data;
+  static final IconData plane = FontAwesomeIcons.plane.data;
+  static final IconData train = FontAwesomeIcons.train.data;
+  static final IconData bicycle = FontAwesomeIcons.bicycle.data;
+  static final IconData motorcycle = FontAwesomeIcons.motorcycle.data;
+  static final IconData taxi = FontAwesomeIcons.taxi.data;
+  static final IconData gasStation = FontAwesomeIcons.gasPump.data;
 
   /// Alışveriş
-  static const IconData shopping = FontAwesomeIcons.bagShopping;
-  static const IconData shoppingCart = FontAwesomeIcons.cartShopping;
-  static const IconData store = FontAwesomeIcons.store;
-  static const IconData gift = FontAwesomeIcons.gift;
-  static const IconData tshirt = FontAwesomeIcons.shirt;
+  static final IconData shopping = FontAwesomeIcons.bagShopping.data;
+  static final IconData shoppingCart = FontAwesomeIcons.cartShopping.data;
+  static final IconData store = FontAwesomeIcons.store.data;
+  static final IconData gift = FontAwesomeIcons.gift.data;
+  static final IconData tshirt = FontAwesomeIcons.shirt.data;
 
   /// Sağlık
-  static const IconData health = FontAwesomeIcons.heartPulse;
-  static const IconData hospital = FontAwesomeIcons.hospital;
-  static const IconData pills = FontAwesomeIcons.pills;
-  static const IconData stethoscope = FontAwesomeIcons.stethoscope;
+  static final IconData health = FontAwesomeIcons.heartPulse.data;
+  static final IconData hospital = FontAwesomeIcons.hospital.data;
+  static final IconData pills = FontAwesomeIcons.pills.data;
+  static final IconData stethoscope = FontAwesomeIcons.stethoscope.data;
 
   /// Eğlence
-  static const IconData entertainment = FontAwesomeIcons.masksTheater;
-  static const IconData movie = FontAwesomeIcons.film;
-  static const IconData music = FontAwesomeIcons.music;
-  static const IconData gamepad = FontAwesomeIcons.gamepad;
-  static const IconData camera = FontAwesomeIcons.camera;
+  static final IconData entertainment = FontAwesomeIcons.masksTheater.data;
+  static final IconData movie = FontAwesomeIcons.film.data;
+  static final IconData music = FontAwesomeIcons.music.data;
+  static final IconData gamepad = FontAwesomeIcons.gamepad.data;
+  static final IconData camera = FontAwesomeIcons.camera.data;
 
   /// Ev ve yaşam
-  static const IconData home = FontAwesomeIcons.house;
-  static const IconData bed = FontAwesomeIcons.bed;
-  static const IconData couch = FontAwesomeIcons.couch;
-  static const IconData hammer = FontAwesomeIcons.hammer;
-  static const IconData paintBrush = FontAwesomeIcons.paintbrush;
+  static final IconData home = FontAwesomeIcons.house.data;
+  static final IconData bed = FontAwesomeIcons.bed.data;
+  static final IconData couch = FontAwesomeIcons.couch.data;
+  static final IconData hammer = FontAwesomeIcons.hammer.data;
+  static final IconData paintBrush = FontAwesomeIcons.paintbrush.data;
 
   // ==================== FATURA İKONLARI ====================
 
   /// Elektrik
-  static const IconData electricity = FontAwesomeIcons.bolt;
-  static const IconData lightbulb = FontAwesomeIcons.lightbulb;
+  static final IconData electricity = FontAwesomeIcons.bolt.data;
+  static final IconData lightbulb = FontAwesomeIcons.lightbulb.data;
 
   /// Su
-  static const IconData water = FontAwesomeIcons.droplet;
-  static const IconData faucet = FontAwesomeIcons.faucetDrip;
+  static final IconData water = FontAwesomeIcons.droplet.data;
+  static final IconData faucet = FontAwesomeIcons.faucetDrip.data;
 
   /// Doğalgaz
-  static const IconData gas = FontAwesomeIcons.fire;
-  static const IconData fireFlame = FontAwesomeIcons.fireFlameSimple;
+  static final IconData gas = FontAwesomeIcons.fire.data;
+  static final IconData fireFlame = FontAwesomeIcons.fireFlameSimple.data;
 
   /// İnternet ve telefon
-  static const IconData internet = FontAwesomeIcons.wifi;
-  static const IconData phone = FontAwesomeIcons.phone;
-  static const IconData mobile = FontAwesomeIcons.mobileScreen;
-  static const IconData router = FontAwesomeIcons.wifi;
+  static final IconData internet = FontAwesomeIcons.wifi.data;
+  static final IconData phone = FontAwesomeIcons.phone.data;
+  static final IconData mobile = FontAwesomeIcons.mobileScreen.data;
+  static final IconData router = FontAwesomeIcons.wifi.data;
 
   /// Kira ve sigorta
-  static const IconData rent = FontAwesomeIcons.houseChimney;
-  static const IconData insurance = FontAwesomeIcons.shield;
-  static const IconData umbrella = FontAwesomeIcons.umbrella;
+  static final IconData rent = FontAwesomeIcons.houseChimney.data;
+  static final IconData insurance = FontAwesomeIcons.shield.data;
+  static final IconData umbrella = FontAwesomeIcons.umbrella.data;
 
   /// Abonelik
-  static const IconData subscription = FontAwesomeIcons.repeat;
-  static const IconData netflix = FontAwesomeIcons.tv;
-  static const IconData spotify = FontAwesomeIcons.spotify;
+  static final IconData subscription = FontAwesomeIcons.repeat.data;
+  static final IconData netflix = FontAwesomeIcons.tv.data;
+  static final IconData spotify = FontAwesomeIcons.spotify.data;
 
   // ==================== UYGULAMA İKONLARI ====================
 
   /// Navigasyon
-  static const IconData dashboard = FontAwesomeIcons.chartLine;
-  static const IconData statistics = FontAwesomeIcons.chartPie;
-  static const IconData calendar = FontAwesomeIcons.calendar;
-  static const IconData settings = FontAwesomeIcons.gear;
-  static const IconData profile = FontAwesomeIcons.user;
+  static final IconData dashboard = FontAwesomeIcons.chartLine.data;
+  static final IconData statistics = FontAwesomeIcons.chartPie.data;
+  static final IconData calendar = FontAwesomeIcons.calendar.data;
+  static final IconData settings = FontAwesomeIcons.gear.data;
+  static final IconData profile = FontAwesomeIcons.user.data;
 
   /// Aksiyonlar
-  static const IconData add = FontAwesomeIcons.plus;
-  static const IconData edit = FontAwesomeIcons.penToSquare;
-  static const IconData delete = FontAwesomeIcons.trash;
-  static const IconData save = FontAwesomeIcons.floppyDisk;
-  static const IconData search = FontAwesomeIcons.magnifyingGlass;
-  static const IconData filter = FontAwesomeIcons.filter;
-  static const IconData sort = FontAwesomeIcons.sort;
+  static final IconData add = FontAwesomeIcons.plus.data;
+  static final IconData edit = FontAwesomeIcons.penToSquare.data;
+  static final IconData delete = FontAwesomeIcons.trash.data;
+  static final IconData save = FontAwesomeIcons.floppyDisk.data;
+  static final IconData search = FontAwesomeIcons.magnifyingGlass.data;
+  static final IconData filter = FontAwesomeIcons.filter.data;
+  static final IconData sort = FontAwesomeIcons.sort.data;
 
   /// Güvenlik
-  static const IconData lock = FontAwesomeIcons.lock;
-  static const IconData unlock = FontAwesomeIcons.lockOpen;
-  static const IconData fingerprint = FontAwesomeIcons.fingerprint;
-  static const IconData eye = FontAwesomeIcons.eye;
-  static const IconData eyeSlash = FontAwesomeIcons.eyeSlash;
-  static const IconData shield = FontAwesomeIcons.shieldHalved;
+  static final IconData lock = FontAwesomeIcons.lock.data;
+  static final IconData unlock = FontAwesomeIcons.lockOpen.data;
+  static final IconData fingerprint = FontAwesomeIcons.fingerprint.data;
+  static final IconData eye = FontAwesomeIcons.eye.data;
+  static final IconData eyeSlash = FontAwesomeIcons.eyeSlash.data;
+  static final IconData shield = FontAwesomeIcons.shieldHalved.data;
 
   /// Bildirimler
-  static const IconData notification = FontAwesomeIcons.bell;
-  static const IconData notificationOff = FontAwesomeIcons.bellSlash;
-  static const IconData warning = FontAwesomeIcons.triangleExclamation;
-  static const IconData info = FontAwesomeIcons.circleInfo;
-  static const IconData success = FontAwesomeIcons.circleCheck;
-  static const IconData error = FontAwesomeIcons.circleXmark;
+  static final IconData notification = FontAwesomeIcons.bell.data;
+  static final IconData notificationOff = FontAwesomeIcons.bellSlash.data;
+  static final IconData warning = FontAwesomeIcons.triangleExclamation.data;
+  static final IconData info = FontAwesomeIcons.circleInfo.data;
+  static final IconData success = FontAwesomeIcons.circleCheck.data;
+  static final IconData error = FontAwesomeIcons.circleXmark.data;
 
   /// Yedekleme ve senkronizasyon
-  static const IconData backup = FontAwesomeIcons.cloudArrowUp;
-  static const IconData restore = FontAwesomeIcons.cloudArrowDown;
-  static const IconData sync = FontAwesomeIcons.arrowsRotate;
-  static const IconData cloud = FontAwesomeIcons.cloud;
-  static const IconData download = FontAwesomeIcons.download;
-  static const IconData upload = FontAwesomeIcons.upload;
+  static final IconData backup = FontAwesomeIcons.cloudArrowUp.data;
+  static final IconData restore = FontAwesomeIcons.cloudArrowDown.data;
+  static final IconData sync = FontAwesomeIcons.arrowsRotate.data;
+  static final IconData cloud = FontAwesomeIcons.cloud.data;
+  static final IconData download = FontAwesomeIcons.download.data;
+  static final IconData upload = FontAwesomeIcons.upload.data;
 
   /// Sosyal medya
-  static const IconData google = FontAwesomeIcons.google;
-  static const IconData apple = FontAwesomeIcons.apple;
-  static const IconData twitter = FontAwesomeIcons.twitter;
+  static final IconData google = FontAwesomeIcons.google.data;
+  static final IconData apple = FontAwesomeIcons.apple.data;
+  static final IconData twitter = FontAwesomeIcons.twitter.data;
 
   // ==================== PHOSPHOR İKONLARI ====================
 
   /// Modern ve minimal ikonlar
-  static final IconData walletPhosphor = PhosphorIcons.wallet();
-  static final IconData chartPhosphor = PhosphorIcons.chartPie();
-  static final IconData trendUpPhosphor = PhosphorIcons.trendUp();
-  static final IconData trendDownPhosphor = PhosphorIcons.trendDown();
-  static final IconData coinPhosphor = PhosphorIcons.coin();
-  static final IconData creditCardPhosphor = PhosphorIcons.creditCard();
+  static const IconData walletPhosphor = LucideIcons.wallet;
+  static const IconData chartPhosphor = LucideIcons.pieChart;
+  static const IconData trendUpPhosphor = LucideIcons.trendingUp;
+  static const IconData trendDownPhosphor = LucideIcons.trendingDown;
+  static const IconData coinPhosphor = LucideIcons.coins;
+  static const IconData creditCardPhosphor = LucideIcons.creditCard;
 
   // ==================== LINE İKONLARI ====================
 
@@ -472,14 +472,14 @@ class AppIcons {
     switch (type.toLowerCase()) {
       case 'income':
       case 'gelir':
-        return FaIcon(income, size: size, color: Colors.green);
+        return Icon(income, size: size, color: Colors.green);
       case 'expense':
       case 'gider':
-        return FaIcon(expense, size: size, color: Colors.red);
+        return Icon(expense, size: size, color: Colors.red);
       case 'transfer':
-        return FaIcon(transfer, size: size, color: Colors.blue);
+        return Icon(transfer, size: size, color: Colors.blue);
       default:
-        return FaIcon(money, size: size, color: Colors.grey);
+        return Icon(money, size: size, color: Colors.grey);
     }
   }
 
@@ -488,24 +488,24 @@ class AppIcons {
     switch (status.toLowerCase()) {
       case 'success':
       case 'başarılı':
-        return FaIcon(success, size: size, color: Colors.green);
+        return Icon(success, size: size, color: Colors.green);
       case 'error':
       case 'hata':
-        return FaIcon(error, size: size, color: Colors.red);
+        return Icon(error, size: size, color: Colors.red);
       case 'warning':
       case 'uyarı':
-        return FaIcon(warning, size: size, color: Colors.orange);
+        return Icon(warning, size: size, color: Colors.orange);
       case 'info':
       case 'bilgi':
-        return FaIcon(info, size: size, color: Colors.blue);
+        return Icon(info, size: size, color: Colors.blue);
       case 'uploading':
       case 'yükleniyor':
-        return FaIcon(upload, size: size, color: Colors.blue);
+        return Icon(upload, size: size, color: Colors.blue);
       case 'downloading':
       case 'indiriliyor':
-        return FaIcon(download, size: size, color: Colors.green);
+        return Icon(download, size: size, color: Colors.green);
       default:
-        return FaIcon(cloud, size: size, color: Colors.grey);
+        return Icon(cloud, size: size, color: Colors.grey);
     }
   }
 
@@ -514,18 +514,18 @@ class AppIcons {
     switch (type.toLowerCase()) {
       case 'locked':
       case 'kilitli':
-        return FaIcon(lock, size: size, color: Colors.red);
+        return Icon(lock, size: size, color: Colors.red);
       case 'unlocked':
       case 'açık':
-        return FaIcon(unlock, size: size, color: Colors.green);
+        return Icon(unlock, size: size, color: Colors.green);
       case 'biometric':
       case 'biyometrik':
-        return FaIcon(fingerprint, size: size, color: Colors.blue);
+        return Icon(fingerprint, size: size, color: Colors.blue);
       case 'secure':
       case 'güvenli':
-        return FaIcon(shield, size: size, color: Colors.green);
+        return Icon(shield, size: size, color: Colors.green);
       default:
-        return FaIcon(lock, size: size, color: Colors.grey);
+        return Icon(lock, size: size, color: Colors.grey);
     }
   }
 }

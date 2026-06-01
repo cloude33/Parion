@@ -113,3 +113,6 @@ test_temp/
 # Firebase cache and process ids
 .firebase/
 flutter.pid
+
+# Environment variables / Credentials
+**/.env

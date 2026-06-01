@@ -165,18 +165,35 @@ class _CloudBackupScreenState extends State<CloudBackupScreen> {
             backgroundColor: Colors.green,
           ),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google girişi iptal edildi'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
       Navigator.pop(context);
 
-      String errorMessage = 'Google Sign-In başarısız';
-      if (e.toString().contains('sign_in_failed')) {
+      final errorStr = e.toString();
+      String errorMessage;
+      if (errorStr.contains('network-request-failed') || errorStr.contains('Firebase')) {
+        errorMessage = errorStr;
+      } else       if (errorStr.contains('sign_in_failed') || errorStr.contains('12500') || errorStr.contains('10')) {
         errorMessage =
-            'Google Sign-In hatası. Lütfen:\n'
-            '• İnternet bağlantınızı kontrol edin\n'
-            '• Google Play Services güncel olduğundan emin olun\n'
-            '• Uygulamayı yeniden başlatmayı deneyin';
+            'Google Sign-In yapılandırma hatası.\n'
+            '• SHA-1 sertifika parmak izini Firebase Console\'a ekleyin\n'
+            '• google-services.json dosyasını güncelleyin (flutterfire configure)\n'
+            '• Firebase Console\'da Destek E-postasını ayarlayın';
+      } else if (errorStr.contains('canceled') || errorStr.contains('cancelled') || errorStr.contains('aborted')) {
+        errorMessage = 'Google girişi iptal edildi';
+      } else if (errorStr.contains('network') || errorStr.contains('connection') || errorStr.contains('internet')) {
+        errorMessage = 'İnternet bağlantısı sorunu.\nLütfen bağlantınızı kontrol edip tekrar deneyin.';
+      } else {
+        errorMessage = errorStr.length > 200 ? 'Google Sign-In başarısız' : errorStr;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

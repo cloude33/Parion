@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -6,9 +5,11 @@ import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/credit_card.dart';
 import '../services/credit_card_service.dart';
-import '../utils/image_helper.dart';
 import '../widgets/icon_picker_dialog.dart';
 import '../utils/category_icons.dart';
+import '../utils/bank_card_helper.dart';
+import '../widgets/cards/bank_card_visual_widget.dart';
+import '../services/data_service.dart';
 
 class AddCreditCardScreen extends StatefulWidget {
   final CreditCard? card;
@@ -37,12 +38,15 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
   late TextEditingController _overLimitInterestRateController;
   late TextEditingController _cashAdvanceOverdueInterestRateController;
   late TextEditingController _minimumPaymentRateController;
+  late TextEditingController _expirationDateController;
 
-  Color _selectedColor = Colors.blue;
-  IconData? _selectedIcon;
+  bool _isLoading = false;
   String? _cardImageBase64;
   String? _selectedRewardType;
-  bool _isLoading = false;
+  Color _selectedColor = const Color(0xFF212121);
+  IconData? _selectedIcon;
+  String _userName = '';
+
   final List<String> _turkishBanks = [
     'Garanti BBVA',
     'İş Bankası',
@@ -149,6 +153,17 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
     _minimumPaymentRateController = TextEditingController(
       text: card?.minimumPaymentRate?.toString() ?? '40',
     );
+    _expirationDateController = TextEditingController(
+      text: card?.expirationDate ?? '',
+    );
+
+    // Real-time preview listeners
+    _bankNameController.addListener(_updatePreview);
+    _cardNameController.addListener(_updatePreview);
+    _last4DigitsController.addListener(_updatePreview);
+    _creditLimitController.addListener(_updatePreview);
+    _initialDebtController.addListener(_updatePreview);
+    _expirationDateController.addListener(_updatePreview);
 
     if (card != null) {
       _selectedColor = card.color;
@@ -157,6 +172,17 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
       if (card.iconName != null) {
         _selectedIcon = _getIconFromName(card.iconName!);
       }
+    }
+    
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final user = await DataService().getCurrentUser();
+    if (user != null && mounted) {
+      setState(() {
+        _userName = user.name;
+      });
     }
   }
 
@@ -177,6 +203,12 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
     return double.tryParse(text.replaceAll('.', '').replaceAll(',', '.')) ?? 0;
   }
 
+  void _updatePreview() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void dispose() {
     _bankNameController.dispose();
@@ -194,6 +226,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
     _overLimitInterestRateController.dispose();
     _cashAdvanceOverdueInterestRateController.dispose();
     _minimumPaymentRateController.dispose();
+    _expirationDateController.dispose();
     super.dispose();
   }
 
@@ -204,186 +237,207 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(isEdit ? 'Kredi Kartı Düzenle' : 'Kredi Kartı Ekle'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [_selectedColor, _selectedColor.withValues(alpha: 0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildCardImageSection(),
-                  const SizedBox(height: 24),
-                  _buildBankNameField(),
-                  const SizedBox(height: 16),
-                  _buildCardNameField(),
-                  const SizedBox(height: 16),
-                  _buildLast4DigitsField(),
-                  const SizedBox(height: 16),
-                  _buildCreditLimitField(),
-                  const SizedBox(height: 16),
-                  _buildInitialDebtField(),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Ekstre ve Ödeme Bilgileri',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStatementDayField(),
-                  const SizedBox(height: 16),
-                  _buildDueDateOffsetField(),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Faiz Oranları',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildMonthlyInterestRateField(),
-                  const SizedBox(height: 16),
-                  _buildLateInterestRateField(),
-                  const SizedBox(height: 16),
-                  _buildOverLimitInterestRateField(),
-                  const SizedBox(height: 16),
-                  _buildMinimumPaymentRateField(),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Nakit Avans Bilgileri (Opsiyonel)',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildCashAdvanceRateField(),
-                  const SizedBox(height: 16),
-                  _buildCashAdvanceOverdueInterestRateField(),
-                  const SizedBox(height: 16),
-                  _buildCashAdvanceLimitField(),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Puan/Ödül Sistemi (Opsiyonel)',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildRewardTypeField(),
-                  if (_selectedRewardType != null &&
-                      _selectedRewardType != 'none') ...[
-                    const SizedBox(height: 16),
-                    _buildPointsConversionRateField(),
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCardImageSection(),
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'Temel Bilgiler',
+                      icon: Icons.credit_card,
+                      children: [
+                        _buildBankNameField(),
+                        const SizedBox(height: 16),
+                        _buildCardNameField(),
+                        const SizedBox(height: 16),
+                        _buildLast4DigitsField(),
+                        const SizedBox(height: 16),
+                        _buildExpirationDateField(),
+                        const SizedBox(height: 16),
+                        _buildCreditLimitField(),
+                        const SizedBox(height: 16),
+                        _buildInitialDebtField(),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'Ekstre ve Ödeme Bilgileri',
+                      icon: Icons.description,
+                      children: [
+                        _buildStatementDayField(),
+                        const SizedBox(height: 16),
+                        _buildDueDateOffsetField(),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'Faiz Oranları',
+                      icon: Icons.percent,
+                      children: [
+                        _buildMonthlyInterestRateField(),
+                        const SizedBox(height: 16),
+                        _buildLateInterestRateField(),
+                        const SizedBox(height: 16),
+                        _buildOverLimitInterestRateField(),
+                        const SizedBox(height: 16),
+                        _buildMinimumPaymentRateField(),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'Nakit Avans Bilgileri (Opsiyonel)',
+                      icon: Icons.atm,
+                      children: [
+                        _buildCashAdvanceRateField(),
+                        const SizedBox(height: 16),
+                        _buildCashAdvanceOverdueInterestRateField(),
+                        const SizedBox(height: 16),
+                        _buildCashAdvanceLimitField(),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'Puan/Ödül Sistemi (Opsiyonel)',
+                      icon: Icons.card_giftcard,
+                      children: [
+                        _buildRewardTypeField(),
+                        if (_selectedRewardType != null &&
+                            _selectedRewardType != 'none') ...[
+                          const SizedBox(height: 16),
+                          _buildPointsConversionRateField(),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildSectionCard(
+                      title: 'Görünüm',
+                      icon: Icons.palette,
+                      children: [
+                        _buildColorPicker(),
+                        const SizedBox(height: 16),
+                        _buildIconPicker(),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    _buildSaveButton(isEdit),
+                    const SizedBox(height: 32),
                   ],
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Görünüm',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildColorPicker(),
-                  const SizedBox(height: 16),
-                  _buildIconPicker(),
-                  const SizedBox(height: 32),
-                  _buildSaveButton(isEdit),
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
             ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required IconData icon,
+    required List<Widget> children,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Theme.of(context).cardColor : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: _selectedColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: _selectedColor,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF2C3E50),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            ...children,
+          ],
+        ),
+      ),
     );
   }
 
   Widget _buildCardImageSection() {
+    final cardImage = _cardImageBase64;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Kart Görseli (Opsiyonel)',
+          'Kart Önizleme',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Center(
-          child: GestureDetector(
-            onTap: _pickCardImage,
-            child: Container(
-              width: double.infinity,
-              height: 200,
-              decoration: BoxDecoration(
-                color: _selectedColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _selectedColor, width: 2),
-              ),
-              child: _cardImageBase64 != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Image.memory(
-                        base64Decode(_cardImageBase64!),
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.add_photo_alternate,
-                          size: 48,
-                          color: _selectedColor,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Kart Fotoğrafı Ekle',
-                          style: TextStyle(
-                            color: _selectedColor,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Kameranızdan veya galerinizden seçin',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
+          child: BankCardVisualWidget(
+            bankName: _bankNameController.text,
+            cardName: _cardNameController.text,
+            last4Digits: _last4DigitsController.text,
+            currentDebt: _parseNumber(_initialDebtController.text),
+            limit: _parseNumber(_creditLimitController.text),
+            colorHex: '0x${_selectedColor.toARGB32().toRadixString(16)}',
+            cardImagePath: cardImage,
+            cardHolderName: _userName,
+            expirationDate: _expirationDateController.text,
           ),
         ),
-        if (_cardImageBase64 != null) ...[
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton.icon(
-              onPressed: () {
-                setState(() {
-                  _cardImageBase64 = null;
-                });
-              },
-              icon: const Icon(Icons.delete, color: Colors.red),
-              label: const Text(
-                'Fotoğrafı Kaldır',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-          ),
-        ],
       ],
     );
   }
 
-  Future<void> _pickCardImage() async {
-    try {
-      final imagePath = await ImageHelper.showImageSourceDialog(context);
-      if (imagePath != null && mounted) {
-        setState(() {
-          _cardImageBase64 = imagePath;
-        });
-      }
-    } catch (e) {
-      debugPrint('Resim seçme hatası: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Resim seçilirken bir hata oluştu: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  void _updateCardStyleFromInput() {
+    final bankName = _bankNameController.text;
+    
+    setState(() {
+      _selectedColor = BankCardHelper.getBankColor(bankName);
+      _cardImageBase64 = null; // Always use coded card
+    });
   }
 
   Widget _buildRewardTypeField() {
@@ -507,6 +561,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
   }
 
   Widget _buildIconPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -521,7 +576,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey[300]!),
+              border: Border.all(color: isDark ? Colors.grey[700]! : Colors.grey[300]!),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -546,7 +601,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
                     style: TextStyle(
                       fontSize: 16,
                       color: _selectedIcon != null
-                          ? Colors.black
+                          ? (isDark ? Colors.white : Colors.black)
                           : Colors.grey[600],
                     ),
                   ),
@@ -606,6 +661,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
       },
       onSelected: (String selection) {
         _bankNameController.text = selection;
+        _updateCardStyleFromInput();
       },
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
         _bankNameController = controller;
@@ -644,6 +700,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
       },
       onSelected: (String selection) {
         _cardNameController.text = selection;
+        _updateCardStyleFromInput();
       },
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
         _cardNameController = controller;
@@ -687,6 +744,52 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
         }
         if (value.length != 4) {
           return 'Son 4 hane eksik, lütfen kontrol ediniz';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildExpirationDateField() {
+    return TextFormField(
+      controller: _expirationDateController,
+      decoration: const InputDecoration(
+        labelText: 'Son Kullanma Tarihi',
+        hintText: 'AA/YY',
+        prefixIcon: Icon(Icons.event),
+        border: OutlineInputBorder(),
+        helperText: 'Ay/Yıl formatında (örn: 12/28)',
+      ),
+      keyboardType: TextInputType.number,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9/]')),
+        _ExpirationDateFormatter(),
+      ],
+      validator: (value) {
+        if (value != null && value.isNotEmpty) {
+          // Validate MM/YY format
+          if (!RegExp(r'^\d{2}/\d{2}$').hasMatch(value)) {
+            return 'Lütfen AA/YY formatında girin (örn: 12/28)';
+          }
+          
+          final parts = value.split('/');
+          final month = int.tryParse(parts[0]);
+          final year = int.tryParse(parts[1]);
+          
+          if (month == null || year == null) {
+            return 'Geçersiz tarih formatı';
+          }
+          
+          if (month < 1 || month > 12) {
+            return 'Ay 1-12 arasında olmalıdır';
+          }
+          
+          final currentYear = DateTime.now().year % 100;
+          final currentMonth = DateTime.now().month;
+          
+          if (year < currentYear || (year == currentYear && month < currentMonth)) {
+            return 'Kartın süresi dolmuş olamaz';
+          }
         }
         return null;
       },
@@ -977,6 +1080,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
   }
 
   Widget _buildColorPicker() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Wrap(
       spacing: 12,
       runSpacing: 12,
@@ -995,7 +1099,7 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
               color: color,
               shape: BoxShape.circle,
               border: Border.all(
-                color: isSelected ? Colors.black : Colors.grey[300]!,
+                color: isSelected ? (isDark ? Colors.white : Colors.black) : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
                 width: isSelected ? 3 : 1,
               ),
             ),
@@ -1009,15 +1113,51 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
   }
 
   Widget _buildSaveButton(bool isEdit) {
-    return ElevatedButton(
-      onPressed: _saveCard,
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_selectedColor, _selectedColor.withValues(alpha: 0.8)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: _selectedColor.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Text(
-        isEdit ? 'Güncelle' : 'Kaydet',
-        style: const TextStyle(fontSize: 16),
+      child: ElevatedButton(
+        onPressed: _saveCard,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isEdit ? Icons.save : Icons.add,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              isEdit ? 'Güncelle' : 'Kaydet',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1043,6 +1183,9 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
     }
 
     setState(() => _isLoading = true);
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
 
     try {
       final initialDebt = _initialDebtController.text.isEmpty
@@ -1098,6 +1241,9 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
         overLimitInterestRate: overLimitInterestRate,
         cashAdvanceOverdueInterestRate: cashAdvanceOverdueInterestRate,
         minimumPaymentRate: minimumPaymentRate,
+        expirationDate: _expirationDateController.text.trim().isEmpty 
+            ? null 
+            : _expirationDateController.text.trim(),
       );
 
       if (widget.card == null) {
@@ -1106,25 +1252,24 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
         await _cardService.updateCard(card);
       }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              widget.card == null
-                  ? 'Kredi kartı başarıyla eklendi'
-                  : 'Kredi kartı başarıyla güncellendi',
-            ),
-            backgroundColor: Colors.green,
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            widget.card == null
+                ? 'Kredi kartı başarıyla eklendi'
+                : 'Kredi kartı başarıyla güncellendi',
           ),
-        );
-        Navigator.pop(context, true);
-      }
+          backgroundColor: Colors.green,
+        ),
+      );
+      navigator.pop(true);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
-        );
-      }
+      debugPrint('Error saving credit card: $e');
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Hata: $e'), backgroundColor: Colors.red),
+      );
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -1208,6 +1353,30 @@ class _DecimalThousandsSeparatorInputFormatter extends TextInputFormatter {
     return TextEditingValue(
       text: text,
       selection: TextSelection.collapsed(offset: text.length),
+    );
+  }
+}
+
+class _ExpirationDateFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String text = newValue.text.replaceAll('/', '');
+    
+    if (text.length > 4) {
+      text = text.substring(0, 4);
+    }
+    
+    String formatted = text;
+    if (text.length >= 3) {
+      formatted = '${text.substring(0, 2)}/${text.substring(2)}';
+    }
+    
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }

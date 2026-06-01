@@ -51,7 +51,7 @@ class AuthSecureStorageService {
     try {
       // Configure platform-specific options for maximum security
       const androidOptions = AndroidOptions(
-        sharedPreferencesName: 'auth_secure_prefs',
+        storageNamespace: 'auth_secure_prefs',
         preferencesKeyPrefix: 'auth_',
         resetOnError: true,
       );

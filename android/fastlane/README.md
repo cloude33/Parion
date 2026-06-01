@@ -15,13 +15,13 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 
 ## Android
 
-### android deploy
+### android upload
 
 ```sh
-[bundle exec] fastlane android deploy
+[bundle exec] fastlane android upload
 ```
 
-Deploy new version to Google Play
+Builds the AAB and uploads it to Google Play
 
 ----
 

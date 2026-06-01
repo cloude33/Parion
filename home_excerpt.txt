@@ -1,0 +1,100 @@
+// ignore_for_file: use_build_context_synchronously
+
+import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' hide Category;
+import 'package:intl/intl.dart';
+import 'dart:convert';
+import 'dart:async';
+
+import '../models/wallet.dart';
+import '../models/transaction.dart';
+import '../models/goal.dart';
+import '../models/user.dart';
+import '../models/category.dart';
+import '../models/loan.dart';
+import '../services/exchange_rate_service.dart';
+import '../services/guest_mode_service.dart';
+import '../services/data_service.dart';
+import '../services/notification_service.dart';
+import '../utils/currency_helper.dart';
+import 'welcome_screen.dart';
+import '../utils/app_icons.dart';
+import 'notification_history_screen.dart';
+import 'add_transaction_screen.dart';
+import 'add_wallet_screen.dart';
+import 'edit_transaction_screen.dart';
+import 'manage_goals_screen.dart';
+import 'calendar_screen.dart';
+import 'statistics_screen.dart';
+import 'settings_screen.dart';
+import '../l10n/app_localizations.dart';
+import 'add_bill_screen.dart';
+import '../services/credit_card_service.dart';
+import '../services/transaction_filter_service.dart';
+import '../models/credit_card_transaction.dart';
+import '../models/credit_card.dart';
+import 'edit_credit_card_transaction_screen.dart';
+import 'credit_card_list_screen.dart';
+import 'kmh_list_screen.dart';
+
+import '../services/kmh_alert_service.dart';
+import '../models/kmh_alert.dart';
+import '../services/statement_generator_service.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../widgets/common/app_bottom_nav_bar.dart';
+import '../widgets/inactivity_monitor_widget.dart';
+import '../widgets/simple_auth_debug_widget.dart';
+import 'exchange_rates_screen.dart';
+import 'investment_list_screen.dart';
+import 'ocr_scan_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  int _selectedIndex = 0;
+  final DataService _dataService = DataService();
+  final NotificationService _notificationService = NotificationService();
+  final CreditCardService _creditCardService = CreditCardService();
+  final KmhAlertService _kmhAlertService = KmhAlertService();
+
+  User? _currentUser;
+  List<Wallet> wallets = [];
+  List<Goal> goals = [];
+  List<Transaction> transactions = [];
+  List<Category> _categories = [];
+  List<CreditCardTransaction> _creditCardTransactions = [];
+  Map<String, CreditCard> _creditCards = {};
+  List<Loan> _loans = [];
+  bool _loading = true;
+  bool _isGuestMode = false;
+  bool _showFabMenu = false;
+  Timer? _fabMenuTimer;
+  int _unreadNotificationCount = 0;
+  List<KmhAlert> _kmhAlerts = [];
+  final List<String> _selectedCardIds = [];
+  bool _isFilterActive = false;
+  double _totalCreditCardDebt = 0.0;
+
+  late PageController _pageController;
+  int _currentPage = 0;
+  int _homeViewMode = 0; // 0: List, 1: Calendar
+  DateTime _selectedMonth = DateTime.now();
+  double? _usdRate;
+  double? _eurRate;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _pageController.addListener(() {
+      final page = _pageController.page?.round() ?? 0;
+      if (page != _currentPage) {
+        setState(() {
+          _currentPage = page;
+        });
+      }

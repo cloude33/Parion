@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/rendering.dart';
 
 /// Types of haptic feedback
 enum HapticFeedbackType {
@@ -178,7 +179,7 @@ class PerformanceOptimizer {
       itemCount: itemCount,
       itemBuilder: itemBuilder,
       // Optimize for performance
-      cacheExtent: 250.0,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(250.0),
     );
   }
 
@@ -200,7 +201,7 @@ class PerformanceOptimizer {
       itemCount: itemCount,
       itemBuilder: itemBuilder,
       // Optimize for performance
-      cacheExtent: 250.0,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(250.0),
     );
   }
 

@@ -635,20 +635,22 @@ class AuthOrchestrator implements IAuthOrchestrator {
     return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email);
   }
 
-  /// Validates password strength
   bool _isValidPassword(String password) {
-    // At least 6 characters
-    if (password.length < 6) return false;
-    
-    // Contains at least one letter and one number
-    final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
-    final hasNumber = RegExp(r'[0-9]').hasMatch(password);
-    
-    return hasLetter && hasNumber;
+    // At least 6 characters for Firebase compatibility
+    return password.length >= 6;
   }
 
   /// Gets localized error message for exceptions
   String _getLocalizedErrorMessage(dynamic error) {
+    // If the error is already a friendly string, just return it
+    if (error is String && error.isNotEmpty && !_containsTechnicalTerms(error)) {
+      final cleanError = error.trim();
+      if (!cleanError.endsWith('.') && !cleanError.endsWith('!') && !cleanError.endsWith('?')) {
+        return '$cleanError.';
+      }
+      return cleanError;
+    }
+
     final errorString = error.toString().toLowerCase();
     
     // Network errors
@@ -730,15 +732,6 @@ class AuthOrchestrator implements IAuthOrchestrator {
       return 'İnternet bağlantısı yok ve yerel kimlik bilgileriniz doğrulanamadı. Lütfen internete bağlandığınızda tekrar giriş yapın.';
     }
     
-    // Generic fallback - ensure it's user-friendly and in Turkish
-    if (error is String && error.isNotEmpty && !_containsTechnicalTerms(error)) {
-      final cleanError = error.trim();
-      if (!cleanError.endsWith('.') && !cleanError.endsWith('!') && !cleanError.endsWith('?')) {
-        return '$cleanError.';
-      }
-      return cleanError;
-    }
-    
     // Debug info for unhandled errors
     String debugInfo = '';
     final codeRegex = RegExp(r'\[(.*?)\]');
@@ -759,7 +752,7 @@ class AuthOrchestrator implements IAuthOrchestrator {
   /// Check if error contains technical terms that should be hidden from users
   bool _containsTechnicalTerms(String error) {
     final technicalTerms = [
-      'firebase', 'auth/', 'exception', 'stack trace', 
+      'auth/', 'exception', 'stack trace',
       'internal', 'debug', 'api', 'token', 'credential', 'socket',
       'dns', 'timeout', 'null', 'undefined'
     ];

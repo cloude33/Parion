@@ -40,7 +40,7 @@ void main() {
     });
 
     // Helper to build the screen with given services
-    Widget _buildScreen({
+    Widget buildScreen({
       List<Transaction> transactions = const [],
       List<Wallet> wallets = const [],
     }) {
@@ -76,7 +76,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       // Only pump once — don't settle futures — to catch loading state
       await tester.pump();
 
@@ -96,7 +96,7 @@ void main() {
       GetIt.I.registerSingleton<StatisticsService>(_FakeStatisticsService());
 
       // No transactions → empty state
-      await tester.pumpWidget(_buildScreen(transactions: const []));
+      await tester.pumpWidget(buildScreen(transactions: const []));
       await tester.pumpAndSettle();
 
       expect(find.byType(StatisticsEmptyState), findsWidgets,
@@ -109,7 +109,7 @@ void main() {
       GetIt.I.registerSingleton<DataService>(_FakeDataService());
       GetIt.I.registerSingleton<StatisticsService>(_FakeStatisticsService());
 
-      await tester.pumpWidget(_buildScreen(transactions: const []));
+      await tester.pumpWidget(buildScreen(transactions: const []));
       await tester.pumpAndSettle();
 
       expect(find.text('Veri Bulunamadı'), findsOneWidget,
@@ -137,7 +137,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       await tester.pumpAndSettle();
 
       expect(find.byType(StatisticsErrorState), findsWidgets,
@@ -165,7 +165,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       await tester.pumpAndSettle();
 
       // Tap the first "Tekrar Dene" button
@@ -207,7 +207,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       await tester.pumpAndSettle();
 
       // Summary cards should show income/expense labels
@@ -237,7 +237,7 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_buildScreen(transactions: transactions));
+      await tester.pumpWidget(buildScreen(transactions: transactions));
       await tester.pumpAndSettle();
 
       expect(find.text('Tasarruf Oranı'), findsOneWidget,

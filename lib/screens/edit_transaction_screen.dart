@@ -782,12 +782,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                   Icon(
                     Icons.add_photo_alternate_outlined,
                     size: 48,
-                    color: Colors.grey.shade400,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     'Fiş fotoğrafı ekle',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -925,7 +928,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           border: Border(
-                            bottom: BorderSide(color: Colors.grey.shade200),
+                            bottom: BorderSide(color: Theme.of(context).dividerColor),
                           ),
                         ),
                         child: Row(

@@ -41,7 +41,7 @@ void main() {
       await TestSetup.tearDownTest();
     });
 
-    Widget _buildScreen() {
+    Widget buildScreen() {
       return MaterialApp(
         home: StatisticsScreen(
           transactions: const [],
@@ -55,7 +55,7 @@ void main() {
     // ── Requirement 1.1: 7 sekme ──────────────────────────────────────────────
 
     testWidgets('sekme sayısı 7 olmalıdır', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
       // TabBar should have exactly 7 tabs
@@ -65,7 +65,7 @@ void main() {
     });
 
     testWidgets('7 sekme başlığı görünür olmalıdır', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
       expect(find.text('Özet'), findsOneWidget);
@@ -79,7 +79,7 @@ void main() {
 
     testWidgets('TabBar kaydırılabilir (isScrollable: true) olmalıdır',
         (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
       final tabBar = tester.widget<TabBar>(find.byType(TabBar));
@@ -90,12 +90,8 @@ void main() {
     // ── Requirement 1.8: Varsayılan sekme Özet (index 0) ─────────────────────
 
     testWidgets('varsayılan sekme Özet (index 0) olmalıdır', (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
-
-      final tabController = DefaultTabController.maybeOf(
-        tester.element(find.byType(TabBar)),
-      );
 
       // Find the TabBar and check its controller
       final tabBar = tester.widget<TabBar>(find.byType(TabBar));
@@ -106,11 +102,11 @@ void main() {
 
     testWidgets('IndexedStack varsayılan olarak index 0 göstermelidir',
         (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
       final indexedStack =
-          tester.widget<IndexedStack>(find.byType(IndexedStack));
+          tester.widget<IndexedStack>(find.byKey(const Key('statistics_indexed_stack')));
       expect(indexedStack.index, equals(0),
           reason: 'IndexedStack must show index 0 (Özet) by default');
     });
@@ -133,9 +129,13 @@ void main() {
       );
       await tester.pump();
 
-      // Tap on 'Haftalık' filter chip
-      await tester.tap(find.text('Haftalık'));
-      await tester.pump();
+      // Tap on DropdownButton to open menu
+      await tester.tap(find.byType(DropdownButton<TimeFilter>));
+      await tester.pumpAndSettle();
+
+      // Tap on 'Haftalık' dropdown menu item
+      await tester.tap(find.text('Haftalık').last);
+      await tester.pumpAndSettle();
 
       expect(capturedFilter, equals(TimeFilter.weekly),
           reason: 'onFilterChanged must be called with TimeFilter.weekly');
@@ -155,25 +155,32 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Günlük'), findsOneWidget);
-      expect(find.text('Haftalık'), findsOneWidget);
-      expect(find.text('Aylık'), findsOneWidget);
-      expect(find.text('Yıllık'), findsOneWidget);
-      expect(find.text('Özel'), findsOneWidget);
+      // Tap on DropdownButton to open menu
+      await tester.tap(find.byType(DropdownButton<TimeFilter>));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Günlük'), findsWidgets);
+      expect(find.text('Haftalık'), findsWidgets);
+      expect(find.text('Aylık'), findsWidgets);
+      expect(find.text('Yıllık'), findsWidgets);
+      expect(find.text('Özel'), findsWidgets);
     });
 
     testWidgets(
         'TimeFilterBar seçili filtre değiştiğinde StatisticsScreen güncellenir',
         (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
-      // Tap on 'Günlük' filter chip in the TimeFilterBar
-      await tester.tap(find.text('Günlük'));
-      await tester.pump();
+      // Tap on DropdownButton to open menu
+      await tester.tap(find.byType(DropdownButton<TimeFilter>));
+      await tester.pumpAndSettle();
+
+      // Tap on 'Günlük' dropdown item
+      await tester.tap(find.text('Günlük').last);
+      await tester.pumpAndSettle();
 
       // After tapping, the TimeFilterBar should reflect the new selection
-      // The chip for 'Günlük' should now be selected (no exception thrown)
       expect(tester.takeException(), isNull);
     });
 
@@ -181,10 +188,13 @@ void main() {
 
     testWidgets('build metodu IndexedStack kullanmalıdır (TabBarView değil)',
         (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
-      expect(find.byType(IndexedStack), findsOneWidget,
+      expect(find.descendant(
+        of: find.byType(StatisticsScreen),
+        matching: find.byType(IndexedStack),
+      ), findsWidgets,
           reason: 'StatisticsScreen must use IndexedStack');
       expect(find.byType(TabBarView), findsNothing,
           reason: 'StatisticsScreen must NOT use TabBarView');
@@ -194,7 +204,7 @@ void main() {
 
     testWidgets('RefreshIndicator ile pull-to-refresh desteği olmalıdır',
         (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
       expect(find.byType(RefreshIndicator), findsOneWidget,
@@ -205,7 +215,7 @@ void main() {
 
     testWidgets('TimeFilterBar tüm sekmelerin üstünde görünmelidir',
         (tester) async {
-      await tester.pumpWidget(_buildScreen());
+      await tester.pumpWidget(buildScreen());
       await tester.pump();
 
       expect(find.byType(TimeFilterBar), findsOneWidget,

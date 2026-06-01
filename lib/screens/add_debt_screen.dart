@@ -236,7 +236,8 @@ class _AddDebtScreenState extends State<AddDebtScreen> {
   Future<void> _pickContact() async {
     try {
       // İzin kontrolü
-      if (!await FlutterContacts.requestPermission(readonly: true)) {
+      final permission = await FlutterContacts.permissions.request(PermissionType.read);
+      if (permission != PermissionStatus.granted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -249,16 +250,19 @@ class _AddDebtScreenState extends State<AddDebtScreen> {
       }
 
       // Rehberden kişi seç
-      final contact = await FlutterContacts.openExternalPick();
+      final contact = await FlutterContacts.native.showPicker();
       
       if (contact != null) {
+        final id = contact.id;
+        if (id == null) return;
+
         // Kişi detaylarını al
-        final fullContact = await FlutterContacts.getContact(contact.id);
+        final fullContact = await FlutterContacts.get(id, properties: ContactProperties.all);
         
         if (fullContact != null) {
           setState(() {
             // İsmi ayarla
-            _personNameController.text = fullContact.displayName;
+            _personNameController.text = fullContact.displayName ?? '';
             
             // Telefon numarasını ayarla (varsa)
             if (fullContact.phones.isNotEmpty) {

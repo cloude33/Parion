@@ -181,7 +181,7 @@ class _EditWalletScreenState extends State<EditWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Cüzdanı Düzenle'),
         backgroundColor: Colors.transparent,
@@ -248,7 +248,7 @@ class _EditWalletScreenState extends State<EditWalletScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -317,7 +317,7 @@ class _EditWalletScreenState extends State<EditWalletScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: _buildInputRow(
@@ -338,7 +338,7 @@ class _EditWalletScreenState extends State<EditWalletScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -404,7 +404,7 @@ class _EditWalletScreenState extends State<EditWalletScreen> {
             width: 140, // Biraz daha geniş, KMH detayları için
             child: Text(
               label,
-              style: const TextStyle(fontSize: 16, color: Colors.black),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
             ),
           ),
           const SizedBox(width: 10),

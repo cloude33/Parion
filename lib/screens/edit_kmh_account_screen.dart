@@ -301,12 +301,12 @@ class _EditKmhAccountScreenState extends State<EditKmhAccountScreen> {
             TextFormField(
               controller: _interestRateController,
               decoration: InputDecoration(
-                labelText: 'Yıllık Faiz Oranı',
-                hintText: 'Örn: 45.5',
+                labelText: 'Aylık Faiz Oranı',
+                hintText: 'Örn: 4.5',
                 prefixIcon: const Icon(Icons.percent),
                 suffixText: '%',
                 border: const OutlineInputBorder(),
-                helperText: 'Bankanızın KMH faiz oranını girin',
+                helperText: 'Bankanızın aylık KMH faiz oranını girin',
                 helperMaxLines: 2,
               ),
               keyboardType: const TextInputType.numberWithOptions(decimal: true),

@@ -130,10 +130,20 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
     _limitController = TextEditingController();
     _interestRateController = TextEditingController(); // Yeni eklendi
     _selectedColor = _colors[0]; // Varsayılan renk
+    
+    // Add listeners for live preview
+    _nameController.addListener(_updatePreview);
+    _balanceController.addListener(_updatePreview);
+  }
+
+  void _updatePreview() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _nameController.removeListener(_updatePreview);
+    _balanceController.removeListener(_updatePreview);
     _nameController.dispose();
     _balanceController.dispose();
     _limitController.dispose();
@@ -202,7 +212,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F7), // iOS Grouped Background
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor, // iOS Grouped Background
       appBar: AppBar(
         title: const Text('Yeni Cüzdan'),
         backgroundColor: Colors.transparent,
@@ -232,6 +242,9 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 20),
             children: [
+              const SizedBox(height: 8),
+              _buildWalletPreview(),
+              const SizedBox(height: 32),
               _buildSectionHeader('TÜR'),
               _buildTypeSelector(),
               const SizedBox(height: 24),
@@ -256,15 +269,120 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
     );
   }
 
+  Widget _buildWalletPreview() {
+    final Color parsedColor = Color(int.parse('0xFF${_selectedColor.substring(1)}'));
+    final String displayName = _nameController.text.isEmpty ? 'Cüzdan Adı' : _nameController.text;
+    final String displayBalance = _balanceController.text.isEmpty ? '0,00' : _balanceController.text;
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: 190,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [parsedColor.withValues(alpha: 0.8), parsedColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: parsedColor.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -50,
+            top: -50,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -30,
+            bottom: -30,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedType == 'cash' ? 'NAKİT' : (_selectedType == 'bank' ? 'BANKA HESABI' : 'KMH HESABI'),
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    Icon(
+                      _selectedType == 'bank' ? Icons.account_balance : (_selectedType == 'overdraft' ? Icons.credit_score : Icons.account_balance_wallet),
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      displayName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '₺ $displayBalance',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(20, 0, 16, 8),
       child: Text(
         title,
         style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: Colors.grey[600],
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 1.2,
         ),
       ),
     );
@@ -277,7 +395,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -340,7 +458,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: _buildInputRow(
@@ -359,7 +477,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -402,7 +520,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
             width: 130, // Biraz daha geniş
             child: Text(
               label,
-              style: const TextStyle(fontSize: 16, color: Colors.black),
+              style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
             ),
           ),
           const SizedBox(width: 16),
@@ -439,7 +557,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: const Color(0xFFE5E5EA),
+        color: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF2C2C2E) : const Color(0xFFE5E5EA),
         borderRadius: BorderRadius.circular(8.91),
       ),
       child: Row(
@@ -474,7 +592,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.white : Colors.transparent,
+            color: isSelected ? Theme.of(context).cardColor : Colors.transparent,
             borderRadius: BorderRadius.circular(6.93),
             boxShadow: isSelected
                 ? [
@@ -497,7 +615,7 @@ class _AddWalletScreenState extends State<AddWalletScreen> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              color: Colors.black,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ),

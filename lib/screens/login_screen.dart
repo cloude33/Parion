@@ -7,7 +7,10 @@ import '../services/auth/interfaces/biometric_auth_interface.dart';
 import '../models/security/security_models.dart';
 import '../services/user_service.dart';
 import '../services/data_service.dart';
+import '../services/auth/interfaces/data_sync_interface.dart';
+import '../models/user.dart' as user_models;
 import '../utils/auth_navigation.dart';
+import '../services/guest_mode_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,10 +47,24 @@ class _LoginScreenState extends State<LoginScreen>
   void initState() {
     super.initState();
     _authOrchestrator = getIt<IAuthOrchestrator>();
+    
+    // Initialize authentication services
+    _initializeAuthServices();
+    
     _checkBiometricAvailability();
     _loadRememberedCredentials();
     _setupAnimations();
     _listenToAuthState();
+  }
+
+  Future<void> _initializeAuthServices() async {
+    try {
+      // Initialize the auth orchestrator which includes all services
+      await _authOrchestrator.initialize();
+      debugPrint('✅ LoginScreen: Auth services initialized');
+    } catch (e) {
+      debugPrint('❌ LoginScreen: Auth services initialization failed: $e');
+    }
   }
 
   void _setupAnimations() {
@@ -248,6 +265,40 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (mounted) {
         if (result.isSuccess) {
+          final userId = result.metadata?['userId'] ?? '';
+          final email = result.metadata?['email'] ?? _emailController.text.trim();
+          final displayName = result.metadata?['displayName'] ?? '';
+
+          // Her zaman güncelle - mevcut kullanıcı olsa bile
+          final dataService = getIt<DataService>();
+          await dataService.init();
+          
+          final existingUser = await dataService.getCurrentUser();
+          final newUser = user_models.User(
+            id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
+            name: displayName.isNotEmpty ? displayName : (existingUser?.name ?? 'Kullanıcı'),
+            email: email.isNotEmpty ? email : (existingUser?.email ?? ''),
+            avatar: existingUser?.avatar,
+            currencyCode: existingUser?.currencyCode ?? 'TRY',
+            currencySymbol: existingUser?.currencySymbol ?? '₺',
+            authMethod: user_models.AuthMethod.email,
+          );
+          await dataService.saveUser(newUser);
+
+          final userService = getIt<UserService>();
+          await userService.init();
+          await userService.saveUserProfile(UserProfile(
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email ?? '',
+            createdAt: DateTime.now(),
+            authMethod: user_models.AuthMethod.email.toString(),
+          ));
+
+          // Trigger remote sync
+          final syncService = getIt<DataSyncInterface>();
+          await syncService.syncAllUserData(userId);
+
           // Save remember me preference BEFORE navigation
           await _saveRememberMePreference();
           // Navigate manually after saving preferences
@@ -297,20 +348,101 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     try {
+      debugPrint('🔄 LoginScreen: Starting Google Sign-In...');
+      
       final result = await _authOrchestrator.authenticate(AuthMethod.social, {
         'provider': 'google',
       });
 
       if (mounted) {
         if (result.isSuccess) {
+          debugPrint('✅ LoginScreen: Google Sign-In successful');
+          
+          final userId = result.metadata?['userId'] ?? '';
+          final email = result.metadata?['email'] ?? '';
+          final displayName = result.metadata?['displayName'] ?? 'Google Kullanıcısı';
+          // Google photoURL key fix (SDK returns photoURL not photoUrl)
+          final photoUrl = result.metadata?['photoUrl'] ?? result.metadata?['photoURL'];
+
+          // Her zaman güncelle - mevcut kullanıcı olsa bile
+          final dataService = getIt<DataService>();
+          await dataService.init();
+
+          final existingUser = await dataService.getCurrentUser();
+          final newUser = user_models.User(
+            id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
+            name: displayName.isNotEmpty ? displayName : (existingUser?.name ?? 'Google Kullanıcısı'),
+            email: email.isNotEmpty ? email : (existingUser?.email ?? ''),
+            avatar: photoUrl ?? existingUser?.avatar,
+            currencyCode: existingUser?.currencyCode ?? 'TRY',
+            currencySymbol: existingUser?.currencySymbol ?? '₺',
+            authMethod: user_models.AuthMethod.google,
+          );
+          await dataService.saveUser(newUser);
+
+          final userService = getIt<UserService>();
+          await userService.init();
+          await userService.saveUserProfile(UserProfile(
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email ?? '',
+            photoUrl: newUser.avatar,
+            createdAt: DateTime.now(),
+            authMethod: user_models.AuthMethod.google.toString(),
+          ));
+
+          // Trigger remote sync
+          final syncService = getIt<DataSyncInterface>();
+          await syncService.syncAllUserData(userId);
+          
+          // Show success message
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Google ile giriş başarılı: ${newUser.name}'),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+          
           // Navigation will be handled by auth state listener
         } else {
-          _showError(result.errorMessage ?? 'Google ile giriş başarısız');
+          final errorMessage = result.errorMessage ?? 'Google ile giriş başarısız';
+          debugPrint('❌ LoginScreen: Google Sign-In failed: $errorMessage');
+          
+          // Provide more specific error handling
+          String userFriendlyMessage = errorMessage;
+          if (errorMessage.contains('SHA-1') || errorMessage.contains('12500') || errorMessage.contains('10') || errorMessage.contains('certificate')) {
+            userFriendlyMessage = 'Google yapılandırma hatası.\n'
+                'Lütfen:\n'
+                '• Firebase Console\'a SHA-1 sertifika parmak izini ekleyin\n'
+                '• google-services.json dosyasını güncelleyin (flutterfire configure)\n'
+                '• Firebase projesinde Destek E-postasını ayarlayın';
+          } else if (errorMessage.contains('network-request-failed') || errorMessage.contains('Firebase')) {
+            userFriendlyMessage = 'Firebase sunucularına bağlanılamıyor.\n'
+                'Lütfen:\n'
+                '• Firebase Console\'da Authentication > Google oturum açmayı etkinleştirin\n'
+                '• Firebase projenizde Destek E-postası belirtildiğinden emin olun\n'
+                '• VPN veya AdGuard varsa kapatıp tekrar deneyin';
+          } else if (errorMessage.contains('network') || errorMessage.contains('internet') || errorMessage.contains('bağlantı')) {
+            userFriendlyMessage = 'İnternet bağlantısı sorunu.\n'
+                'Lütfen Wi-Fi veya mobil verinizi kontrol edip tekrar deneyin.\n'
+                'Not: Cihazınızda VPN veya AdGuard gibi bir reklam engelleyici varsa geçici olarak kapatıp tekrar deneyin.';
+          } else if (errorMessage.contains('cancelled')) {
+            userFriendlyMessage = 'Google ile giriş iptal edildi.';
+          }
+          
+          // Append raw error detail for developers/users to diagnose easily
+          userFriendlyMessage += '\n\n[Teknik Hata: $errorMessage]';
+          
+          _showError(userFriendlyMessage);
         }
       }
     } catch (e) {
+      debugPrint('❌ LoginScreen: Unexpected error in Google Sign-In: $e');
       if (mounted) {
-        _showError('Google ile giriş sırasında bir hata oluştu');
+        _showError('Google ile giriş sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
       }
     } finally {
       if (mounted) {
@@ -334,6 +466,39 @@ class _LoginScreenState extends State<LoginScreen>
 
       if (mounted) {
         if (result.isSuccess) {
+          final userId = result.metadata?['userId'] ?? '';
+          final email = result.metadata?['email'] ?? '';
+          final displayName = result.metadata?['displayName'] ?? 'Apple Kullanıcısı';
+
+          // Her zaman güncelle - mevcut kullanıcı olsa bile
+          final dataService = getIt<DataService>();
+          await dataService.init();
+
+          final existingUser = await dataService.getCurrentUser();
+          final newUser = user_models.User(
+            id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
+            name: displayName.isNotEmpty ? displayName : (existingUser?.name ?? 'Apple Kullanıcısı'),
+            email: email.isNotEmpty ? email : (existingUser?.email ?? ''),
+            avatar: existingUser?.avatar,
+            currencyCode: existingUser?.currencyCode ?? 'TRY',
+            currencySymbol: existingUser?.currencySymbol ?? '₺',
+            authMethod: user_models.AuthMethod.apple,
+          );
+          await dataService.saveUser(newUser);
+
+          final userService = getIt<UserService>();
+          await userService.init();
+          await userService.saveUserProfile(UserProfile(
+            id: newUser.id,
+            name: newUser.name,
+            email: newUser.email ?? '',
+            createdAt: DateTime.now(),
+            authMethod: user_models.AuthMethod.apple.toString(),
+          ));
+
+          // Trigger remote sync
+          final syncService = getIt<DataSyncInterface>();
+          await syncService.syncAllUserData(userId);
           // Navigation will be handled by auth state listener
         } else {
           _showError(result.errorMessage ?? 'Apple ile giriş başarısız');
@@ -616,6 +781,10 @@ class _LoginScreenState extends State<LoginScreen>
 
           // Register link
           _buildRegisterLink(),
+          const SizedBox(height: 8),
+
+          // Guest mode link
+          _buildGuestModeLink(),
         ],
       ),
     );
@@ -1051,6 +1220,47 @@ class _LoginScreenState extends State<LoginScreen>
         ),
       ),
     );
+  }
+
+  Widget _buildGuestModeLink() {
+    return TextButton(
+      onPressed: _isLoading ? null : _enterGuestMode,
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.play_circle_outline,
+            color: Colors.white.withValues(alpha: 0.5),
+            size: 16,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'Misafir olarak devam et',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 13,
+              decoration: TextDecoration.underline,
+              decorationColor: Colors.white.withValues(alpha: 0.3),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _enterGuestMode() async {
+    setState(() => _isLoading = true);
+    try {
+      await GuestModeService().enableGuestMode();
+      if (mounted) context.toHome();
+    } catch (e) {
+      debugPrint('Guest mode error: \$e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

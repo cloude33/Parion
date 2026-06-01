@@ -41,6 +41,20 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
+
+  <script>
+    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+      firebase.initializeApp({
+        apiKey: "AIzaSyBuqCY5iKdFuXS5npOp-j-l-gxHudYrKYs",
+        authDomain: "walletapp-ece89.firebaseapp.com",
+        projectId: "walletapp-ece89",
+        storageBucket: "walletapp-ece89.firebasestorage.app",
+        messagingSenderId: "195092382674",
+        appId: "1:195092382674:web:6b0e72c8e2e5f8a73a3e0b",
+        measurementId: "G-3D1F6DQ4BF"
+      });
+    }
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

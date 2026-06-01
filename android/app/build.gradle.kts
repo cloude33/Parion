@@ -6,8 +6,7 @@ plugins {
     // START: FlutterFire Configuration
     id("com.google.gms.google-services")
     // END: FlutterFire Configuration
-    id("kotlin-android")
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // The Flutter Gradle Plugin handles Kotlin automatically (built-in Kotlin support).
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -41,7 +40,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
     defaultConfig {
@@ -61,8 +60,8 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             // Enable proguard for release builds to protect biometric and security code
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             // Disable R8 full mode to prevent NoSuchFileException errors
             // This uses R8 in compatibility mode for better stability

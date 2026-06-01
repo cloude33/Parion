@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import '../l10n/app_localizations.dart';
+import 'dart:async';
 import 'dart:convert';
 import 'package:uuid/uuid.dart';
 import '../models/wallet.dart';
@@ -50,6 +51,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   CategorySuggestion? _suggestion;
   List<Category> _categories = [];
   int _installmentCount = 1;
+  Timer? _suggestionDebounce;
 
   @override
   void initState() {
@@ -137,6 +139,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     _amountController.dispose();
     _descriptionController.dispose();
     _installmentCountController.dispose();
+    _suggestionDebounce?.cancel();
     super.dispose();
   }
 
@@ -316,7 +319,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             ).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: FaIcon(
+                          child: Icon(
                             AppIcons.wallet,
                             size: 64,
                             color: Theme.of(context).primaryColor,
@@ -343,7 +346,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         const SizedBox(height: 32),
                         ElevatedButton.icon(
                           onPressed: () => Navigator.pop(context),
-                          icon: FaIcon(FontAwesomeIcons.arrowLeft, size: 16),
+                          icon: Icon(FontAwesomeIcons.arrowLeft.data, size: 16),
                           label: Text(AppLocalizations.of(context)!.cancel),
                           style: ElevatedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(
@@ -436,8 +439,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: FaIcon(
-              FontAwesomeIcons.arrowLeft,
+            icon: Icon(
+              FontAwesomeIcons.arrowLeft.data,
               color: Theme.of(context).appBarTheme.foregroundColor,
               size: 20,
             ),
@@ -774,16 +777,28 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   }
 
   Future<void> _onDescriptionChanged(String value) async {
+    _suggestionDebounce?.cancel();
     if (value.length > 3) {
-      final suggestion = await _smartService.suggestCategory(
-        value,
-        _isIncome ? 'income' : 'expense',
-      );
-      if (mounted) {
-        setState(() {
-          _suggestion = suggestion;
-        });
-      }
+      _suggestionDebounce = Timer(const Duration(milliseconds: 400), () async {
+        final suggestion = await _smartService.suggestCategory(
+          value,
+          _isIncome ? 'income' : 'expense',
+        );
+        if (mounted) {
+          setState(() {
+            _suggestion = suggestion;
+            if (suggestion != null && suggestion.confidence >= 0.95) {
+              _selectedCategory = suggestion.category;
+              if (suggestion.suggestedAmount != null) {
+                _amountController.text = suggestion.suggestedAmount!.toStringAsFixed(2);
+              }
+              if (suggestion.suggestedWalletId != null) {
+                _selectedWalletId = suggestion.suggestedWalletId!;
+              }
+            }
+          });
+        }
+      });
     } else {
       if (mounted) {
         setState(() {
@@ -839,8 +854,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               contentPadding: EdgeInsets.zero,
               suffixIcon: _suggestion != null
                   ? IconButton(
-                      icon: FaIcon(
-                        FontAwesomeIcons.lightbulb,
+                      icon: Icon(
+                        FontAwesomeIcons.lightbulb.data,
                         color: Colors.amber,
                         size: 18,
                       ),
@@ -864,8 +879,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 children: [
                   Row(
                     children: [
-                      FaIcon(
-                        FontAwesomeIcons.lightbulb,
+                      Icon(
+                        FontAwesomeIcons.lightbulb.data,
                         color: Colors.amber,
                         size: 18,
                       ),
@@ -918,14 +933,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       children: [
                         if (_suggestion!.transactionCount > 0)
                           _buildSuggestionChip(
-                            icon: FontAwesomeIcons.clockRotateLeft,
+                            icon: FontAwesomeIcons.clockRotateLeft.data,
                             label: '${_suggestion!.transactionCount} kez',
                             tooltip:
                                 'Bu işlem daha önce ${_suggestion!.transactionCount} kez girilmiş',
                           ),
                         if (_suggestion!.suggestedAmount != null)
                           _buildSuggestionChip(
-                            icon: FontAwesomeIcons.coins,
+                            icon: FontAwesomeIcons.coins.data,
                             label:
                                 '₺${NumberFormat('#,##0.00', 'tr_TR').format(_suggestion!.suggestedAmount)}',
                             tooltip: 'Ortalama tutar',
@@ -938,7 +953,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                         if (_suggestion!.suggestedWalletName != null)
                           _buildSuggestionChip(
-                            icon: FontAwesomeIcons.wallet,
+                            icon: FontAwesomeIcons.wallet.data,
                             label: _cleanWalletName(
                               _suggestion!.suggestedWalletName!,
                             ),
@@ -980,7 +995,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FaIcon(icon, size: 12, color: Colors.amber[800]),
+          Icon(icon, size: 12, color: Colors.amber[800]),
           const SizedBox(width: 6),
           Text(
             label,
@@ -1410,7 +1425,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    FaIcon(
+                    Icon(
                       AppIcons.camera,
                       size: 32,
                       color: Colors.grey.shade400,
@@ -1455,7 +1470,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         });
                       }
                     },
-                    icon: FaIcon(AppIcons.camera, size: 16),
+                    icon: Icon(AppIcons.camera, size: 16),
                     label: const Text('Ekle'),
                     style: TextButton.styleFrom(
                       foregroundColor: Theme.of(context).primaryColor,
@@ -1510,8 +1525,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   color: Colors.black.withValues(alpha: 0.6),
                   shape: BoxShape.circle,
                 ),
-                child: FaIcon(
-                  FontAwesomeIcons.xmark,
+                child: Icon(
+                  FontAwesomeIcons.xmark.data,
                   color: Colors.white,
                   size: 14,
                 ),
@@ -1665,7 +1680,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       color: Color(0xFF1C1C1E),
                     ),
                   ),
-                  FaIcon(
+                  Icon(
                     AppIcons.calendar,
                     color: Theme.of(context).primaryColor,
                     size: 20,

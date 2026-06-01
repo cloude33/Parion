@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -9,8 +9,16 @@ import 'l10n/app_localizations.dart';
 import 'services/theme_service.dart';
 import 'services/language_service.dart';
 import 'services/auto_backup_service.dart';
+import 'services/guest_mode_service.dart';
 import 'services/onboarding_service.dart';
+import 'services/battery_optimization_service.dart';
 import 'services/auth/interfaces/auth_orchestrator_interface.dart';
+import 'services/auth/auth_orchestrator.dart';
+import 'services/auth/session_manager.dart';
+import 'services/auth/biometric_auth_service.dart';
+import 'services/auth/social_login_service.dart';
+import 'services/auth/security_controller.dart';
+import 'services/auth/data_sync_service.dart';
 import 'models/security/security_models.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/login_screen.dart';
@@ -32,6 +40,8 @@ import 'models/kmh_transaction_type.dart';
 import 'services/notification_scheduler_service.dart';
 import 'services/bill_payment_service.dart';
 import 'services/app_lock_service.dart';
+import 'services/fcm_service.dart';
+import 'utils/global_navigator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,17 +58,13 @@ void main() async {
 
   debugPrint('Firebase initialization starting...');
   try {
-    if (!kIsWeb) {
-      if (Firebase.apps.isEmpty) {
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        ).timeout(const Duration(seconds: 10));
-        debugPrint('Firebase initialization completed.');
-      } else {
-        debugPrint('Firebase already initialized, skipping...');
-      }
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ).timeout(const Duration(seconds: 10));
+      debugPrint('Firebase initialization completed.');
     } else {
-      debugPrint('Running on Web - Firebase initialization skipped');
+      debugPrint('Firebase already initialized, skipping...');
     }
   } catch (e) {
     debugPrint('Firebase initialization error: $e');
@@ -87,6 +93,15 @@ void main() async {
   }
 
   await ThemeService().init();
+
+  // FCM (Firebase Cloud Messaging) servisini başlat
+  try {
+    final fcmService = FcmService();
+    await fcmService.initialize();
+    debugPrint('FCM service initialized');
+  } catch (e) {
+    debugPrint('FCM service init error: $e');
+  }
 
   // Bildirim servisini başlat ve izinleri iste
   try {
@@ -133,25 +148,42 @@ class ParionApp extends StatefulWidget {
 }
 
 class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
-  late final IAuthOrchestrator _authOrchestrator;
   final ThemeService _themeService = ThemeService();
   final LanguageService _languageService = LanguageService();
   final AutoBackupService _autoBackupService = AutoBackupService();
   final BillPaymentService _billPaymentService = BillPaymentService();
   final OnboardingService _onboardingService = OnboardingService();
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalNavigator.navigatorKey;
 
   ThemeMode _themeMode = ThemeMode.system;
   AuthState _authState = AuthState.unauthenticated();
   bool? _onboardingCompleted; // null = not yet checked
+  bool _isGuestMode = false;
+
+  late final IAuthOrchestrator _authOrchestrator = _initAuthOrchestrator();
+
+  IAuthOrchestrator _initAuthOrchestrator() {
+    try {
+      return getIt<IAuthOrchestrator>();
+    } catch (e) {
+      debugPrint('Auth orchestrator init error: $e');
+      return AuthOrchestrator(
+        sessionManager: SessionManager(),
+        biometricService: BiometricAuthService(),
+        socialLoginService: SocialLoginService(),
+        securityController: SecurityController(),
+        dataSyncService: DataSyncService(),
+      );
+    }
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _authOrchestrator = getIt<IAuthOrchestrator>(); // getIt is global
     _loadTheme();
     _loadOnboardingStatus();
+    _loadGuestMode();
     _authOrchestrator.authStateStream.listen((authState) {
       if (mounted) {
         final wasAuthenticated = _authState.isAuthenticated;
@@ -166,6 +198,11 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
             '/login',
             (route) => false,
           );
+        }
+
+        // Kullanıcı giriş yaptığında batarya optimizasyonu muafiyetini kontrol et
+        if (authState.isAuthenticated && !wasAuthenticated) {
+          _checkBatteryOptimization();
         }
       }
     });
@@ -190,6 +227,15 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
     if (mounted) {
       setState(() {
         _onboardingCompleted = completed;
+      });
+    }
+  }
+
+  Future<void> _loadGuestMode() async {
+    final isGuest = await GuestModeService().isGuestMode();
+    if (mounted) {
+      setState(() {
+        _isGuestMode = isGuest;
       });
     }
   }
@@ -234,6 +280,15 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
     }
   }
 
+  Future<void> _checkBatteryOptimization() async {
+    final service = BatteryOptimizationService();
+    final isDisabled = await service.isBatteryOptimizationDisabled();
+    if (!isDisabled) {
+      debugPrint('Battery optimization is enabled - requesting exemption');
+      await service.requestDisableBatteryOptimization();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -271,6 +326,10 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
   }
 
   Widget _getInitialScreen() {
+    // Guest/Demo mode: allow access without login (required by Google Play)
+    if (_isGuestMode) {
+      return const HomeScreen();
+    }
     if (_authState.isAuthenticated) {
       // Onboarding durumu henüz yüklenmemişse yükleme göster
       if (_onboardingCompleted == null) {

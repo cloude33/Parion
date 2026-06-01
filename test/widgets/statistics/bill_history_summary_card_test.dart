@@ -194,31 +194,23 @@ void main() {
           paymentRate: 100,
           paid: 12,
           total: 12,
-        )..toString(), // success
+        ), // success
         _makeSummary(
           paymentRate: 75,
           paid: 9,
           total: 12,
-        )..toString(), // warning
+        ), // warning
         _makeSummary(
           paymentRate: 25,
           paid: 3,
           total: 12,
-        )..toString(), // error
+        ), // error
       ];
-
-      // Build with three distinct summaries
-      final successSummary =
-          _makeSummary(paymentRate: 100, paid: 12, total: 12);
-      final warningSummary =
-          _makeSummary(paymentRate: 75, paid: 9, total: 12);
-      final errorSummary =
-          _makeSummary(paymentRate: 25, paid: 3, total: 12);
 
       await tester.pumpWidget(
         _wrap(
           BillHistorySummaryCard(
-            summaries: [successSummary, warningSummary, errorSummary],
+            summaries: summaries,
           ),
         ),
       );

@@ -16,6 +16,7 @@ import '../services/language_service.dart';
 import '../services/user_service.dart';
 import '../services/auth/interfaces/data_sync_interface.dart';
 import '../core/di/service_locator.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
 import '../l10n/app_localizations.dart';
 import 'currency_settings_screen.dart';
@@ -31,6 +32,7 @@ import 'notification_settings_screen.dart';
 import 'change_password_screen.dart';
 import 'cloud_backup_screen.dart';
 import 'backup_and_export_screen.dart';
+import 'family/family_groups_screen.dart';
 
 import '../widgets/theme_toggle_button.dart';
 import '../widgets/debug_background_lock_widget.dart';
@@ -83,52 +85,124 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  /// Avatar kaynağını akıllıca belirler:
+  /// - URL ise (Google/sosyal giriş) → NetworkImage
+  /// - Base64 ise (yerel fotoğraf) → MemoryImage
+  /// - null ise → null (baş harf gösterilir)
+  ImageProvider? _buildAvatarImage() {
+    final avatar = _currentUser?.avatar;
+    if (avatar == null || avatar.isEmpty) return null;
+
+    // URL kontrolü
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return NetworkImage(avatar);
+    }
+
+    // Base64 verisi
+    try {
+      return MemoryImage(base64Decode(avatar));
+    } catch (e) {
+      debugPrint('Avatar decode hatası: $e');
+      return null;
+    }
+  }
+
   Future<void> _loadUser() async {
-    final user = await _dataService.getCurrentUser();
     final themeMode = await _themeService.getThemeMode();
+
+    // Tüm kaynaklardan paralel oku
+    final user = await _dataService.getCurrentUser();
 
     final userService = UserService();
     await userService.init();
     final userProfile = await userService.getUserProfile();
 
+    // Firebase Auth - Google/sosyal girişlerde en yetkili kaynak
+    final fbUser = fb_auth.FirebaseAuth.instance.currentUser;
+
+    // Firebase'den gelen bilgileri yerel depoya kaydet (güncel tut)
+    if (fbUser != null) {
+      final fbName = fbUser.displayName ?? '';
+      final fbEmail = fbUser.email ?? '';
+      final fbPhoto = fbUser.photoURL;
+
+      if (fbName.isNotEmpty || fbEmail.isNotEmpty) {
+        try {
+          final updatedUser = User(
+            id: fbUser.uid,
+            name: fbName.isNotEmpty ? fbName : (user?.name ?? 'Kullanıcı'),
+            email: fbEmail.isNotEmpty ? fbEmail : (user?.email ?? ''),
+            avatar: fbPhoto ?? user?.avatar,
+            currencyCode: user?.currencyCode ?? 'TRY',
+            currencySymbol: user?.currencySymbol ?? '₺',
+          );
+          await _dataService.saveUser(updatedUser);
+
+          await userService.saveUserProfile(UserProfile(
+            id: fbUser.uid,
+            name: updatedUser.name,
+            email: updatedUser.email ?? '',
+            photoUrl: fbPhoto,
+            createdAt: DateTime.now(),
+            authMethod: 'google',
+          ));
+        } catch (e) {
+          debugPrint('Settings: Firebase veri güncelleme hatası: $e');
+        }
+      }
+    }
+
     setState(() {
       _currentThemeMode = themeMode;
       _loading = false;
-      
-      if (user != null) {
-        String displayName = user.name;
-        if ((displayName == 'Kullanıcı' || displayName.isEmpty) && 
-            userProfile != null && userProfile.name.isNotEmpty) {
-          displayName = userProfile.name;
-        }
 
-        String displayEmail = user.email ?? '';
-        if (displayEmail.isEmpty && userProfile != null && userProfile.email.isNotEmpty) {
-          displayEmail = userProfile.email;
-        }
+      String displayName = '';
+      String displayEmail = '';
+      String? displayAvatar;
+      String userId = '';
 
+      // 1. Önce Firebase (en güncel, sosyal girişlerde kesin doğru)
+      if (fbUser != null) {
+        userId = fbUser.uid;
+        displayName = fbUser.displayName ?? '';
+        displayEmail = fbUser.email ?? '';
+        displayAvatar = fbUser.photoURL;
+      }
+
+      // 2. Yerel veriyle eksikleri doldur
+      if (userId.isEmpty && user != null) userId = user.id;
+      if ((displayName.isEmpty || displayName == 'Kullanıcı') && user != null && user.name.isNotEmpty) {
+        displayName = user.name;
+      }
+      if (displayEmail.isEmpty && user != null && (user.email?.isNotEmpty == true)) {
+        displayEmail = user.email!;
+      }
+      if (displayAvatar == null && user?.avatar != null) {
+        displayAvatar = user!.avatar;
+      }
+
+      // 3. UserProfile ile kalan boşlukları doldur
+      if ((displayName.isEmpty || displayName == 'Kullanıcı') && userProfile != null && userProfile.name.isNotEmpty) {
+        displayName = userProfile.name;
+      }
+      if (displayEmail.isEmpty && userProfile != null && userProfile.email.isNotEmpty) {
+        displayEmail = userProfile.email;
+      }
+      if (displayAvatar == null && userProfile?.photoUrl != null) {
+        displayAvatar = userProfile!.photoUrl;
+      }
+
+      if (userId.isNotEmpty || displayName.isNotEmpty || displayEmail.isNotEmpty) {
         _currentUser = User(
-          id: user.id,
-          name: displayName,
+          id: userId,
+          name: displayName.isNotEmpty ? displayName : 'Kullanıcı',
           email: displayEmail,
-          avatar: user.avatar,
-          currencyCode: user.currencyCode,
-          currencySymbol: user.currencySymbol,
+          avatar: displayAvatar,
+          currencyCode: user?.currencyCode ?? 'TRY',
+          currencySymbol: user?.currencySymbol ?? '₺',
         );
-
-        _nameController.text = displayName;
-        _emailController.text = displayEmail;
-      } else if (userProfile != null) {
-        _currentUser = User(
-          id: userProfile.id,
-          name: userProfile.name,
-          email: userProfile.email,
-          avatar: userProfile.photoUrl,
-          currencyCode: 'TRY',
-          currencySymbol: '₺',
-        );
-        _nameController.text = userProfile.name;
-        _emailController.text = userProfile.email;
+        _nameController.text = _currentUser!.name;
+        _emailController.text = _currentUser!.email ?? '';
       } else {
         _currentUser = null;
       }
@@ -194,9 +268,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: const Color(0xFF00BFA5),
-                  backgroundImage: _currentUser?.avatar != null
-                      ? MemoryImage(base64Decode(_currentUser!.avatar!))
-                      : null,
+                  backgroundImage: _buildAvatarImage(),
                   child: _currentUser?.avatar == null
                       ? Text(
                           _currentUser?.name[0].toUpperCase() ?? 'U',
@@ -364,6 +436,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const DebtListScreen()),
+              );
+            },
+          ),
+          _buildSettingItem(
+            icon: Icons.groups_2_outlined,
+            title: 'Aile Paketi',
+            subtitle: 'Çok kullanıcı, ortak bütçe ve borç takibi',
+            iconColor: Colors.teal,
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Color(0xFF8E8E93),
+            ),
+            onTap: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FamilyGroupsScreen(),
+                ),
               );
             },
           ),

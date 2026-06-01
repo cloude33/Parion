@@ -164,7 +164,7 @@ class _CardReportingTabState extends State<CardReportingTab>
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: DropdownButtonFormField<String>(
-        value: _selectedCardId,
+        initialValue: _selectedCardId,
         decoration: InputDecoration(
           labelText: 'Kart Seçin',
           border: const OutlineInputBorder(),
@@ -570,7 +570,7 @@ class _CardReportingTabState extends State<CardReportingTab>
           padding: const EdgeInsets.all(AppSpacing.lg),
           color: Theme.of(context).cardColor,
           child: DropdownButtonFormField<int>(
-            value: _selectedYear,
+            initialValue: _selectedYear,
             decoration: const InputDecoration(
               labelText: 'Yıl Seçin',
               border: OutlineInputBorder(),

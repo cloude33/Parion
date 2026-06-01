@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:parion/core/design/app_spacing.dart';
 import 'package:parion/core/design/app_text_styles.dart';
 import 'package:parion/widgets/common/app_button.dart';
