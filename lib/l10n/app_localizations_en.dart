@@ -948,4 +948,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get recordSettlement => 'Record Settlement';
+
+  @override
+  String get welcomeBack => 'Welcome back';
+
+  @override
+  String helloUser(Object name) {
+    return 'Hello, $name';
+  }
 }

@@ -18,11 +18,12 @@ import '../services/data_service.dart';
 import '../utils/app_icons.dart';
 import '../utils/currency_helper.dart';
 import '../widgets/common/amount_display.dart';
-import '../widgets/common/app_card.dart';
+
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_error_state.dart';
 import '../widgets/common/app_loading_state.dart';
 import '../widgets/common/section_header.dart';
+import '../widgets/common/premium_widgets.dart';
 import 'budget_list_screen.dart';
 import 'subscription_list_screen.dart';
 import 'net_worth_screen.dart';
@@ -327,55 +328,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildNetBalanceCard() {
     final balance = _netBalance;
     final isPositive = balance >= 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradient = isDark ? AppColors.primaryDarkGradient : AppColors.primaryGradient;
 
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppSpacing.sm),
+    return AnimatedPressScale(
+      onTap: () {
+        // Aesthetic feed-back, trigger data reload as action
+        _loadData();
+      },
+      semanticLabel: 'Net Bakiye Kartı',
+      child: PremiumGradientCard(
+        gradient: gradient,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(AppSpacing.sm),
+                  ),
+                  child: const Icon(
+                    LucideIcons.wallet,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                 ),
-                child: const Icon(
-                  LucideIcons.wallet,
-                  size: 20,
-                  color: AppColors.primary,
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'Net Bakiye',
+                  style: AppTextStyles.labelLarge.copyWith(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                'Net Bakiye',
-                style: AppTextStyles.labelLarge.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          AmountDisplay(
-            amount: balance,
-            isIncome: isPositive,
-            style: AppTextStyles.displayMedium,
-            showSign: false,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            CurrencyHelper.formatAmount(balance.abs(), _currentUser),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.45),
+              ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.md),
+            AmountDisplay(
+              amount: balance,
+              isIncome: isPositive,
+              style: AppTextStyles.displayMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+              color: Colors.white,
+              showSign: false,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              CurrencyHelper.formatAmount(balance.abs(), _currentUser),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -404,107 +414,131 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildIncomeCard() {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: AppColors.incomeColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppSpacing.xs),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final incomeGrad = LinearGradient(
+      colors: isDark 
+          ? [const Color(0x1F34C759), const Color(0x0534C759)] 
+          : [const Color(0x2E34C759), const Color(0x0A34C759)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return AnimatedPressScale(
+      onTap: () {},
+      child: GlassmorphicCard(
+        gradient: incomeGrad,
+        borderRadius: 16.0,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.incomeColor.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    LucideIcons.trendingUp,
+                    size: 16,
+                    color: AppColors.incomeColor,
+                  ),
                 ),
-                child: const Icon(
-                  LucideIcons.trendingUp,
-                  size: 16,
-                  color: AppColors.incomeColor,
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Gelir',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: isDark ? Colors.white.withValues(alpha: 0.7) : AppColors.onSurface.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Gelir',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AmountDisplay(
-            amount: _monthlyIncome,
-            isIncome: true,
-            style: AppTextStyles.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            CurrencyHelper.formatAmount(_monthlyIncome, _currentUser),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.45),
+              ],
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sm),
+            AmountDisplay(
+              amount: _monthlyIncome,
+              isIncome: true,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              CurrencyHelper.formatAmount(_monthlyIncome, _currentUser),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.white.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildExpenseCard() {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: AppColors.expenseColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppSpacing.xs),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final expenseGrad = LinearGradient(
+      colors: isDark 
+          ? [const Color(0x1FFF3B30), const Color(0x05FF3B30)] 
+          : [const Color(0x2EFF3B30), const Color(0x0AFF3B30)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return AnimatedPressScale(
+      onTap: () {},
+      child: GlassmorphicCard(
+        gradient: expenseGrad,
+        borderRadius: 16.0,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.expenseColor.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    LucideIcons.trendingDown,
+                    size: 16,
+                    color: AppColors.expenseColor,
+                  ),
                 ),
-                child: const Icon(
-                  LucideIcons.trendingDown,
-                  size: 16,
-                  color: AppColors.expenseColor,
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Gider',
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: isDark ? Colors.white.withValues(alpha: 0.7) : AppColors.onSurface.withValues(alpha: 0.7),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Text(
-                'Gider',
-                style: AppTextStyles.labelSmall.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.6),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AmountDisplay(
-            amount: _monthlyExpense,
-            isIncome: false,
-            style: AppTextStyles.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            CurrencyHelper.formatAmount(_monthlyExpense, _currentUser),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.45),
+              ],
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sm),
+            AmountDisplay(
+              amount: _monthlyExpense,
+              isIncome: false,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              CurrencyHelper.formatAmount(_monthlyExpense, _currentUser),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.white.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -523,114 +557,140 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildCreditCardDebtCard() {
     final debt = _totalCreditCardDebt;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: AppColors.expenseColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppSpacing.xs),
-                ),
-                child: const Icon(
-                  LucideIcons.creditCard,
-                  size: 16,
-                  color: AppColors.expenseColor,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Flexible(
-                child: Text(
-                  'Kredi Kartı Borcu',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final ccGrad = LinearGradient(
+      colors: isDark 
+          ? [const Color(0x1FFF3B30), const Color(0x05FF3B30)] 
+          : [const Color(0x2EFF3B30), const Color(0x0AFF3B30)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return AnimatedPressScale(
+      onTap: () {},
+      child: GlassmorphicCard(
+        gradient: ccGrad,
+        borderRadius: 16.0,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.expenseColor.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  child: const Icon(
+                    LucideIcons.creditCard,
+                    size: 16,
+                    color: AppColors.expenseColor,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AmountDisplay(
-            amount: debt,
-            isIncome: false,
-            style: AppTextStyles.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            CurrencyHelper.formatAmount(debt, _currentUser),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.45),
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    'Kredi Kartı Borcu',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isDark ? Colors.white.withValues(alpha: 0.7) : AppColors.onSurface.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sm),
+            AmountDisplay(
+              amount: debt,
+              isIncome: false,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              CurrencyHelper.formatAmount(debt, _currentUser),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.white.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildKmhValueCard() {
     final kmhDebt = _kmhDebt;
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.xs),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppSpacing.xs),
-                ),
-                child: const Icon(
-                  LucideIcons.landmark,
-                  size: 16,
-                  color: AppColors.warning,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              Flexible(
-                child: Text(
-                  'KMH Değeri',
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .onSurface
-                        .withValues(alpha: 0.6),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final warningGrad = LinearGradient(
+      colors: isDark 
+          ? [const Color(0x1FFF9500), const Color(0x05FF9500)] 
+          : [const Color(0x2EFF9500), const Color(0x0AFF9500)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
+    return AnimatedPressScale(
+      onTap: () {},
+      child: GlassmorphicCard(
+        gradient: warningGrad,
+        borderRadius: 16.0,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.16),
+                    shape: BoxShape.circle,
                   ),
-                  overflow: TextOverflow.ellipsis,
+                  child: const Icon(
+                    LucideIcons.landmark,
+                    size: 16,
+                    color: AppColors.warning,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AmountDisplay(
-            amount: kmhDebt,
-            isIncome: false,
-            style: AppTextStyles.titleMedium,
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            CurrencyHelper.formatAmount(kmhDebt, _currentUser),
-            style: AppTextStyles.bodySmall.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.45),
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(
+                  child: Text(
+                    'KMH Değeri',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: isDark ? Colors.white.withValues(alpha: 0.7) : AppColors.onSurface.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
+            const SizedBox(height: AppSpacing.sm),
+            AmountDisplay(
+              amount: kmhDebt,
+              isIncome: false,
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              CurrencyHelper.formatAmount(kmhDebt, _currentUser),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: isDark ? Colors.white.withValues(alpha: 0.5) : AppColors.onSurface.withValues(alpha: 0.5),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -658,6 +718,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               color: const Color(0xFFE91E63),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionListScreen())),
             )),
+            const SizedBox(width: 12),
             Expanded(child: _buildQuickCard(
               icon: Icons.show_chart,
               label: 'Net Değer',
@@ -676,19 +737,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return GestureDetector(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return AnimatedPressScale(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+          color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.22 : 0.15),
+            width: 1.2,
+          ),
         ),
         child: Column(
           children: [
             Icon(icon, color: color, size: 24),
             const SizedBox(height: 6),
-            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? color.withValues(alpha: 0.9) : color,
+              ),
+            ),
           ],
         ),
       ),
@@ -747,6 +820,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildTransactionTile(Transaction transaction) {
     final isIncome = transaction.type == 'income';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     Category? category;
     try {
@@ -760,7 +834,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (category != null) {
       categoryColor = category.color;
-      iconWidget = Icon(category.icon, size: 22, color: categoryColor);
+      iconWidget = Icon(category.icon, size: 20, color: categoryColor);
     } else {
       final rawColor = AppIcons.getCategoryColor(transaction.category);
       categoryColor =
@@ -769,22 +843,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
               : rawColor;
       iconWidget = AppIcons.getCategoryIcon(
         transaction.category,
-        size: 22,
+        size: 20,
         color: categoryColor,
       );
     }
 
+    final tileGrad = LinearGradient(
+      colors: isDark
+          ? [Colors.white.withValues(alpha: 0.04), Colors.white.withValues(alpha: 0.01)]
+          : [Colors.white.withValues(alpha: 0.85), Colors.white.withValues(alpha: 0.65)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AppCard(
+      child: GlassmorphicCard(
+        blur: 5.0,
+        gradient: tileGrad,
+        borderRadius: 14.0,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: categoryColor.withValues(alpha: 0.12),
+                color: categoryColor.withValues(alpha: isDark ? 0.16 : 0.1),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: categoryColor.withValues(alpha: 0.22),
+                  width: 1.5,
+                ),
               ),
               child: Center(child: iconWidget),
             ),
@@ -795,13 +885,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Text(
                     transaction.description,
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: 2),
                   Text(
                     transaction.category,
                     style: AppTextStyles.bodySmall.copyWith(
@@ -822,10 +912,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 AmountDisplay(
                   amount: transaction.amount,
                   isIncome: isIncome,
-                  style: AppTextStyles.labelLarge,
+                  style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
                   showSign: true,
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 2),
                 Text(
                   _formatDate(transaction.date),
                   style: AppTextStyles.bodySmall.copyWith(
@@ -845,6 +935,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildCreditCardTransactionTile(CreditCardTransaction transaction) {
     final card = _creditCards[transaction.cardId];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     Category? category;
     try {
@@ -858,7 +949,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (category != null) {
       categoryColor = category.color;
-      iconWidget = Icon(category.icon, size: 22, color: categoryColor);
+      iconWidget = Icon(category.icon, size: 20, color: categoryColor);
     } else {
       final rawColor = AppIcons.getCategoryColor(transaction.category);
       categoryColor =
@@ -867,7 +958,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               : rawColor;
       iconWidget = AppIcons.getCategoryIcon(
         transaction.category,
-        size: 22,
+        size: 20,
         color: categoryColor,
       );
     }
@@ -876,17 +967,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? '${card.bankName} •••• ${card.last4Digits}'
         : 'Kredi Kartı';
 
+    final tileGrad = LinearGradient(
+      colors: isDark
+          ? [Colors.white.withValues(alpha: 0.04), Colors.white.withValues(alpha: 0.01)]
+          : [Colors.white.withValues(alpha: 0.85), Colors.white.withValues(alpha: 0.65)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: AppCard(
+      child: GlassmorphicCard(
+        blur: 5.0,
+        gradient: tileGrad,
+        borderRadius: 14.0,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
         child: Row(
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: categoryColor.withValues(alpha: 0.12),
+                color: categoryColor.withValues(alpha: isDark ? 0.16 : 0.1),
                 shape: BoxShape.circle,
+                border: Border.all(
+                  color: categoryColor.withValues(alpha: 0.22),
+                  width: 1.5,
+                ),
               ),
               child: Center(child: iconWidget),
             ),
@@ -897,13 +1004,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 children: [
                   Text(
                     transaction.description,
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w600,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: 2),
                   Text(
                     cardLabel,
                     style: AppTextStyles.bodySmall.copyWith(
@@ -924,10 +1031,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 AmountDisplay(
                   amount: transaction.amount,
                   isIncome: false,
-                  style: AppTextStyles.labelLarge,
+                  style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
                   showSign: true,
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 2),
                 Text(
                   _formatDate(transaction.transactionDate),
                   style: AppTextStyles.bodySmall.copyWith(

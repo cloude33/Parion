@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:intl/intl.dart';
 import '../models/credit_card.dart';
 import '../models/credit_card_transaction.dart';
@@ -7,6 +6,9 @@ import '../services/credit_card_service.dart';
 import '../services/reward_points_service.dart';
 import '../services/cash_advance_service.dart';
 import '../services/deferred_installment_service.dart';
+import '../services/data_service.dart';
+import '../utils/bank_card_entity_helper.dart';
+import '../widgets/cards/bank_card_widget.dart';
 import 'add_credit_card_screen.dart';
 import 'add_credit_card_transaction_screen.dart';
 import 'make_credit_card_payment_screen.dart';
@@ -59,6 +61,7 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
   List<CreditCardTransaction> _deferredInstallments = [];
   List<BillPayment> _scheduledBills = [];
   Map<String, BillTemplate> _billTemplates = {};
+  String? _userName;
 
   @override
   void initState() {
@@ -71,7 +74,21 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
         DateTime.now().day,
       );
     }
+    _loadUserName();
     _loadCardDetails();
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final user = await DataService().getCurrentUser();
+      if (user != null && mounted) {
+        setState(() {
+          _userName = user.name;
+        });
+      }
+    } catch (_) {
+      // Sessizce yoksay; kart sahibi adı olmadan da gösterim yapılabilir.
+    }
   }
 
   Future<void> _loadCardDetails() async {
@@ -339,71 +356,20 @@ class _CreditCardDetailScreenState extends State<CreditCardDetailScreen> {
   }
 
   Widget _buildCardHeader() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              width: 100,
-              height: 63, // Card ratio 1.58 (100 / 1.58 = 63.3)
-              decoration: BoxDecoration(
-                color: widget.card.color.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(8),
-                image: widget.card.cardImagePath != null
-                    ? DecorationImage(
-                        image: widget.card.cardImagePath!.startsWith('assets/')
-                            ? AssetImage(widget.card.cardImagePath!)
-                                as ImageProvider
-                            : MemoryImage(
-                                base64Decode(widget.card.cardImagePath!),
-                              ),
-                        fit: BoxFit.cover,
-                      )
-                    : null,
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.card.color.withValues(alpha: 0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: widget.card.cardImagePath == null
-                  ? Icon(
-                      Icons.credit_card,
-                      color: widget.card.color,
-                      size: 32,
-                    )
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.card.bankName,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${widget.card.cardName} •••• ${widget.card.last4Digits}',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Limit: ${_currencyFormat.format(widget.card.creditLimit)}',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Center(
+      child: BankCardWidget(
+        bankName: widget.card.bankName,
+        last4Digits: widget.card.last4Digits,
+        brand: BankCardEntityHelper.resolveBrand(widget.card),
+        cardHolderName: _userName ?? widget.card.bankName,
+        expirationDate: widget.card.expirationDate,
+        network: BankCardEntityHelper.resolveNetwork(widget.card),
+        creditLimit: widget.card.creditLimit,
+        currentDebt: _totalDebt,
+        showDebtInfo: true,
+        // Ekrana sığacak şekilde responsive boyutlandırma.
+        width: MediaQuery.of(context).size.width - 64,
+        height: (MediaQuery.of(context).size.width - 64) * (220 / 350),
       ),
     );
   }

@@ -1,0 +1,1 @@
+Ana ekran arayüzü baştan tasarlandı: üstten kenara kadar uzanan gradyan başlık, kullanıcı karşılama alanı ve yeni kart görünümü. Kredi kartı ve KMH ekranlarındaki kart tasarımları güncellendi, hata düzeltmeleri ve performans iyileştirmeleri yapıldı.

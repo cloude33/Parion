@@ -5,6 +5,7 @@ import '../models/wallet.dart';
 import '../models/kmh_transaction.dart';
 import '../models/kmh_transaction_type.dart';
 import '../models/kmh_summary.dart';
+import '../services/data_service.dart';
 import '../services/kmh_service.dart';
 import '../services/sensitive_data_handler.dart';
 import 'kmh_statement_screen.dart';
@@ -26,12 +27,14 @@ class KmhAccountDetailScreen extends StatefulWidget {
 
 class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
   final KmhService _kmhService = KmhService();
+  final DataService _dataService = DataService();
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'tr_TR',
     symbol: '₺',
     decimalDigits: 2,
   );
 
+  late Wallet _account;
   bool _isLoading = true;
   KmhSummary? _summary;
   List<KmhTransaction> _recentTransactions = [];
@@ -40,18 +43,37 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _account = _account;
     _loadAccountDetails();
+  }
+
+  Future<void> _reloadAccountFromStorage() async {
+    final wallets = await _dataService.getWallets();
+    final updated = wallets.firstWhere(
+      (w) => w.id == _account.id,
+      orElse: () => _account,
+    );
+    if (updated.color != _account.color ||
+        updated.name != _account.name ||
+        updated.creditLimit != _account.creditLimit ||
+        updated.interestRate != _account.interestRate ||
+        updated.bankName != _account.bankName ||
+        updated.accountNumber != _account.accountNumber ||
+        updated.iban != _account.iban) {
+      _account = updated;
+    }
   }
 
   Future<void> _loadAccountDetails() async {
     setState(() => _isLoading = true);
 
     try {
-      final summary = await _kmhService.getAccountSummary(widget.account.id);
+      await _reloadAccountFromStorage();
+      final summary = await _kmhService.getAccountSummary(_account.id);
       final endDate = DateTime.now();
       final startDate = endDate.subtract(const Duration(days: 30));
       final statement = await _kmhService.generateStatement(
-        widget.account.id,
+        _account.id,
         startDate,
         endDate,
       );
@@ -77,7 +99,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.account.name),
+        title: Text(_account.name),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
@@ -131,13 +153,13 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: Color(int.parse(widget.account.color))
+                    color: Color(int.parse(_account.color))
                         .withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     Icons.account_balance,
-                    color: Color(int.parse(widget.account.color)),
+                    color: Color(int.parse(_account.color)),
                     size: 32,
                   ),
                 ),
@@ -147,16 +169,16 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.account.name,
+                        _account.name,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      if (widget.account.accountNumber != null)
+                      if (_account.accountNumber != null)
                         Text(
-                          _maskAccountNumber(widget.account.accountNumber!),
+                          _maskAccountNumber(_account.accountNumber!),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey[600],
@@ -857,7 +879,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditKmhAccountScreen(account: widget.account),
+        builder: (context) => EditKmhAccountScreen(account: _account),
       ),
     );
 
@@ -870,7 +892,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => KmhWithdrawScreen(account: widget.account),
+        builder: (context) => KmhWithdrawScreen(account: _account),
       ),
     );
 
@@ -883,7 +905,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => KmhDepositScreen(account: widget.account),
+        builder: (context) => KmhDepositScreen(account: _account),
       ),
     );
 
@@ -896,7 +918,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => KmhStatementScreen(account: widget.account),
+        builder: (context) => KmhStatementScreen(account: _account),
       ),
     );
   }
@@ -905,7 +927,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => KmhPaymentPlannerScreen(account: widget.account),
+        builder: (context) => KmhPaymentPlannerScreen(account: _account),
       ),
     );
 
@@ -918,7 +940,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => KmhTransactionScreen(account: widget.account),
+        builder: (context) => KmhTransactionScreen(account: _account),
       ),
     );
   }
@@ -929,7 +951,7 @@ class _KmhAccountDetailScreenState extends State<KmhAccountDetailScreen> {
       MaterialPageRoute(
         builder: (context) => KmhInterestCalculatorScreen(
           initialAmount: _summary?.usedCredit,
-          initialRate: widget.account.interestRate,
+          initialRate: _account.interestRate,
         ),
       ),
     );

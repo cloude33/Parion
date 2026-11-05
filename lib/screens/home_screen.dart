@@ -1,9 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'dart:async';
+import 'dart:ui';
 
 import '../models/wallet.dart';
 import '../models/transaction.dart';
@@ -29,7 +31,8 @@ import 'calendar_screen.dart';
 import 'statistics_screen.dart';
 import 'settings_screen.dart';
 import '../l10n/app_localizations.dart';
-import 'add_bill_screen.dart';
+import 'add_subscription_bill_screen.dart';
+
 import '../services/credit_card_service.dart';
 import '../services/transaction_filter_service.dart';
 import '../models/credit_card_transaction.dart';
@@ -48,6 +51,7 @@ import '../widgets/simple_auth_debug_widget.dart';
 import 'exchange_rates_screen.dart';
 import 'add_investment_screen.dart';
 import 'ocr_scan_screen.dart';
+import '../widgets/common/premium_widgets.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -321,150 +325,354 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             setState(() => _showFabMenu = false);
           }
         },
-        child: Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          appBar: _selectedIndex == 0
-              ? AppBar(
-                  automaticallyImplyLeading: false,
-                  title: Center(child: _buildHomeToggle()),
-                  centerTitle: true,
-                  actions: [
-                    Stack(
-                      children: [
-                        IconButton(
-                          icon: Icon(AppIcons.notification, size: 20),
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const NotificationHistoryScreen(),
-                              ),
-                            );
-                            _loadData();
-                          },
-                        ),
-                        if (_isGuestMode)
-                          IconButton(
-                            icon: const Icon(Icons.logout, size: 20, color: Colors.redAccent),
-                            tooltip: 'Demo modundan çık',
-                            onPressed: () async {
-                              await GuestModeService().disableGuestMode();
-                              if (mounted) {
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                                  (route) => false,
-                                );
-                              }
-                            },
-                          ),
-                        if (_unreadNotificationCount > 0)
-                          Positioned(
-                            right: 8,
-                            top: 8,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
-                              child: Text(
-                                _unreadNotificationCount > 99
-                                    ? '99+'
-                                    : _unreadNotificationCount.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                      ],
+        child: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: _statusBarStyle,
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            body: Stack(
+              children: [
+                IndexedStack(
+                  index: _selectedIndex,
+                  children: [
+                    _buildHomeContent(),
+                    const CreditCardListScreen(),
+                    const KmhListScreen(),
+                    StatisticsScreen(
+                      transactions: transactions,
+                      wallets: wallets,
+                      loans: _loans,
+                      creditCardTransactions: _creditCardTransactions,
                     ),
+                    const SettingsScreen(),
                   ],
-                )
-              : null,
-          body: IndexedStack(
-            index: _selectedIndex,
-            children: [
-              _buildHomeContent(),
-              const CreditCardListScreen(),
-              const KmhListScreen(),
-              StatisticsScreen(
-                transactions: transactions,
-                wallets: wallets,
-                loans: _loans,
-                creditCardTransactions: _creditCardTransactions,
-              ),
-              const SettingsScreen(),
-            ],
+                ),
+                if (_showFabMenu)
+                  Positioned.fill(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _showFabMenu = false),
+                      child: ClipRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                          child: Container(
+                            color: Colors.black.withAlpha(85),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            bottomNavigationBar: AppBottomNavBar(
+              currentIndex: _selectedIndex,
+              onTap: (index) => setState(() {
+                _selectedIndex = index;
+                _showFabMenu = false;
+              }),
+            ),
+            floatingActionButton: _selectedIndex == 0 ? _buildFabMenu() : null,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.endFloat,
           ),
-          bottomNavigationBar: AppBottomNavBar(
-            currentIndex: _selectedIndex,
-            onTap: (index) => setState(() {
-              _selectedIndex = index;
-              _showFabMenu = false;
-            }),
-          ),
-          floatingActionButton: _selectedIndex == 0 ? _buildFabMenu() : null,
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         ),
       ),
     );
   }
 
 
+  /// Aktif sekmeye göre durum çubuğu stili. Ana sekmede üst alan koyu yeşil
+  /// başlıkla kaplı olduğu için ikonlar açık renk kalır.
+  SystemUiOverlayStyle get _statusBarStyle {
+    if (_selectedIndex == 0) {
+      return const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      );
+    }
+    return const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+    );
+  }
+
+  /// Durum çubuğu dahil ekranın üstünü kenardan kenara dolduran başlık bloğu.
+  Widget _buildHomeHeader({List<Widget> children = const <Widget>[]}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final topInset = MediaQuery.paddingOf(context).top;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? const [Color(0xFF062A1E), Color(0xFF0C4736)]
+              : const [Color(0xFF0B3D2E), Color(0xFF1B6B4A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0B3D2E).withValues(alpha: 0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(14, topInset + 10, 14, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildHeaderTopRow(),
+          const SizedBox(height: 14),
+          Center(child: _buildHomeToggle()),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderTopRow() {
+    final localizations = AppLocalizations.of(context)!;
+    final name = _currentUser?.name.trim() ?? '';
+    final avatarImage = _buildHeaderAvatarImage();
+
+    return Row(
+      children: [
+        Container(
+          width: 46,
+          height: 46,
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.35),
+              width: 1.5,
+            ),
+          ),
+          child: CircleAvatar(
+            backgroundColor: const Color(0xFF00BFA5),
+            backgroundImage: avatarImage,
+            child: avatarImage == null
+                ? Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : 'P',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                localizations.welcomeBack,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.75),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                name.isNotEmpty
+                    ? localizations.helloUser(name)
+                    : localizations.home,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (_isGuestMode)
+          _buildHeaderActionButton(
+            icon: Icons.logout,
+            iconColor: Colors.redAccent,
+            tooltip: 'Demo modundan çık',
+            onPressed: () async {
+              await GuestModeService().disableGuestMode();
+              if (mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                  (route) => false,
+                );
+              }
+            },
+          ),
+        _buildHeaderActionButton(
+          icon: AppIcons.notification,
+          tooltip: localizations.notifications,
+          badgeCount: _unreadNotificationCount,
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const NotificationHistoryScreen(),
+              ),
+            );
+            _loadData();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHeaderActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+    Color iconColor = Colors.white,
+    int badgeCount = 0,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedPressScale(
+            onTap: onPressed,
+            semanticLabel: tooltip,
+            child: Tooltip(
+              message: tooltip,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.14),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Icon(icon, size: 20, color: iconColor),
+              ),
+            ),
+          ),
+          if (badgeCount > 0)
+            Positioned(
+              right: 1,
+              top: 1,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF0B3D2E), width: 1.5),
+                ),
+                child: Text(
+                  badgeCount > 99 ? '99+' : badgeCount.toString(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Avatar kaynağını akıllıca belirler: URL → NetworkImage, base64 →
+  /// MemoryImage, veri yoksa null (baş harf gösterilir).
+  ImageProvider? _buildHeaderAvatarImage() {
+    final avatar = _currentUser?.avatar;
+    if (avatar == null || avatar.isEmpty) return null;
+
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return NetworkImage(avatar);
+    }
+
+    try {
+      return MemoryImage(base64Decode(avatar));
+    } catch (e) {
+      debugPrint('Avatar decode hatası: $e');
+      return null;
+    }
+  }
+
   Widget _buildHomeToggle() {
     return Container(
-      height: 36,
+      height: 40,
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(18),
+        color: Colors.white.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.grey.withAlpha(50),
+          color: Colors.white.withValues(alpha: 0.22),
+          width: 1,
         ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _buildToggleOption(AppLocalizations.of(context)!.list, 0),
-          _buildToggleOption(AppLocalizations.of(context)!.calendar, 1),
-        ],
+      child: SizedBox(
+        width: 220,
+        child: Stack(
+          children: [
+            AnimatedAlign(
+              alignment: _homeViewMode == 0 ? Alignment.centerLeft : Alignment.centerRight,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOutCubic,
+              child: FractionallySizedBox(
+                widthFactor: 0.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: AppColors.incomeGradient,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00BFA5).withValues(alpha: 0.35),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildToggleOption(AppLocalizations.of(context)!.list, 0),
+                ),
+                Expanded(
+                  child: _buildToggleOption(AppLocalizations.of(context)!.calendar, 1),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildToggleOption(String text, int mode) {
     final isSelected = _homeViewMode == mode;
-    return GestureDetector(
+    return AnimatedPressScale(
       onTap: () => setState(() => _homeViewMode = mode),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Container(
         alignment: Alignment.center,
         height: double.infinity,
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).primaryColor
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(18),
-        ),
+        color: Colors.transparent,
         child: Text(
           text,
-          textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected
-                ? Colors.white
-                : Theme.of(context).textTheme.bodyMedium?.color,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
+            color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.7),
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 13,
+            letterSpacing: 0.5,
           ),
         ),
       ),
@@ -473,42 +681,55 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildHomeContent() {
     if (_homeViewMode == 1) {
-      return CalendarScreen(transactions: transactions, isEmbedded: true);
+      return Column(
+        children: [
+          _buildHomeHeader(),
+          Expanded(
+            child: CalendarScreen(transactions: transactions, isEmbedded: true),
+          ),
+        ],
+      );
     }
 
     return RefreshIndicator(
       onRefresh: _loadData,
       color: const Color(0xFF00BFA5),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 4),
-              if (kDebugMode) ...[
-                const SimpleAuthDebugWidget(),
-                const InactivityMonitorWidget(),
-                const SizedBox(height: 4),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom + 8,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHomeHeader(
+              children: [
+                if (kDebugMode) ...[
+                  const SizedBox(height: 12),
+                  const SimpleAuthDebugWidget(),
+                  const InactivityMonitorWidget(),
+                ],
+                const SizedBox(height: 12),
+                _buildSummaryCard(),
               ],
-              _buildSummaryCard(),
-              const SizedBox(height: 12),
-              _buildPriceBar(),
-              const SizedBox(height: 8),
-              if (_kmhAlerts.isNotEmpty) ...[
-                _buildKmhAlertsSection(),
-                const SizedBox(height: 8),
-              ],
-              _buildAllTransactions(),
-              const SizedBox(height: 8),
-              _buildGoalsSection(),
+            ),
+            const SizedBox(height: 12),
+            _buildPriceBar(),
+            const SizedBox(height: 8),
+            if (_kmhAlerts.isNotEmpty) ...[
+              _buildKmhAlertsSection(),
               const SizedBox(height: 8),
             ],
-          ),
+            _buildAllTransactions(),
+            const SizedBox(height: 8),
+            _buildGoalsSection(),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );
   }
+
 
   Widget _buildAllTransactions() {
     List<CreditCardTransaction> filteredCCTransactions = _isFilterActive
@@ -1179,30 +1400,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Material(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-            elevation: 0,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ExchangeRatesScreen(),
-                ),
+          AnimatedPressScale(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ExchangeRatesScreen(),
               ),
+            ),
+            child: GlassmorphicCard(
+              borderRadius: 20,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
                 child: Row(
                   children: [
                     Expanded(
@@ -1278,6 +1486,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     );
   }
 
+  Widget _buildPriceDivider() {
+    return Container(
+      width: 1,
+      height: 28,
+      color: Theme.of(context).dividerColor.withAlpha(50),
+      margin: const EdgeInsets.symmetric(vertical: 2),
+    );
+  }
+
   Widget _buildPriceItem({
     required String label,
     required double? value,
@@ -1319,15 +1536,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildPriceDivider() {
-    return Container(
-      width: 1,
-      height: 28,
-      color: const Color(0xFFE5E5EA),
-      margin: const EdgeInsets.symmetric(vertical: 2),
     );
   }
 
@@ -1435,52 +1643,49 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final totalDebts = creditCardDebts + kmhDebts + loanDebts;
     final monthName = DateFormat.MMMM().format(now);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Column(
-        children: [
-          SizedBox(
-            height: 200,
-            child: PageView(
-              padEnds: false,
-              controller: _pageController,
-              children: [
-                _buildNetBalanceCard(
-                  monthName: monthName,
-                  year: now.year,
-                  netBalance: netBalance,
-                  monthlyIncome: monthlyIncome,
-                  monthlyExpense: monthlyExpense,
-                ),
-                _buildTotalDebtsCard(
-                  totalDebts: totalDebts,
-                  creditCardDebts: creditCardDebts,
-                  kmhDebts: kmhDebts,
-                  loanDebts: loanDebts,
-                ),
-              ],
-            ),
+    return Column(
+      children: [
+        SizedBox(
+          height: 200,
+          child: PageView(
+            padEnds: false,
+            controller: _pageController,
+            children: [
+              _buildNetBalanceCard(
+                monthName: monthName,
+                year: now.year,
+                netBalance: netBalance,
+                monthlyIncome: monthlyIncome,
+                monthlyExpense: monthlyExpense,
+              ),
+              _buildTotalDebtsCard(
+                totalDebts: totalDebts,
+                creditCardDebts: creditCardDebts,
+                kmhDebts: kmhDebts,
+                loanDebts: loanDebts,
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              2,
-              (index) => Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: _currentPage == index ? 20 : 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: _currentPage == index
-                      ? const Color(0xFF00BFA5)
-                      : Color(0xFF00BFA5).withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            2,
+            (index) => Container(
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: _currentPage == index ? 20 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: _currentPage == index
+                    ? const Color(0xFF00BFA5)
+                    : Color(0xFF00BFA5).withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(4),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -2197,6 +2402,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               );
               if (result == true) _loadData();
             },
+            index: 5,
           ),
           const SizedBox(height: 12),
           _buildFabMenuItem(
@@ -2219,20 +2425,24 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               );
               if (result == true) _loadData();
             },
+            index: 4,
           ),
           const SizedBox(height: 12),
           _buildFabMenuItem(
-            label: AppLocalizations.of(context)!.addBill,
+            label: 'Abonelik & Fatura',
             icon: AppIcons.receipt,
             color: const Color(0xFFFF9800),
             onTap: () async {
               setState(() => _showFabMenu = false);
               final result = await Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AddBillScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const AddSubscriptionBillScreen(),
+                ),
               );
               if (result == true) _loadData();
             },
+            index: 3,
           ),
           const SizedBox(height: 12),
           _buildFabMenuItem(
@@ -2246,8 +2456,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 MaterialPageRoute(builder: (context) => const OcrScanScreen()),
               );
             },
+            index: 2,
           ),
-
           const SizedBox(height: 12),
           _buildFabMenuItem(
             label: AppLocalizations.of(context)!.addWallet,
@@ -2263,6 +2473,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               );
               if (result == true) _loadData();
             },
+            index: 1,
           ),
           const SizedBox(height: 12),
           _buildFabMenuItem(
@@ -2279,6 +2490,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               );
               if (result == true) _loadData();
             },
+            index: 0,
           ),
           const SizedBox(height: 16),
         ],
@@ -2316,41 +2528,57 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
+    required int index,
   }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 150 + (index * 40)),
+      curve: Curves.easeOutBack,
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          alignment: Alignment.centerRight,
+          child: Opacity(
+            opacity: value.clamp(0.0, 1.0),
+            child: child,
           ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF8E8E93),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
+        );
+      },
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(180) ?? const Color(0xFF8E8E93),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        FloatingActionButton(
-          heroTag: label,
-          onPressed: onTap,
-          backgroundColor: color,
-          mini: false,
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-      ],
+          const SizedBox(width: 12),
+          FloatingActionButton(
+            heroTag: label,
+            onPressed: onTap,
+            backgroundColor: color,
+            mini: false,
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+        ],
+      ),
     );
   }
 }

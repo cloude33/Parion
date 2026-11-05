@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/design/app_spacing.dart';
 import '../../models/asset_analysis.dart';
+import '../common/premium_widgets.dart';
 
 class FinancialHealthScoreCard extends StatelessWidget {
   final FinancialHealthScore healthScore;
@@ -16,13 +17,12 @@ class FinancialHealthScoreCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.all(AppSpacing.lg),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      child: AnimatedPressScale(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        child: GlassmorphicCard(
+          borderRadius: 20.0,
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

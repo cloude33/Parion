@@ -188,12 +188,12 @@ class _BackupAndExportScreenState extends State<BackupAndExportScreen> {
     );
 
     if (confirm != true) return;
-    final result = await FilePicker.pickFiles(
+    final files = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['mbk', 'zip'],
     );
 
-    if (result == null || result.files.single.path == null) return;
+    if (files.isEmpty || files.single.path == null) return;
 
     if (!mounted) return;
 
@@ -204,7 +204,7 @@ class _BackupAndExportScreenState extends State<BackupAndExportScreen> {
     );
 
     try {
-      final backupFile = File(result.files.single.path!);
+      final backupFile = File(files.single.path!);
       
       // Metadata kontrol et
       final metadata = await _backupService.getBackupMetadata(backupFile);

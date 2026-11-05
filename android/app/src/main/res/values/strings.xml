@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        google_sign_in native tarafının (Credential Manager fallback dahil)
+        okuduğu OAuth web client_id. Firebase Console'daki "Web application"
+        tipindeki OAuth client'ın kimliği.
+
+        Değer: google-services.json -> oauth_client[client_type=3]
+    -->
+    <string name="default_web_client_id">195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com</string>
+</resources>

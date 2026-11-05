@@ -1,9 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import '../firebase_options.dart';
+import 'auth/google_sign_in_helper.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -233,123 +230,21 @@ class FirebaseAuthService {
     );
   }
 
+  /// Google ile giriş. Tüm mantık [GoogleSignInHelper] içinde toplandı —
+  /// burada sadece FirebaseAuthException'i Türkçe mesajlara çeviriyoruz.
   Future<UserCredential?> signInWithGoogle() async {
-    try {
-      debugPrint('🔄 Google Sign-In başlatılıyor...');
+    final outcome = await GoogleSignInHelper.instance.signIn();
 
-      // Firebase'in başlatıldığından emin ol
-      try {
-        if (Firebase.apps.isEmpty) {
-          await Firebase.initializeApp(
-            options: DefaultFirebaseOptions.currentPlatform,
-          ).timeout(const Duration(seconds: 10));
-          debugPrint('✅ Firebase lazily initialized for Google Sign-In');
-        }
-      } catch (initError) {
-        debugPrint('❌ Firebase initialization in signInWithGoogle failed: $initError');
-      }
-
-      if (kIsWeb) {
-        // Web için Google Identity Services (GIS) veya signInWithPopup kullan
-        final googleProvider = GoogleAuthProvider();
-        googleProvider.addScope('email');
-        googleProvider.addScope(
-          'https://www.googleapis.com/auth/userinfo.profile',
-        );
-
-        debugPrint(
-          '🌐 Web platformu algılandı, signInWithPopup kullanılıyor...',
-        );
-        final userCredential = await _auth.signInWithPopup(googleProvider);
-        debugPrint('✅ Google Sign-In başarılı: ${userCredential.user?.email}');
-        return userCredential;
-      } else {
-        // Mobil için mevcut GoogleSignIn akışını kullan
-        
-        // Initialize GoogleSignIn
-        await GoogleSignIn.instance.initialize(
-          serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-        );
-        
-        // Önce mevcut oturumu temizle
-        try {
-          await GoogleSignIn.instance.signOut();
-          await _auth.signOut();
-        } catch (e) {
-          debugPrint('⚠️ Sign out error (ignorable): $e');
-        }
-        
-        debugPrint('🔄 Google Sign-In başlatılıyor...');
-        
-        final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
-        
-        debugPrint('✅ Google kullanıcısı seçildi: ${googleUser.email}');
-
-        // Google kimlik doğrulama detaylarını al
-        final auth = await googleUser.authorizationClient.authorizeScopes(['email']);
-        final googleAuth = googleUser.authentication;
-
-        debugPrint('Access Token: ${auth.accessToken.isNotEmpty ? 'OK' : 'EMPTY'}');
-        debugPrint('ID Token: ${googleAuth.idToken?.isNotEmpty ?? false ? 'OK' : 'EMPTY'}');
-
-        debugPrint('✅ Google auth tokens alındı');
-
-        // Firebase credential oluştur
-        final credential = GoogleAuthProvider.credential(
-          accessToken: auth.accessToken,
-          idToken: googleAuth.idToken,
-        );
-
-        debugPrint('🔄 Firebase ile giriş yapılıyor...');
-        debugPrint('   Firebase Auth proje: ${_auth.app.options.projectId}');
-        debugPrint('   Credential provider: ${credential.providerId}');
-        
-        try {
-          final userCredential = await _auth.signInWithCredential(credential);
-          debugPrint('✅ Google Sign-In başarılı: ${userCredential.user?.email}');
-          return userCredential;
-        } on FirebaseAuthException catch (e) {
-          debugPrint('❌ Firebase signInWithCredential failed: ${e.code}');
-          debugPrint('   Message: ${e.message}');
-          debugPrint('   Credential: accessToken=${auth.accessToken.isNotEmpty ? 'OK' : 'EMPTY'}, idToken=${googleAuth.idToken?.isNotEmpty ?? false ? 'OK' : 'EMPTY'}');
-          
-          // Özel olarak network-request-failed için daha açıklayıcı hata
-          if (e.code == 'network-request-failed') {
-            throw 'Firebase sunucularına bağlanılamadı (network-request-failed).\n'
-                'Muhtemel nedenler:\n'
-                '• Firebase Console\'da Authentication > Sign-in method > Google oturum açma etkinleştirilmemiş\n'
-                '• Firebase Console\'da Authentication ayarlarında Destek E-postası belirtilmemiş\n'
-                '• google-services.json güncel değil (flutterfire configure komutunu çalıştırın)\n'
-                '• Cihaz Firebase sunucularına erişemiyor (VPN, güvenlik duvarı veya DNS sorunu)';
-          }
-          rethrow;
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      debugPrint('❌ Firebase Auth Error: ${e.code} - ${e.message}');
-      throw handleAuthException(e);
-    } on PlatformException catch (e) {
-      debugPrint('❌ Platform Exception: ${e.code} - ${e.message}');
-      debugPrint('❌ Platform Exception Details: ${e.details}');
-      
-      if (e.code == 'sign_in_failed') {
-        final msg = e.message ?? '';
-        if (msg.contains('12500') || msg.contains('10')) {
-          throw 'Google Sign-In yapılandırma hatası (${msg.contains('12500') ? '12500' : '10'}). Muhtemel nedenler:\n'
-              '• SHA-1 sertifika parmak izi Firebase konsoluna eklenmemiş\n'
-              '• google-services.json dosyası güncel değil\n'
-              '• Firebase projesinde Destek E-postası ayarlanmamış';
-        }
-        throw 'Google Sign-In başarısız. Lütfen internet bağlantınızı kontrol edin ve tekrar deneyin.';
-      }
-      throw 'Google Sign-In hatası: ${e.message ?? e.code}';
-    } catch (e) {
-      debugPrint('❌ Google sign in error: $e');
-      if (e is String && e.isNotEmpty) {
-        rethrow;
-      }
-      throw 'Google Sign-In sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.';
+    if (outcome.isSuccess) {
+      debugPrint('✅ FirebaseAuthService: Google Sign-In başarılı: '
+          '${outcome.userCredential?.user?.email}');
+      return outcome.userCredential;
     }
+
+    final message = outcome.errorMessage ?? 'Google Sign-In başarısız';
+    debugPrint('❌ FirebaseAuthService: Google Sign-In hatası '
+        '(${outcome.errorCode}): $message');
+    throw message;
   }
 
   Future<void> signOut() async {
@@ -357,7 +252,12 @@ class FirebaseAuthService {
       if (kIsWeb) {
         await _auth.signOut();
       } else {
-        await Future.wait([_auth.signOut(), GoogleSignIn.instance.signOut()]);
+        await _auth.signOut();
+        try {
+          await GoogleSignInHelper.instance.googleSignIn.signOut();
+        } catch (e) {
+          debugPrint('⚠️ GoogleSignIn.signOut on Firebase signOut: $e');
+        }
       }
     } catch (e) {
       debugPrint('Sign out error: $e');

@@ -3,8 +3,8 @@ default_platform(:android)
 platform :android do
   desc "Builds the AAB and uploads it to Google Play"
   lane :upload do
-    # Build the AAB (if not already built)
-    sh "flutter build appbundle --release"
+    # AAB is built in project root prior to upload
+    # sh "flutter build appbundle --release"
 
     upload_to_play_store(
       track: "production",

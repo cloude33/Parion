@@ -7,6 +7,8 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import 'auth/google_sign_in_helper.dart';
+
 class AuthService {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
@@ -19,29 +21,15 @@ class AuthService {
   SharedPreferences? _prefs;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
+  // Tek GoogleSignIn instance — tüm akışlar GoogleSignInHelper üzerinden
+  // yapılır (platform tarafı singleton'dur, birden fazla instance sessiz
+  // başarısızlığa yol açar).
+  GoogleSignIn get _googleSignIn => GoogleSignInHelper.instance.googleSignIn;
+
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
-
-    if (_isInitialized) return;
     _isInitialized = true;
-
-    unawaited(() async {
-      try {
-        debugPrint('AuthService: Pre-loading Google Sign-In library...');
-        if (kIsWeb) {
-          await GoogleSignIn.instance.initialize(
-            clientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-          ).timeout(const Duration(seconds: 5));
-        } else {
-          await GoogleSignIn.instance.initialize(
-            serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-          ).timeout(const Duration(seconds: 5));
-        }
-        debugPrint('✅ AuthService: Google Sign-In library pre-loaded');
-      } catch (e) {
-        debugPrint('⚠️ AuthService: Google Sign-In pre-load failed (will retry on first sign-in): $e');
-      }
-    }());
+    debugPrint('✅ AuthService: initialized');
   }
 
   Future<void> savePinCode(String pin) async {
@@ -116,56 +104,41 @@ class AuthService {
 
   Future<GoogleSignInAccount?> signInWithGoogle() async {
     try {
-      // Ensure initialization
-      if (!_isInitialized) {
-        await init();
-      }
-      
+      if (!_isInitialized) await init();
       debugPrint('🔄 AuthService: Starting Google Sign-In...');
-      
-      // Clear any existing session to prevent conflicts
+
       try {
-        await GoogleSignIn.instance.signOut();
-      } catch (e) {
-        debugPrint('⚠️ AuthService: Sign out error (ignorable): $e');
+        await _googleSignIn.signOut();
+      } catch (_) {}
+
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
+
+      if (account == null) {
+        debugPrint('⚠️ AuthService: Google Sign-In cancelled');
+        return null;
       }
-      
-      final GoogleSignInAccount account = await GoogleSignIn.instance.authenticate();
-      
+
       debugPrint('✅ AuthService: Google Sign-In successful: ${account.email}');
-      
-      // Save user data
       await _prefs?.setString('google_email', account.email);
       await _prefs?.setString('google_name', account.displayName ?? '');
       await _prefs?.setString('google_photo', account.photoUrl ?? '');
-      
       return account;
     } on PlatformException catch (e) {
-      debugPrint('❌ AuthService: Platform Exception in Google Sign-In: ${e.code} - ${e.message}');
-      
-      // Handle specific platform errors
-      if (e.code == 'sign_in_failed') {
-        if (e.message?.contains('10') == true) {
-          debugPrint('❌ AuthService: Google Play Services configuration error');
-        }
-      }
-      
+      debugPrint('❌ AuthService: Platform Exception: ${e.code} - ${e.message}');
       return null;
     } catch (e) {
-      debugPrint('❌ AuthService: Unexpected error in Google Sign-In: $e');
+      debugPrint('❌ AuthService: Unexpected error: $e');
       return null;
     }
   }
 
   Future<void> signOutGoogle() async {
     try {
-      await GoogleSignIn.instance.signOut();
+      await _googleSignIn.signOut();
       debugPrint('✅ AuthService: Signed out from Google');
     } catch (e) {
       debugPrint('⚠️ AuthService: Google sign out error (ignorable): $e');
     }
-    
-    // Clear stored data regardless of sign-out success
     await _prefs?.remove('google_email');
     await _prefs?.remove('google_name');
     await _prefs?.remove('google_photo');

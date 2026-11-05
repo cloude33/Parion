@@ -948,4 +948,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get recordSettlement => 'Ödemeyi Kaydet';
+
+  @override
+  String get welcomeBack => 'Tekrar hoş geldin';
+
+  @override
+  String helloUser(Object name) {
+    return 'Merhaba, $name';
+  }
 }

@@ -1897,6 +1897,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ödemeyi Kaydet'**
   String get recordSettlement;
+
+  /// No description provided for @welcomeBack.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar hoş geldin'**
+  String get welcomeBack;
+
+  /// No description provided for @helloUser.
+  ///
+  /// In tr, this message translates to:
+  /// **'Merhaba, {name}'**
+  String helloUser(Object name);
 }
 
 class _AppLocalizationsDelegate

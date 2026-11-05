@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../../models/security/security_models.dart';
 import '../firebase_auth_service.dart';
+import 'google_sign_in_helper.dart';
 import 'interfaces/social_login_interface.dart';
 
 /// Unified Social Login Service
@@ -39,31 +39,21 @@ class SocialLoginService implements ISocialLoginService {
   @override
   Future<void> initialize() async {
     if (_isInitialized) return;
-    
-    // If already initializing, wait for completion
-    if (_initCompleter != null) {
-      return _initCompleter!.future;
-    }
-    
+    if (_initCompleter != null) return _initCompleter!.future;
+
     _initCompleter = Completer<void>();
-    
-    // Initialize in background to prevent blocking application startup/main thread
-    unawaited(() async {
-      try {
-        debugPrint('SocialLoginService: Initializing Google Sign-In in background...');
-        await GoogleSignIn.instance.initialize(
-          serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-        ).timeout(const Duration(seconds: 5));
-        
-        _isInitialized = true;
-        _initCompleter!.complete();
-        debugPrint('✅ SocialLoginService initialized successfully');
-      } catch (e) {
-        debugPrint('❌ SocialLoginService initialization failed or timed out: $e');
-        _isInitialized = true; // Mark as initialized anyway to prevent blocking dependent services
-        _initCompleter!.complete();
-      }
-    }());
+    try {
+      // Google Sign-In başlatması artık GoogleSignInHelper içinde
+      // merkezi olarak yapılıyor. Burada sadece bayrak kaldırıyoruz.
+      await Future<void>.delayed(Duration.zero);
+      _isInitialized = true;
+      _initCompleter!.complete();
+      debugPrint('✅ SocialLoginService initialized (delegated to GoogleSignInHelper)');
+    } catch (e) {
+      _isInitialized = true;
+      _initCompleter!.complete();
+      debugPrint('⚠️ SocialLoginService initialize error (ignored): $e');
+    }
   }
 
   /// Ensures service is initialized before operations
@@ -77,53 +67,31 @@ class SocialLoginService implements ISocialLoginService {
   Future<AuthResult> signInWithGoogle() async {
     try {
       await _ensureInitialized();
-      
-      debugPrint('🔄 Starting Google Sign-In via SocialLoginService...');
-      
-      // Use the existing Firebase Auth Service Google Sign-In implementation
       final userCredential = await _firebaseAuthService.signInWithGoogle();
-      
+
       if (userCredential == null) {
-        debugPrint('❌ Google Sign-In cancelled by user');
         return AuthResult.failure(
           method: AuthMethod.social,
           errorMessage: 'Google Sign-In iptal edildi',
         );
       }
-      
-      debugPrint('✅ Google Sign-In successful: ${userCredential.user?.email}');
-      
+
       return AuthResult.success(
         method: AuthMethod.social,
         metadata: {
           'provider': 'google',
+          'userId': userCredential.user?.uid,
           'email': userCredential.user?.email,
           'displayName': userCredential.user?.displayName,
-          'photoURL': userCredential.user?.photoURL,
-          'uid': userCredential.user?.uid,
+          'photoUrl': userCredential.user?.photoURL,
         },
       );
-      
-    } on FirebaseAuthException catch (e) {
-      debugPrint('❌ Firebase Auth Error in Google Sign-In: ${e.code} - ${e.message}');
-      return AuthResult.failure(
-        method: AuthMethod.social,
-        errorMessage: _handleFirebaseAuthException(e),
-        metadata: {'provider': 'google', 'errorCode': e.code},
-      );
-    } on PlatformException catch (e) {
-      debugPrint('❌ Platform Exception in Google Sign-In: ${e.code} - ${e.message}');
-      return AuthResult.failure(
-        method: AuthMethod.social,
-        errorMessage: _handlePlatformException(e),
-        metadata: {'provider': 'google', 'errorCode': e.code},
-      );
     } catch (e) {
-      debugPrint('❌ Unexpected error in Google Sign-In: $e');
+      final msg = e is String ? e : e.toString();
       return AuthResult.failure(
         method: AuthMethod.social,
-        errorMessage: 'Google Sign-In sırasında beklenmeyen bir hata oluştu',
-        metadata: {'provider': 'google', 'error': e.toString()},
+        errorMessage: msg.isNotEmpty ? msg : 'Google Sign-In başarısız',
+        metadata: {'provider': 'google', 'error': msg},
       );
     }
   }
@@ -343,8 +311,12 @@ class SocialLoginService implements ISocialLoginService {
       switch (provider.toLowerCase()) {
         case 'google':
           providerId = 'google.com';
-          // Also sign out from Google Sign-In
-          await GoogleSignIn.instance.signOut();
+          // Also sign out from Google Sign-In (singleton instance)
+          try {
+            await GoogleSignInHelper.instance.googleSignIn.signOut();
+          } catch (e) {
+            debugPrint('⚠️ Google sign out on unlink: $e');
+          }
           break;
         case 'apple':
           providerId = 'apple.com';
@@ -364,9 +336,7 @@ class SocialLoginService implements ISocialLoginService {
       debugPrint('❌ Unexpected error in account unlinking: $e');
       rethrow;
     }
-  }
-
-  @override
+  }  @override
   Future<List<String>> getLinkedProviders() async {
     try {
       await _ensureInitialized();
@@ -411,9 +381,9 @@ class SocialLoginService implements ISocialLoginService {
       // Sign out from Firebase
       await _auth.signOut();
       
-      // Sign out from Google
+      // Sign out from Google (singleton instance)
       try {
-        await GoogleSignIn.instance.signOut();
+        await GoogleSignInHelper.instance.googleSignIn.signOut();
       } catch (e) {
         debugPrint('⚠️ Google sign out error (ignorable): $e');
       }
@@ -440,13 +410,14 @@ class SocialLoginService implements ISocialLoginService {
   /// Creates Google credential for account linking
   Future<AuthCredential?> _createGoogleCredential() async {
     try {
-      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
-      
-      final auth = await googleUser.authorizationClient.authorizeScopes(['email']);
-      final googleAuth = googleUser.authentication;
-
+      final googleSignIn = GoogleSignIn(
+        serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
+      );
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser == null) return null;
+      final googleAuth = await googleUser.authentication;
       return GoogleAuthProvider.credential(
-        accessToken: auth.accessToken,
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
     } catch (e) {
@@ -514,29 +485,6 @@ class SocialLoginService implements ISocialLoginService {
         return 'Çok fazla istek gönderildi. Güvenliğiniz için lütfen biraz bekleyip tekrar deneyin.';
       default:
         return e.message ?? 'Bir kimlik doğrulama hatası oluştu.';
-    }
-  }
-
-  /// Handles platform exceptions with localized messages
-  String _handlePlatformException(PlatformException e) {
-    switch (e.code) {
-      case 'sign_in_failed':
-        final msg = e.message ?? '';
-        if (msg.contains('12500') || msg.contains('10')) {
-          return 'Google Sign-In yapılandırma hatası.\n'
-              '• SHA-1 sertifika parmak izi Firebase konsoluna eklenmemiş\n'
-              '• google-services.json dosyası güncel değil\n'
-              '• Firebase projesinde Destek E-postası ayarlanmamış';
-        }
-        return 'Giriş işlemi başarısız oldu. Lütfen tekrar deneyin.';
-      case 'network_error':
-        return 'Ağ bağlantısı hatası. Lütfen internet bağlantınızı kontrol edin.';
-      case 'sign_in_canceled':
-        return 'Giriş işlemi iptal edildi.';
-      case 'sign_in_required':
-        return 'Devam etmek için giriş yapmanız gerekmektedir.';
-      default:
-        return e.message ?? 'Cihaz seviyesinde bir hata oluştu.';
     }
   }
 }

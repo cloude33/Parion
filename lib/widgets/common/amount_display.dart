@@ -12,18 +12,20 @@ class AmountDisplay extends StatelessWidget {
     required this.isIncome,
     this.style,
     this.showSign = false,
+    this.color,
   });
 
   final double amount;
   final bool isIncome;
   final TextStyle? style;
   final bool showSign;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    final color = isIncome ? AppColors.incomeColor : AppColors.expenseColor;
+    final effectiveColor = color ?? (isIncome ? AppColors.incomeColor : AppColors.expenseColor);
     final effectiveStyle = (style ?? AppTextStyles.titleMedium).copyWith(
-      color: color,
+      color: effectiveColor,
     );
 
     final String sign;

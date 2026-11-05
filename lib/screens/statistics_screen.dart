@@ -251,10 +251,18 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                 children: [
                   // Kaydırılabilir sekme başlıkları (7 sekme) en üstte
                   Container(
-                    margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: isDark ? AppColors.surfaceDark : AppColors.background,
-                      borderRadius: BorderRadius.circular(12),
+                      color: isDark ? const Color(0xFF1E1E1E) : const Color(0xFFEFEFEF),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1.5),
+                        ),
+                      ],
                     ),
                     child: TabBar(
                       controller: _tabController,
@@ -262,12 +270,19 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       tabAlignment: TabAlignment.start,
                       dividerColor: Colors.transparent, // Alt çizgiyi gizle
                       indicator: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(12),
+                        color: isDark ? AppColors.primaryDark : AppColors.primary,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: (isDark ? AppColors.primaryDark : AppColors.primary).withValues(alpha: 0.35),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       indicatorSize: TabBarIndicatorSize.tab,
-                      labelColor: AppColors.onPrimary,
-                      unselectedLabelColor: isDark ? AppColors.onSurfaceDark.withValues(alpha: 0.6) : AppColors.onSurface.withValues(alpha: 0.6),
+                      labelColor: Colors.white,
+                      unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
                       labelStyle: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.bold),
                       unselectedLabelStyle: AppTextStyles.bodySmall,
                       tabs: const [

@@ -6,6 +6,8 @@ import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
+import 'auth/google_sign_in_helper.dart';
+
 class GoogleDriveService {
   static final GoogleDriveService _instance = GoogleDriveService._internal();
   factory GoogleDriveService() => _instance;
@@ -130,14 +132,15 @@ class GoogleDriveService {
     }
   }
 
+  // v6 API: GoogleSignIn instance — TÜM akışlar için tek instance.
+  // GoogleSignInHelper.instance singleton'ı kullanılır (platform tarafı
+  // singleton, birden fazla instance sessiz başarısızlığa yol açar).
+  GoogleSignIn get _googleSignIn => GoogleSignInHelper.instance.googleSignIn;
+
   Future<bool> isAuthenticated() async {
     if (_isTestMode) return true;
-    final GoogleSignInAccount? account = await GoogleSignIn.instance.attemptLightweightAuthentication();
-    if (account == null) {
-      await GoogleSignIn.instance.authenticate();
-      return true;
-    }
-    return true;
+    final GoogleSignInAccount? account = await _googleSignIn.signInSilently();
+    return account != null;
   }
 
   Future<void> signIn() async {
@@ -146,54 +149,48 @@ class GoogleDriveService {
       debugPrint('CLOUD_BACKUP: 🔐 Starting Google Drive sign-in process...');
       _driveApi = null;
 
-      await GoogleSignIn.instance.initialize(
-        serverClientId: '195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com',
-      );
-
-      debugPrint(
-        'CLOUD_BACKUP: 🔍 Checking Google connectivity before sign-in...',
-      );
+      debugPrint('CLOUD_BACKUP: 🔍 Checking Google connectivity before sign-in...');
       final hasConnectivity = await checkGoogleConnectivity();
-      debugPrint(
-        'CLOUD_BACKUP: 🔍 Connectivity check result: $hasConnectivity',
-      );
       if (!hasConnectivity) {
-        debugPrint('CLOUD_BACKUP: ❌ Google connectivity check failed');
         throw Exception(
           'network_error: Google Drive hizmetlerine erişilemiyor. Lütfen internet bağlantınızı kontrol edin. (Hata: ${_lastConnectionError ?? "Bilinmeyen ağ hatası"})',
         );
       }
-      debugPrint(
-        'CLOUD_BACKUP: ✅ Google connectivity verified, proceeding with sign-in',
-      );
+      debugPrint('CLOUD_BACKUP: ✅ Google connectivity verified, proceeding with sign-in');
 
+      // Try silent sign-in first
       try {
         debugPrint('CLOUD_BACKUP: 🔍 Attempting silent sign-in...');
-        final GoogleSignInAccount? account = await GoogleSignIn.instance.attemptLightweightAuthentication();
-        if (account != null) {
-          final auth = await account.authorizationClient.authorizeScopes([drive.DriveApi.driveAppdataScope]);
-          _driveApi = drive.DriveApi(auth.authClient(scopes: [drive.DriveApi.driveAppdataScope]));
-          debugPrint('CLOUD_BACKUP: ✅ Google Drive silent sign-in successful');
-          return;
+        final GoogleSignInAccount? silentAccount = await _googleSignIn.signInSilently();
+        if (silentAccount != null) {
+          final client = await _googleSignIn.authenticatedClient();
+          if (client != null) {
+            _driveApi = drive.DriveApi(client);
+            debugPrint('CLOUD_BACKUP: ✅ Google Drive silent sign-in successful');
+            return;
+          }
         }
         debugPrint('CLOUD_BACKUP: ⚠️ Silent sign-in failed');
       } catch (e) {
         debugPrint('CLOUD_BACKUP: ⚠️ Silent sign-in failed: $e');
       }
 
+      // Explicit sign-in
       try {
-        debugPrint('CLOUD_BACKUP: 🔍 Signing out to clear state...');
-        await GoogleSignIn.instance.signOut();
-        debugPrint('CLOUD_BACKUP: ✅ Sign out completed');
-      } catch (e) {
-        debugPrint('CLOUD_BACKUP: ⚠️ Sign out error (ignorable): $e');
-      }
+        await _googleSignIn.signOut();
+      } catch (_) {}
 
       debugPrint('CLOUD_BACKUP: 🔍 Starting explicit sign-in...');
-      final GoogleSignInAccount account = await GoogleSignIn.instance.authenticate();
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
+      if (account == null) {
+        throw Exception('Google Sign-In iptal edildi');
+      }
       debugPrint('CLOUD_BACKUP: ✅ Google account selected: ${account.email}');
-      final auth = await account.authorizationClient.authorizeScopes([drive.DriveApi.driveAppdataScope]);
-      _driveApi = drive.DriveApi(auth.authClient(scopes: [drive.DriveApi.driveAppdataScope]));
+      final client = await _googleSignIn.authenticatedClient();
+      if (client == null) {
+        throw Exception('Google Drive yetkilendirme başarısız');
+      }
+      _driveApi = drive.DriveApi(client);
       debugPrint('CLOUD_BACKUP: ✅ Google Drive explicit sign-in successful: ${account.email}');
     } catch (e) {
       debugPrint('CLOUD_BACKUP: ❌ Google Drive Sign In Error: $e');
@@ -217,7 +214,11 @@ class GoogleDriveService {
   }
 
   Future<void> signOut() async {
-    await GoogleSignIn.instance.signOut();
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      debugPrint('CLOUD_BACKUP: ⚠️ Drive signOut ignored: $e');
+    }
     _driveApi = null;
   }
 

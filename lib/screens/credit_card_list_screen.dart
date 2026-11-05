@@ -2,13 +2,17 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/credit_card.dart';
+import '../models/card_design/card_brand.dart';
 import '../services/credit_card_service.dart';
 import '../services/data_service.dart';
+import '../utils/bank_card_entity_helper.dart';
+import '../widgets/cards/bank_card_carousel.dart';
+import '../widgets/cards/bank_card_theme_picker.dart';
+import '../widgets/cards/bank_card_widget.dart';
 import 'add_credit_card_screen.dart';
 import 'credit_card_detail_screen.dart';
 import 'card_reporting_screen.dart';
 import 'installment_tracking_screen.dart';
-import '../widgets/cards/bank_card_visual_widget.dart';
 
 class CreditCardListScreen extends StatefulWidget {
   const CreditCardListScreen({super.key});
@@ -35,6 +39,13 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
   double _totalAvailableCredit = 0;
   double _totalDueThisMonth = 0;
   String _userName = '';
+
+  /// Carousel & list senkronizasyonu.
+  final PageController _carouselController = PageController(viewportFraction: 0.92);
+  int _currentCarouselIndex = 0;
+
+  /// Marka filtresi. null = tümü.
+  CardBrand? _brandFilter;
 
   @override
   void initState() {
@@ -74,6 +85,12 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
         ).showSnackBar(SnackBar(content: Text('Hata: $e')));
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _carouselController.dispose();
+    super.dispose();
   }
 
   Future<void> _deleteCard(CreditCard card) async {
@@ -139,6 +156,12 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
                   ),
                 );
               },
+            ),
+          if (_selectedTab == 0)
+            IconButton(
+              icon: const Icon(Icons.style_outlined),
+              tooltip: 'Kart Tasarımları',
+              onPressed: _openThemeGallery,
             ),
           IconButton(icon: const Icon(Icons.refresh), onPressed: _loadCards),
         ],
@@ -362,102 +385,310 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
   }
 
   Widget _buildCardList() {
-    return ReorderableListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: _cards.length,
-      onReorderItem: (oldIndex, newIndex) async {
-        setState(() {
-          final item = _cards.removeAt(oldIndex);
-          _cards.insert(newIndex, item);
-        });
- 
-        // Save the new order
-        await _cardService.reorderCards(_cards);
-      },
-      proxyDecorator: (child, index, animation) {
-        return AnimatedBuilder(
-          animation: animation,
-          builder: (BuildContext context, Widget? child) {
-            final double animValue = Curves.easeInOut.transform(
-              animation.value,
-            );
-            final double elevation = lerpDouble(0, 6, animValue)!;
-            return Material(
-              elevation: elevation,
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
-              child: child,
-            );
-          },
-          child: child,
-        );
-      },
-      itemBuilder: (context, index) {
-        final card = _cards[index];
-        final details = _cardDetails[card.id];
-        return Padding(
-          key: ValueKey(card.id),
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildCardItemContent(card, details),
-        );
-      },
+    final filteredCards = _filterCards();
+    final displayCards = filteredCards.isEmpty ? _cards : filteredCards;
+
+    if (displayCards.isEmpty) {
+      return _buildEmptyState();
+    }
+
+    return CustomScrollView(
+      slivers: [
+        // 1. Marka filtre şeridi
+        SliverToBoxAdapter(child: _buildBrandFilterStrip()),
+
+        // 2. Öne çıkan kart carousel'i
+        SliverToBoxAdapter(child: _buildCarouselSection(displayCards)),
+
+        // 3. Tüm kartlar başlığı
+        SliverToBoxAdapter(child: _buildListHeader(displayCards.length)),
+
+        // 4. Sıralanabilir kompakt liste
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          sliver: SliverReorderableList(
+            itemCount: displayCards.length,
+            // ignore: deprecated_member_use
+            onReorder: (oldIndex, newIndex) async {
+              setState(() {
+                if (newIndex > oldIndex) newIndex -= 1;
+                final item = displayCards.removeAt(oldIndex);
+                displayCards.insert(newIndex, item);
+                // Filtre devrede değilse _cards'ı da güncelle
+                if (_brandFilter == null) {
+                  _cards
+                    ..clear()
+                    ..addAll(displayCards);
+                }
+              });
+
+              await _cardService.reorderCards(_cards);
+            },
+            proxyDecorator: (child, index, animation) {
+              return AnimatedBuilder(
+                animation: animation,
+                builder: (BuildContext context, Widget? child) {
+                  final double animValue = Curves.easeInOut.transform(
+                    animation.value,
+                  );
+                  final double elevation = lerpDouble(0, 6, animValue)!;
+                  return Material(
+                    elevation: elevation,
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    child: child,
+                  );
+                },
+                child: child,
+              );
+            },
+            itemBuilder: (context, index) {
+              final card = displayCards[index];
+              return Padding(
+                key: ValueKey(card.id),
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _buildCompactListItem(card, index, displayCards),
+              );
+            },
+          ),
+        ),
+
+        const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
+      ],
     );
   }
 
-  Widget _buildCardItemContent(CreditCard card, Map<String, dynamic>? details) {
-    if (details == null) {
-      return const Card(child: ListTile(title: Text('Yükleniyor...')));
+  /// Mevcut marka filtresine göre kartları daraltır.
+  List<CreditCard> _filterCards() {
+    if (_brandFilter == null) return _cards;
+    return _cards
+        .where((c) =>
+            BankCardEntityHelper.resolveBrand(c) == _brandFilter)
+        .toList();
+  }
+
+  /// Yatay kaydırılabilir marka filtre şeridi.
+  Widget _buildBrandFilterStrip() {
+    final availableBrands = <CardBrand>{
+      for (final c in _cards) BankCardEntityHelper.resolveBrand(c),
+    }.toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+
+    if (availableBrands.length < 2) {
+      return const SizedBox.shrink();
     }
 
-    final currentDebt = details['currentDebt'] as double;
-    final nextDueDate = details['nextDueDate'] as DateTime;
-    final cardImage = card.cardImagePath;
-
-    return BankCardVisualWidget(
-      bankName: card.bankName,
-      cardName: card.cardName,
-      last4Digits: card.last4Digits,
-      currentDebt: currentDebt,
-      limit: card.creditLimit,
-      colorHex: card.cardColor.toString(),
-      cutOffDay: card.statementDay,
-      fullPaymentDate: nextDueDate,
-      cardImagePath: cardImage,
-      cardHolderName: _userName,
-      expirationDate: card.expirationDate,
-      onTap: () => _navigateToCardDetail(card),
-      action: Row(
-        mainAxisSize: MainAxisSize.min,
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         children: [
-          ReorderableDragStartListener(
-            index: _cards.indexOf(card),
-            child: const Icon(
-              Icons.drag_handle,
-              color: Colors.white70,
-              size: 24,
+          _FilterChip(
+            label: 'Tümü',
+            isSelected: _brandFilter == null,
+            onTap: () => _setBrandFilter(null),
+          ),
+          const SizedBox(width: 6),
+          ...availableBrands.map(
+            (b) => Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: _FilterChip(
+                label: b.displayName,
+                isSelected: _brandFilter == b,
+                onTap: () => _setBrandFilter(b),
+              ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _setBrandFilter(CardBrand? brand) {
+    setState(() {
+      _brandFilter = brand;
+      _currentCarouselIndex = 0;
+      // Filtre değiştiğinde carousel'i başa sar
+      if (_carouselController.hasClients) {
+        _carouselController.jumpToPage(0);
+      }
+    });
+  }
+
+  /// Carousel bölümü: başlık + PageView + gösterge noktaları.
+  Widget _buildCarouselSection(List<CreditCard> cards) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+          child: Row(
+            children: [
+              Text(
+                'Öne Çıkan',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const Spacer(),
+              Text(
+                '${_currentCarouselIndex + 1}/${cards.length}',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.6),
+                    ),
+              ),
+            ],
+          ),
+        ),
+        BankCardCarousel(
+          controller: _carouselController,
+          cards: cards
+              .map((c) => _buildCarouselCard(
+                    c,
+                    _cardDetails[c.id],
+                  ))
+              .toList(),
+          height: 240,
+          showIndicator: true,
+          onPageChanged: _onCarouselPageChanged,
+        ),
+      ],
+    );
+  }
+
+  /// Carousel içinde gösterilecek tam boy kart.
+  Widget _buildCarouselCard(
+    CreditCard card,
+    Map<String, dynamic>? details,
+  ) {
+    final currentDebt = (details?['currentDebt'] as double?) ?? 0;
+    return BankCardWidget(
+      bankName: card.bankName,
+      last4Digits: card.last4Digits,
+      brand: BankCardEntityHelper.resolveBrand(card),
+      cardHolderName: _userName.isEmpty ? null : _userName,
+      expirationDate: card.expirationDate,
+      network: BankCardEntityHelper.resolveNetwork(card),
+      currentDebt: currentDebt,
+      creditLimit: card.creditLimit,
+      showDebtInfo: true,
+      onTap: () => _navigateToCardDetail(card),
+    );
+  }
+
+  void _onCarouselPageChanged(int index) {
+    setState(() => _currentCarouselIndex = index);
+  }
+
+  /// "Tüm Kartlar (n)" başlığı.
+  Widget _buildListHeader(int count) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+      child: Row(
+        children: [
+          Text(
+            'Tüm Kartlar',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: Theme.of(context)
+                  .colorScheme
+                  .primary
+                  .withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+          ),
+          const Spacer(),
+          if (_brandFilter != null)
+            TextButton.icon(
+              onPressed: () => _setBrandFilter(null),
+              icon: const Icon(Icons.clear, size: 14),
+              label: const Text('Filtreyi temizle'),
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Kompakt liste satırı: mini kart + banka adı + son 4 + aksiyonlar.
+  Widget _buildCompactListItem(
+    CreditCard card,
+    int index,
+    List<CreditCard> contextCards,
+  ) {
+    final cardIndex = _cards.indexOf(card);
+    final canReorder = _brandFilter == null;
+    return BankCardListItem(
+      bankName: card.bankName,
+      last4Digits: card.last4Digits,
+      brand: BankCardEntityHelper.resolveBrand(card),
+      cardHolderName: _userName,
+      isSelected: _brandFilter == null && index == _currentCarouselIndex,
+      onTap: () => _navigateToCardDetail(card),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (canReorder && cardIndex >= 0)
+            ReorderableDragStartListener(
+              index: cardIndex,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6),
+                child: Icon(Icons.drag_handle, size: 22),
+              ),
+            ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: const Icon(Icons.more_vert),
+            tooltip: 'Kart işlemleri',
             onSelected: (value) {
               if (value == 'delete') {
                 _deleteCard(card);
+              } else if (value == 'detail') {
+                _navigateToCardDetail(card);
               }
             },
-            itemBuilder: (BuildContext context) {
-              return [
-                const PopupMenuItem(
-                  value: 'delete',
-                  child: Row(
-                    children: [
-                      Icon(Icons.delete, color: Colors.red, size: 20),
-                      SizedBox(width: 8),
-                      Text('Sil', style: TextStyle(color: Colors.red)),
-                    ],
-                  ),
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'detail',
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 20),
+                    SizedBox(width: 8),
+                    Text('Detay'),
+                  ],
                 ),
-              ];
-            },
+              ),
+              PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete, color: Colors.red, size: 20),
+                    SizedBox(width: 8),
+                    Text('Sil', style: TextStyle(color: Colors.red)),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -490,4 +721,118 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     }
   }
 
+  /// Tüm temaları alt sayfa olarak açar; seçilen temayı filtre olarak uygular.
+  Future<void> _openThemeGallery() async {
+    final selected = await showModalBottomSheet<CardBrand>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (_, controller) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(sheetContext).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.4),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: Row(
+                      children: [
+                        Text(
+                          'Kart Tasarımları',
+                          style: Theme.of(sheetContext)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: controller,
+                      child: BankCardThemePicker(
+                        selected: _brandFilter,
+                        onSelected: (b) {
+                          Navigator.pop(sheetContext, b);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (selected != null && mounted) {
+      _setBrandFilter(selected);
+    }
+  }
+}
+
+/// Marka filtre şeridinde kullanılan küçük chip.
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: isSelected
+          ? scheme.primary
+          : scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isSelected
+                  ? scheme.onPrimary
+                  : scheme.onSurface.withValues(alpha: 0.8),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

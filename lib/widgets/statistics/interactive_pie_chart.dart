@@ -142,7 +142,11 @@ class _InteractivePieChartState extends State<InteractivePieChart> {
           title: widget.showPercentage
               ? '${percentage.toStringAsFixed(1)}%'
               : '',
-          radius: isTouched ? widget.radius + 10 : widget.radius,
+          radius: isTouched ? widget.radius + 8 : widget.radius,
+          borderSide: BorderSide(
+            color: isDark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.85),
+            width: 1.5,
+          ),
           titleStyle: AppTextStyles.bodySmall.copyWith(
             fontSize: isTouched ? 14 : 12,
             fontWeight: FontWeight.bold,

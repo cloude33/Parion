@@ -306,5 +306,7 @@
   "groupColor": "Grup rengi",
   "deleteGroup": "Grubu Sil",
   "deleteGroupConfirm": "{name} grubu ve tüm paylaşımlı harcamalar, bütçeler ve borçlar silinecek. Devam etmek istiyor musunuz?",
-  "recordSettlement": "Ödemeyi Kaydet"
+  "recordSettlement": "Ödemeyi Kaydet",
+  "welcomeBack": "Tekrar hoş geldin",
+  "helloUser": "Merhaba, {name}"
 }

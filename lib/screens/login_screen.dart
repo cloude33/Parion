@@ -1,17 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 import '../core/di/service_locator.dart';
+import '../models/security/security_models.dart';
+import '../models/user.dart' as user_models;
 import '../services/auth/interfaces/auth_orchestrator_interface.dart';
 import '../services/auth/interfaces/biometric_auth_interface.dart';
-import '../models/security/security_models.dart';
-import '../services/user_service.dart';
-import '../services/data_service.dart';
 import '../services/auth/interfaces/data_sync_interface.dart';
-import '../models/user.dart' as user_models;
-import '../utils/auth_navigation.dart';
+import '../services/data_service.dart';
 import '../services/guest_mode_service.dart';
+import '../services/user_service.dart';
+import '../utils/auth_navigation.dart';
 
+/// Uygulamanın giriş ekranı.
+///
+/// Davranış prensipleri:
+/// - Auth akışı için `IAuthOrchestrator` tek giriş noktasıdır (orchestrator detayını saklar).
+/// - Google Sign-In `GoogleSignInHelper` üzerinden tek noktada başlatılır
+///   (yarış durumu yok).
+/// - Hata durumunda sade ve anlaşılır mesajlar gösterilir.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -19,1284 +26,312 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
-  late final IAuthOrchestrator _authOrchestrator;
+class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailCtrl = TextEditingController();
+  final _passwordCtrl = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
 
-  bool _isBiometricAvailable = false;
-  bool _isLoading = false;
+  late final IAuthOrchestrator _auth;
+  late final IBiometricAuthService _biometric;
+
+  bool _busy = false;
   bool _showPassword = false;
   bool _rememberMe = false;
-  String? _userName;
-  String? _currentError;
-  bool _isProcessingLogin = false;
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  // Form validation states
-  bool _emailValid = true;
-  bool _passwordValid = true;
-  String? _emailError;
-  String? _passwordError;
+  bool _biometricAvailable = false;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _authOrchestrator = getIt<IAuthOrchestrator>();
-    
-    // Initialize authentication services
-    _initializeAuthServices();
-    
-    _checkBiometricAvailability();
-    _loadRememberedCredentials();
-    _setupAnimations();
-    _listenToAuthState();
+    _auth = getIt<IAuthOrchestrator>();
+    _biometric = getIt<IBiometricAuthService>();
+    _bootstrap();
   }
 
-  Future<void> _initializeAuthServices() async {
+  Future<void> _bootstrap() async {
     try {
-      // Initialize the auth orchestrator which includes all services
-      await _authOrchestrator.initialize();
-      debugPrint('✅ LoginScreen: Auth services initialized');
+      await _auth.initialize();
+      await _biometric.initialize();
     } catch (e) {
-      debugPrint('❌ LoginScreen: Auth services initialization failed: $e');
+      debugPrint('LoginScreen: auth init hatası: $e');
     }
+    await _loadRemembered();
+    await _checkBiometric();
   }
 
-  void _setupAnimations() {
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
-
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(
-            parent: _animationController,
-            curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
-          ),
-        );
-
-    _animationController.forward();
-  }
-
-  void _listenToAuthState() {
-    _authOrchestrator.authStateStream.listen((authState) {
-      // Don't navigate if we're processing login manually
-      // This ensures "remember me" preference is saved before navigation
-      if (mounted && authState.isAuthenticated && !_isProcessingLogin) {
-        context.toHome();
-      }
-    });
-  }
-
-  Future<void> _loadRememberedCredentials() async {
+  Future<void> _loadRemembered() async {
     try {
       final userService = UserService();
       await userService.init();
-      final rememberedEmail = await userService.getRememberedEmail();
-      final shouldRemember = await userService.shouldRememberEmail();
-
-      if (rememberedEmail != null && shouldRemember) {
+      final email = await userService.getRememberedEmail();
+      final should = await userService.shouldRememberEmail();
+      if (email != null && should && mounted) {
         setState(() {
-          _emailController.text = rememberedEmail;
+          _emailCtrl.text = email;
           _rememberMe = true;
         });
-        await _loadUserNameFromEmail(rememberedEmail);
       }
-    } catch (e) {
-      debugPrint('Error loading remembered credentials: $e');
-    }
+    } catch (_) {}
   }
 
-  Future<void> _loadUserNameFromEmail(String email) async {
+  Future<void> _checkBiometric() async {
     try {
-      if (email.isNotEmpty) {
-        // Try getting from DataService first (main app storage)
-        final dataService = DataService();
-        await dataService.init();
-        
-        final currentUser = await dataService.getCurrentUser();
-        if (currentUser != null && currentUser.email?.toLowerCase() == email.toLowerCase()) {
-          if (mounted) {
-            setState(() {
-              _userName = currentUser.name.toUpperCase();
-            });
-          }
-          return;
-        }
-
-        final allUsers = await dataService.getAllUsers();
-        final matchingUser = allUsers.where((u) => u.email?.toLowerCase() == email.toLowerCase()).firstOrNull;
-        if (matchingUser != null) {
-          if (mounted) {
-            setState(() {
-              _userName = matchingUser.name.toUpperCase();
-            });
-          }
-          return;
-        }
-
-        // Legacy/Fallback to UserService
-        final userService = UserService();
-        await userService.init();
-        final profile = await userService.getUserProfile();
-
-        if (mounted) {
-          setState(() {
-            if (profile != null && profile.email.toLowerCase() == email.toLowerCase()) {
-              _userName = profile.name.toUpperCase();
-            } else {
-              // Fallback to email prefix
-              if (email.contains('@')) {
-                _userName = email.split('@')[0].toUpperCase();
-              } else {
-                _userName = email.toUpperCase();
-              }
-            }
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error loading user name: $e');
-    }
+      final isAuthed = await _auth.isAuthenticated();
+      if (isAuthed) return;
+      final has = await _biometric.isAvailable();
+      final enabled = await _biometric.isBiometricEnabled();
+      if (mounted) setState(() => _biometricAvailable = has && enabled);
+    } catch (_) {}
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    _animationController.dispose();
+    _emailCtrl.dispose();
+    _passwordCtrl.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
-  Future<void> _checkBiometricAvailability() async {
-    try {
-      final isAuthenticated = await _authOrchestrator.isAuthenticated();
-      if (!isAuthenticated) {
-        // Check biometric availability through the biometric service
-        final biometricService = getIt<IBiometricAuthService>();
-        final isAvailable = await biometricService.isAvailable();
-        final isEnabled = await biometricService.isBiometricEnabled();
+  // ---------- Actions ----------
 
-        if (mounted) {
-          setState(() {
-            _isBiometricAvailable = isAvailable && isEnabled;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking biometric availability: $e');
-      if (mounted) {
-        setState(() {
-          _isBiometricAvailable = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _handleBiometricAuth() async {
-    if (_isLoading) return;
-
+  Future<void> _signInWithEmail() async {
+    if (_busy) return;
+    if (!_formKey.currentState!.validate()) return;
     setState(() {
-      _isLoading = true;
-      _currentError = null;
+      _busy = true;
+      _errorMessage = null;
     });
-
     try {
-      final result = await _authOrchestrator
-          .authenticate(AuthMethod.biometric, {
-            'reason': 'Uygulamaya erişmek için kimliğinizi doğrulayın',
-            'fallbackTitle': 'PIN Kullan',
-            'cancelText': 'İptal',
-          });
-
-      if (mounted) {
-        if (result.isSuccess) {
-          // Navigation will be handled by auth state listener
-        } else {
-          _showError(result.errorMessage ?? 'Biyometrik doğrulama başarısız');
-        }
+      final result = await _auth.authenticate(
+        AuthMethod.emailPassword,
+        {
+          'email': _emailCtrl.text.trim(),
+          'password': _passwordCtrl.text,
+          'isSignUp': false,
+        },
+      );
+      if (!mounted) return;
+      if (!result.isSuccess) {
+        _showError(result.errorMessage ?? 'Giriş başarısız.');
+        return;
       }
+      await _persistUserFromResult(result.metadata);
+      await _saveRememberMe();
+      if (mounted) context.toHome();
     } catch (e) {
-      if (mounted) {
-        _showError('Biyometrik doğrulama sırasında bir hata oluştu');
-      }
+      if (mounted) _showError('Beklenmeyen hata: $e');
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _handleEmailLogin() async {
-    if (_isLoading) return;
-
-    // Real-time validation
-    _validateForm();
-    if (!_emailValid || !_passwordValid) {
-      return;
-    }
-
+  Future<void> _signInWithGoogle() async {
+    if (_busy) return;
     setState(() {
-      _isLoading = true;
-      _currentError = null;
-      _isProcessingLogin = true; // Prevent auth listener from navigating
+      _busy = true;
+      _errorMessage = null;
     });
-
     try {
-      final result = await _authOrchestrator
-          .authenticate(AuthMethod.emailPassword, {
-            'email': _emailController.text.trim(),
-            'password': _passwordController.text.trim(),
-            'isSignUp': false,
-          });
-
+      final result = await _auth.authenticate(
+        AuthMethod.social,
+        {'provider': 'google'},
+      );
+      if (!mounted) return;
+      if (!result.isSuccess) {
+        _showError(result.errorMessage ?? 'Google ile giriş başarısız.');
+        return;
+      }
+      await _persistUserFromResult(result.metadata);
       if (mounted) {
-        if (result.isSuccess) {
-          final userId = result.metadata?['userId'] ?? '';
-          final email = result.metadata?['email'] ?? _emailController.text.trim();
-          final displayName = result.metadata?['displayName'] ?? '';
-
-          // Her zaman güncelle - mevcut kullanıcı olsa bile
-          final dataService = getIt<DataService>();
-          await dataService.init();
-          
-          final existingUser = await dataService.getCurrentUser();
-          final newUser = user_models.User(
-            id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
-            name: displayName.isNotEmpty ? displayName : (existingUser?.name ?? 'Kullanıcı'),
-            email: email.isNotEmpty ? email : (existingUser?.email ?? ''),
-            avatar: existingUser?.avatar,
-            currencyCode: existingUser?.currencyCode ?? 'TRY',
-            currencySymbol: existingUser?.currencySymbol ?? '₺',
-            authMethod: user_models.AuthMethod.email,
-          );
-          await dataService.saveUser(newUser);
-
-          final userService = getIt<UserService>();
-          await userService.init();
-          await userService.saveUserProfile(UserProfile(
-            id: newUser.id,
-            name: newUser.name,
-            email: newUser.email ?? '',
-            createdAt: DateTime.now(),
-            authMethod: user_models.AuthMethod.email.toString(),
-          ));
-
-          // Trigger remote sync
-          final syncService = getIt<DataSyncInterface>();
-          await syncService.syncAllUserData(userId);
-
-          // Save remember me preference BEFORE navigation
-          await _saveRememberMePreference();
-          // Navigate manually after saving preferences
-          if (mounted) {
-            context.toHome();
-          }
-        } else {
-          _showError(result.errorMessage ?? 'Giriş başarısız');
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Hoş geldin, ${result.metadata?['displayName'] ?? result.metadata?['email'] ?? 'kullanıcı'}!',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.toHome();
       }
     } catch (e) {
-      if (mounted) {
-        _showError('Giriş sırasında bir hata oluştu');
-      }
+      if (mounted) _showError('Google girişi sırasında hata: $e');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _isProcessingLogin = false;
-        });
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _signInWithBiometric() async {
+    if (_busy) return;
+    setState(() {
+      _busy = true;
+      _errorMessage = null;
+    });
+    try {
+      final result = await _auth.authenticate(AuthMethod.biometric, {
+        'reason': 'Uygulamaya erişmek için kimliğinizi doğrulayın',
+        'fallbackTitle': 'PIN Kullan',
+        'cancelText': 'İptal',
+      });
+      if (!mounted) return;
+      if (!result.isSuccess) {
+        _showError(result.errorMessage ?? 'Biyometrik doğrulama başarısız.');
+        return;
+      }
+      context.toHome();
+    } catch (e) {
+      if (mounted) _showError('Biyometrik doğrulama sırasında hata: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _enterGuest() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await GuestModeService().enableGuestMode();
+      if (mounted) context.toHome();
+    } catch (e) {
+      if (mounted) _showError('Misafir modu başlatılamadı: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _forgotPassword() async {
+    final email = await showDialog<String>(
+      context: context,
+      builder: (_) => const _ForgotPasswordDialog(),
+    );
+    if (email == null || email.isEmpty || !mounted) return;
+    setState(() {
+      _busy = true;
+      _errorMessage = null;
+    });
+    try {
+      final result = await _auth.sendPasswordResetEmail(email);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result.isSuccess
+                ? 'Şifre sıfırlama bağlantısı $email adresine gönderildi.'
+                : (result.errorMessage ?? 'Şifre sıfırlama başarısız.'),
+          ),
+          backgroundColor: result.isSuccess ? Colors.green : Colors.red,
+        ),
+      );
+    } catch (e) {
+      if (mounted) _showError('Şifre sıfırlama hatası: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  // ---------- Persistence helpers ----------
+
+  Future<void> _persistUserFromResult(Map<String, dynamic>? metadata) async {
+    if (metadata == null) return;
+    final userId = metadata['userId']?.toString() ?? '';
+    final email = metadata['email']?.toString() ?? '';
+    final name = metadata['displayName']?.toString() ?? '';
+    final photoUrl = metadata['photoUrl']?.toString();
+
+    final dataService = getIt<DataService>();
+    await dataService.init();
+    final existing = await dataService.getCurrentUser();
+    final newUser = user_models.User(
+      id: userId.isNotEmpty
+          ? userId
+          : DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name.isNotEmpty ? name : (existing?.name ?? 'Kullanıcı'),
+      email: email.isNotEmpty ? email : (existing?.email ?? ''),
+      avatar: photoUrl ?? existing?.avatar,
+      currencyCode: existing?.currencyCode ?? 'TRY',
+      currencySymbol: existing?.currencySymbol ?? '₺',
+      authMethod: email.isEmpty
+          ? user_models.AuthMethod.email
+          : user_models.AuthMethod.google,
+    );
+    await dataService.saveUser(newUser);
+
+    final userService = getIt<UserService>();
+    await userService.init();
+    await userService.saveUserProfile(UserProfile(
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email ?? '',
+      photoUrl: newUser.avatar,
+      createdAt: DateTime.now(),
+      authMethod: newUser.authMethod.toString(),
+    ));
+
+    if (userId.isNotEmpty) {
+      try {
+        await getIt<DataSyncInterface>().syncAllUserData(userId);
+      } catch (e) {
+        debugPrint('LoginScreen: senkron hatası (önemsiz): $e');
       }
     }
   }
 
-  Future<void> _saveRememberMePreference() async {
+  Future<void> _saveRememberMe() async {
     try {
       final userService = UserService();
       await userService.init();
       if (_rememberMe) {
-        await userService.saveRememberedEmail(_emailController.text.trim());
+        await userService.saveRememberedEmail(_emailCtrl.text.trim());
         await userService.setRememberEmail(true);
       } else {
         await userService.clearRememberedEmail();
         await userService.setRememberEmail(false);
       }
-    } catch (e) {
-      debugPrint('Error saving remember me preference: $e');
-    }
-  }
-
-  Future<void> _handleGoogleSignIn() async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-      _currentError = null;
-    });
-
-    try {
-      debugPrint('🔄 LoginScreen: Starting Google Sign-In...');
-      
-      final result = await _authOrchestrator.authenticate(AuthMethod.social, {
-        'provider': 'google',
-      });
-
-      if (mounted) {
-        if (result.isSuccess) {
-          debugPrint('✅ LoginScreen: Google Sign-In successful');
-          
-          final userId = result.metadata?['userId'] ?? '';
-          final email = result.metadata?['email'] ?? '';
-          final displayName = result.metadata?['displayName'] ?? 'Google Kullanıcısı';
-          // Google photoURL key fix (SDK returns photoURL not photoUrl)
-          final photoUrl = result.metadata?['photoUrl'] ?? result.metadata?['photoURL'];
-
-          // Her zaman güncelle - mevcut kullanıcı olsa bile
-          final dataService = getIt<DataService>();
-          await dataService.init();
-
-          final existingUser = await dataService.getCurrentUser();
-          final newUser = user_models.User(
-            id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
-            name: displayName.isNotEmpty ? displayName : (existingUser?.name ?? 'Google Kullanıcısı'),
-            email: email.isNotEmpty ? email : (existingUser?.email ?? ''),
-            avatar: photoUrl ?? existingUser?.avatar,
-            currencyCode: existingUser?.currencyCode ?? 'TRY',
-            currencySymbol: existingUser?.currencySymbol ?? '₺',
-            authMethod: user_models.AuthMethod.google,
-          );
-          await dataService.saveUser(newUser);
-
-          final userService = getIt<UserService>();
-          await userService.init();
-          await userService.saveUserProfile(UserProfile(
-            id: newUser.id,
-            name: newUser.name,
-            email: newUser.email ?? '',
-            photoUrl: newUser.avatar,
-            createdAt: DateTime.now(),
-            authMethod: user_models.AuthMethod.google.toString(),
-          ));
-
-          // Trigger remote sync
-          final syncService = getIt<DataSyncInterface>();
-          await syncService.syncAllUserData(userId);
-          
-          // Show success message
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Google ile giriş başarılı: ${newUser.name}'),
-                backgroundColor: Colors.green,
-                duration: const Duration(seconds: 2),
-              ),
-            );
-          }
-          
-          // Navigation will be handled by auth state listener
-        } else {
-          final errorMessage = result.errorMessage ?? 'Google ile giriş başarısız';
-          debugPrint('❌ LoginScreen: Google Sign-In failed: $errorMessage');
-          
-          // Provide more specific error handling
-          String userFriendlyMessage = errorMessage;
-          if (errorMessage.contains('SHA-1') || errorMessage.contains('12500') || errorMessage.contains('10') || errorMessage.contains('certificate')) {
-            userFriendlyMessage = 'Google yapılandırma hatası.\n'
-                'Lütfen:\n'
-                '• Firebase Console\'a SHA-1 sertifika parmak izini ekleyin\n'
-                '• google-services.json dosyasını güncelleyin (flutterfire configure)\n'
-                '• Firebase projesinde Destek E-postasını ayarlayın';
-          } else if (errorMessage.contains('network-request-failed') || errorMessage.contains('Firebase')) {
-            userFriendlyMessage = 'Firebase sunucularına bağlanılamıyor.\n'
-                'Lütfen:\n'
-                '• Firebase Console\'da Authentication > Google oturum açmayı etkinleştirin\n'
-                '• Firebase projenizde Destek E-postası belirtildiğinden emin olun\n'
-                '• VPN veya AdGuard varsa kapatıp tekrar deneyin';
-          } else if (errorMessage.contains('network') || errorMessage.contains('internet') || errorMessage.contains('bağlantı')) {
-            userFriendlyMessage = 'İnternet bağlantısı sorunu.\n'
-                'Lütfen Wi-Fi veya mobil verinizi kontrol edip tekrar deneyin.\n'
-                'Not: Cihazınızda VPN veya AdGuard gibi bir reklam engelleyici varsa geçici olarak kapatıp tekrar deneyin.';
-          } else if (errorMessage.contains('cancelled')) {
-            userFriendlyMessage = 'Google ile giriş iptal edildi.';
-          }
-          
-          // Append raw error detail for developers/users to diagnose easily
-          userFriendlyMessage += '\n\n[Teknik Hata: $errorMessage]';
-          
-          _showError(userFriendlyMessage);
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ LoginScreen: Unexpected error in Google Sign-In: $e');
-      if (mounted) {
-        _showError('Google ile giriş sırasında beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _handleAppleSignIn() async {
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-      _currentError = null;
-    });
-
-    try {
-      final result = await _authOrchestrator.authenticate(AuthMethod.social, {
-        'provider': 'apple',
-      });
-
-      if (mounted) {
-        if (result.isSuccess) {
-          final userId = result.metadata?['userId'] ?? '';
-          final email = result.metadata?['email'] ?? '';
-          final displayName = result.metadata?['displayName'] ?? 'Apple Kullanıcısı';
-
-          // Her zaman güncelle - mevcut kullanıcı olsa bile
-          final dataService = getIt<DataService>();
-          await dataService.init();
-
-          final existingUser = await dataService.getCurrentUser();
-          final newUser = user_models.User(
-            id: userId.isNotEmpty ? userId : DateTime.now().millisecondsSinceEpoch.toString(),
-            name: displayName.isNotEmpty ? displayName : (existingUser?.name ?? 'Apple Kullanıcısı'),
-            email: email.isNotEmpty ? email : (existingUser?.email ?? ''),
-            avatar: existingUser?.avatar,
-            currencyCode: existingUser?.currencyCode ?? 'TRY',
-            currencySymbol: existingUser?.currencySymbol ?? '₺',
-            authMethod: user_models.AuthMethod.apple,
-          );
-          await dataService.saveUser(newUser);
-
-          final userService = getIt<UserService>();
-          await userService.init();
-          await userService.saveUserProfile(UserProfile(
-            id: newUser.id,
-            name: newUser.name,
-            email: newUser.email ?? '',
-            createdAt: DateTime.now(),
-            authMethod: user_models.AuthMethod.apple.toString(),
-          ));
-
-          // Trigger remote sync
-          final syncService = getIt<DataSyncInterface>();
-          await syncService.syncAllUserData(userId);
-          // Navigation will be handled by auth state listener
-        } else {
-          _showError(result.errorMessage ?? 'Apple ile giriş başarısız');
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        _showError('Apple ile giriş sırasında bir hata oluştu');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<void> _handleForgotPassword() async {
-    final emailController = TextEditingController();
-    if (_emailController.text.isNotEmpty) {
-      emailController.text = _emailController.text;
-    }
-
-    return showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        bool isLoading = false;
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              backgroundColor: const Color(0xFF1E3A3A),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              title: const Text(
-                'Şifre Sıfırlama',
-                style: TextStyle(color: Colors.white),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'E-posta adresinizi girin, size şifre sıfırlama bağlantısı gönderelim.',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      labelText: 'E-posta',
-                      labelStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.1),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFFDB32A),
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: isLoading
-                      ? null
-                      : () => Navigator.pop(dialogContext),
-                  child: const Text(
-                    'İptal',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: isLoading
-                      ? null
-                      : () async {
-                          final email = emailController.text.trim();
-                          if (email.isEmpty || !_isValidEmail(email)) {
-                            ScaffoldMessenger.of(dialogContext).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Geçerli bir e-posta adresi girin',
-                                ),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                            return;
-                          }
-
-                          setDialogState(() => isLoading = true);
-                          final messenger = ScaffoldMessenger.of(context);
-                          final navigator = Navigator.of(dialogContext);
-
-                          try {
-                            final result = await _authOrchestrator
-                                .sendPasswordResetEmail(email);
-
-                            if (navigator.mounted) {
-                              navigator.pop();
-                            }
-
-                            if (mounted) {
-                              if (result.isSuccess) {
-                                messenger.showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Şifre sıfırlama bağlantısı \$email adresine gönderildi',
-                                    ),
-                                    backgroundColor: Colors.green,
-                                  ),
-                                );
-                              } else {
-                                _showError(
-                                  result.errorMessage ??
-                                      'Şifre sıfırlama başarısız',
-                                );
-                              }
-                            }
-                          } catch (e) {
-                            if (navigator.mounted) {
-                              navigator.pop();
-                            }
-                            if (mounted) {
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Şifre sıfırlama sırasında bir hata oluştu',
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          }
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFDB32A),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 16,
-                          width: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Text('Gönder'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  bool _isValidEmail(String email) {
-    return RegExp(
-      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
-    ).hasMatch(email);
-  }
-
-  void _validateForm() {
-    _validateEmail();
-    _validatePassword();
-  }
-
-  void _validateEmail() {
-    final email = _emailController.text.trim();
-    setState(() {
-      if (email.isEmpty) {
-        _emailValid = false;
-        _emailError = 'E-posta adresi gerekli';
-      } else if (!_isValidEmail(email)) {
-        _emailValid = false;
-        _emailError = 'Geçerli bir e-posta adresi girin';
-      } else {
-        _emailValid = true;
-        _emailError = null;
-      }
-    });
-  }
-
-  void _validatePassword() {
-    final password = _passwordController.text;
-    setState(() {
-      if (password.isEmpty) {
-        _passwordValid = false;
-        _passwordError = 'Şifre gerekli';
-      } else if (password.length < 6) {
-        _passwordValid = false;
-        _passwordError = 'Şifre en az 6 karakter olmalı';
-      } else {
-        _passwordValid = true;
-        _passwordError = null;
-      }
-    });
-  }
-
-  void _clearError() {
-    if (_currentError != null) {
-      setState(() {
-        _currentError = null;
-      });
-    }
+    } catch (_) {}
   }
 
   void _showError(String message) {
-    setState(() {
-      _currentError = message;
-    });
-
+    setState(() => _errorMessage = message);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.red.shade700,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
 
-  Widget _buildLoginForm() {
-    return Form(
-      key: _formKey,
-      child: Column(
-        children: [
-          // Error display
-          if (_currentError != null) _buildErrorDisplay(),
-
-          // Email field
-          _buildEmailField(),
-          const SizedBox(height: 16),
-
-          // Password field
-          _buildPasswordField(),
-          const SizedBox(height: 8),
-
-          // Remember me and forgot password
-          _buildRememberMeAndForgotPassword(),
-          const SizedBox(height: 24),
-
-          // Login button
-          _buildLoginButton(),
-          const SizedBox(height: 20),
-
-          // Divider
-          _buildDivider(),
-          const SizedBox(height: 20),
-
-          // Social login buttons
-          _buildSocialLoginButtons(),
-          const SizedBox(height: 20),
-
-          // Biometric button
-          if (_isBiometricAvailable) _buildBiometricButton(),
-
-          const SizedBox(height: 20),
-
-          // Register link
-          _buildRegisterLink(),
-          const SizedBox(height: 8),
-
-          // Guest mode link
-          _buildGuestModeLink(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorDisplay() {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.error_outline, color: Colors.red.shade300, size: 20),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              _currentError!,
-              style: TextStyle(color: Colors.red.shade300, fontSize: 14),
-            ),
-          ),
-          IconButton(
-            icon: Icon(Icons.close, color: Colors.red.shade300, size: 18),
-            onPressed: _clearError,
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmailField() {
-    return TextFormField(
-      controller: _emailController,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: 'E-posta',
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: _emailValid
-                ? Colors.white.withValues(alpha: 0.2)
-                : Colors.red.withValues(alpha: 0.5),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: _emailValid ? const Color(0xFFFDB32A) : Colors.red,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        prefixIcon: Icon(
-          Icons.email,
-          color: _emailValid
-              ? Colors.white.withValues(alpha: 0.7)
-              : Colors.red.withValues(alpha: 0.7),
-        ),
-        suffixIcon: _emailController.text.isNotEmpty
-            ? Icon(
-                _emailValid ? Icons.check_circle : Icons.error,
-                color: _emailValid ? Colors.green : Colors.red,
-                size: 20,
-              )
-            : null,
-        errorText: _emailError,
-        errorStyle: const TextStyle(color: Colors.red),
-      ),
-      keyboardType: TextInputType.emailAddress,
-      textInputAction: TextInputAction.next,
-      onChanged: (value) {
-        _validateEmail();
-        if (value.contains('@')) {
-          _loadUserNameFromEmail(value);
-        }
-      },
-      onFieldSubmitted: (_) {
-        FocusScope.of(context).nextFocus();
-      },
-    );
-  }
-
-  Widget _buildPasswordField() {
-    return TextFormField(
-      controller: _passwordController,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: 'Şifre',
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-        filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: _passwordValid
-                ? Colors.white.withValues(alpha: 0.2)
-                : Colors.red.withValues(alpha: 0.5),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: _passwordValid ? const Color(0xFFFDB32A) : Colors.red,
-            width: 2,
-          ),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        prefixIcon: Icon(
-          Icons.lock,
-          color: _passwordValid
-              ? Colors.white.withValues(alpha: 0.7)
-              : Colors.red.withValues(alpha: 0.7),
-        ),
-        suffixIcon: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_passwordController.text.isNotEmpty)
-              Icon(
-                _passwordValid ? Icons.check_circle : Icons.error,
-                color: _passwordValid ? Colors.green : Colors.red,
-                size: 20,
-              ),
-            IconButton(
-              icon: Icon(
-                _showPassword ? Icons.visibility : Icons.visibility_off,
-                color: Colors.white.withValues(alpha: 0.7),
-              ),
-              onPressed: () {
-                setState(() {
-                  _showPassword = !_showPassword;
-                });
-              },
-            ),
-          ],
-        ),
-        errorText: _passwordError,
-        errorStyle: const TextStyle(color: Colors.red),
-      ),
-      obscureText: !_showPassword,
-      textInputAction: TextInputAction.done,
-      onChanged: (value) {
-        _validatePassword();
-      },
-      onFieldSubmitted: (_) {
-        _handleEmailLogin();
-      },
-    );
-  }
-
-  Widget _buildRememberMeAndForgotPassword() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Transform.scale(
-              scale: 0.9,
-              child: Checkbox(
-                value: _rememberMe,
-                onChanged: (value) {
-                  setState(() {
-                    _rememberMe = value ?? false;
-                  });
-                },
-                activeColor: const Color(0xFFFDB32A),
-                checkColor: Colors.white,
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _rememberMe = !_rememberMe;
-                });
-              },
-              child: Text(
-                'Beni Hatırla',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ],
-        ),
-        TextButton(
-          onPressed: _isLoading ? null : _handleForgotPassword,
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          ),
-          child: const Text(
-            'Şifremi Unuttum',
-            style: TextStyle(
-              color: Color(0xFFFDB32A),
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _handleEmailLogin,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFDB32A),
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          elevation: 0,
-          shadowColor: Colors.transparent,
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
-            : const Text(
-                'Giriş Yap',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            height: 1,
-            color: Colors.white.withValues(alpha: 0.2),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'veya',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 14,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: 1,
-            color: Colors.white.withValues(alpha: 0.2),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialLoginButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildSocialButton(
-            onPressed: _isLoading ? null : _handleGoogleSignIn,
-            icon: Image.asset(
-              'assets/images/google-logo.png',
-              width: 20,
-              height: 20,
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(
-                  Icons.g_mobiledata,
-                  size: 20,
-                  color: Colors.white,
-                );
-              },
-            ),
-            label: 'Google',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildSocialButton(
-            onPressed: _isLoading ? null : _handleAppleSignIn,
-            icon: const Icon(Icons.apple, size: 20, color: Colors.white),
-            label: 'Apple',
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSocialButton({
-    required VoidCallback? onPressed,
-    required Widget icon,
-    required String label,
-  }) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: icon,
-      label: Text(
-        label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        backgroundColor: Colors.white.withValues(alpha: 0.08),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  Widget _buildBiometricButton() {
-    return Column(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.3),
-              width: 2,
-            ),
-            color: Colors.white.withValues(alpha: 0.1),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFFDB32A).withValues(alpha: 0.2),
-                blurRadius: 20,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(40),
-              onTap: _isLoading ? null : _handleBiometricAuth,
-              child: Container(
-                padding: const EdgeInsets.all(20),
-                child: Icon(
-                  Icons.fingerprint,
-                  size: 32,
-                  color: _isLoading
-                      ? Colors.white.withValues(alpha: 0.5)
-                      : const Color(0xFFFDB32A),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Biyometrik Giriş',
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRegisterLink() {
-    return TextButton(
-      onPressed: () => context.toRegister(),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      ),
-      child: RichText(
-        text: TextSpan(
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.8),
-            fontSize: 14,
-          ),
-          children: const [
-            TextSpan(text: 'Hesabınız yok mu? '),
-            TextSpan(
-              text: 'Kayıt olun',
-              style: TextStyle(
-                color: Color(0xFFFDB32A),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGuestModeLink() {
-    return TextButton(
-      onPressed: _isLoading ? null : _enterGuestMode,
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.play_circle_outline,
-            color: Colors.white.withValues(alpha: 0.5),
-            size: 16,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'Misafir olarak devam et',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 13,
-              decoration: TextDecoration.underline,
-              decorationColor: Colors.white.withValues(alpha: 0.3),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _enterGuestMode() async {
-    setState(() => _isLoading = true);
-    try {
-      await GuestModeService().enableGuestMode();
-      if (mounted) context.toHome();
-    } catch (e) {
-      debugPrint('Guest mode error: \$e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+  // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0f2027), Color(0xFF203a43), Color(0xFF2c5364)],
+            colors: [Color(0xFF0F2027), Color(0xFF203A43), Color(0xFF2C5364)],
           ),
         ),
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 40),
-
-                    // Logo
-                    _buildLogo(),
+                    _logo(),
+                    const SizedBox(height: 24),
+                    const _Header(),
                     const SizedBox(height: 32),
-
-                    // Welcome text
-                    _buildWelcomeText(),
-                    const SizedBox(height: 40),
-
-                    // Login form
-                    _buildLoginForm(),
+                    _form(),
+                    const SizedBox(height: 24),
+                    _bottomLinks(),
                   ],
                 ),
               ),
@@ -1307,75 +342,378 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  Widget _buildLogo() {
-    return Container(
-      width: 120,
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 30,
-            offset: const Offset(0, 15),
-          ),
-          BoxShadow(
-            color: const Color(0xFFFDB32A).withValues(alpha: 0.2),
-            blurRadius: 40,
-            spreadRadius: 5,
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+  Widget _logo() {
+    return Center(
+      child: Container(
+        width: 96,
+        height: 96,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFDB32A).withValues(alpha: 0.4),
+              blurRadius: 30,
+              spreadRadius: 4,
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(14),
         child: Image.asset(
-          'assets/icon/logo.png',
+          'assets/images/logo.png',
           fit: BoxFit.contain,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(
-              Icons.account_balance_wallet,
-              size: 60,
-              color: Color(0xFFFDB32A),
-            );
-          },
+          errorBuilder: (_, _, _) => const Icon(
+            Icons.account_balance_wallet,
+            size: 56,
+            color: Color(0xFFFDB32A),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildWelcomeText() {
+  Widget _form() {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_errorMessage != null) _errorBanner(_errorMessage!),
+          _emailField(),
+          const SizedBox(height: 12),
+          _passwordField(),
+          const SizedBox(height: 8),
+          _rememberForgotRow(),
+          const SizedBox(height: 20),
+          _primaryButton(
+            label: 'Giriş Yap',
+            icon: Icons.login,
+            onPressed: _busy ? null : _signInWithEmail,
+          ),
+          const SizedBox(height: 16),
+          _divider(),
+          const SizedBox(height: 16),
+          _googleButton(),
+          if (_biometricAvailable) ...[
+            const SizedBox(height: 24),
+            _biometricButton(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _emailField() {
+    return TextFormField(
+      controller: _emailCtrl,
+      focusNode: _emailFocus,
+      keyboardType: TextInputType.emailAddress,
+      textInputAction: TextInputAction.next,
+      enabled: !_busy,
+      style: const TextStyle(color: Colors.white),
+      decoration: _inputDecoration(
+        label: 'E-posta',
+        icon: Icons.email,
+      ),
+      validator: _validateEmail,
+      onFieldSubmitted: (_) => _passwordFocus.requestFocus(),
+    );
+  }
+
+  Widget _passwordField() {
+    return TextFormField(
+      controller: _passwordCtrl,
+      focusNode: _passwordFocus,
+      obscureText: !_showPassword,
+      textInputAction: TextInputAction.done,
+      enabled: !_busy,
+      style: const TextStyle(color: Colors.white),
+      decoration: _inputDecoration(
+        label: 'Şifre',
+        icon: Icons.lock,
+        suffix: IconButton(
+          icon: Icon(
+            _showPassword ? Icons.visibility : Icons.visibility_off,
+            color: Colors.white70,
+          ),
+          onPressed: () => setState(() => _showPassword = !_showPassword),
+        ),
+      ),
+      validator: (v) =>
+          (v == null || v.isEmpty) ? 'Şifre gerekli' : null,
+      onFieldSubmitted: (_) => _signInWithEmail(),
+    );
+  }
+
+  Widget _rememberForgotRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              height: 24,
+              width: 24,
+              child: Checkbox(
+                value: _rememberMe,
+                onChanged: _busy
+                    ? null
+                    : (v) => setState(() => _rememberMe = v ?? false),
+                activeColor: const Color(0xFFFDB32A),
+                checkColor: Colors.white,
+                side: const BorderSide(color: Colors.white54),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _busy
+                  ? null
+                  : () => setState(() => _rememberMe = !_rememberMe),
+              child: const Text(
+                'Beni hatırla',
+                style: TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ),
+          ],
+        ),
+        TextButton(
+          onPressed: _busy ? null : _forgotPassword,
+          child: const Text(
+            'Şifremi unuttum',
+            style: TextStyle(
+              color: Color(0xFFFDB32A),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _primaryButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback? onPressed,
+  }) {
+    return SizedBox(
+      height: 52,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: _busy
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              )
+            : Icon(icon, color: Colors.white),
+        label: Text(label,
+            style: const TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFFDB32A),
+          disabledBackgroundColor: const Color(0xFFFDB32A).withValues(alpha: 0.5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() {
+    return Row(
+      children: [
+        Expanded(child: Container(height: 1, color: Colors.white24)),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12),
+          child: Text('veya', style: TextStyle(color: Colors.white60)),
+        ),
+        Expanded(child: Container(height: 1, color: Colors.white24)),
+      ],
+    );
+  }
+
+  Widget _googleButton() {
+    return SizedBox(
+      height: 52,
+      child: OutlinedButton.icon(
+        onPressed: _busy ? null : _signInWithGoogle,
+        icon: Image.asset(
+          'assets/images/google-logo.png',
+          width: 20,
+          height: 20,
+          errorBuilder: (_, _, _) => const Icon(
+            Icons.g_mobiledata,
+            size: 28,
+            color: Colors.white,
+          ),
+        ),
+        label: const Text(
+          'Google ile giriş yap',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white.withValues(alpha: 0.08),
+          side: const BorderSide(color: Colors.white24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
+    );
+  }
+
+  Widget _biometricButton() {
+    return Center(
+      child: Column(
+        children: [
+          InkResponse(
+            onTap: _busy ? null : _signInWithBiometric,
+            radius: 36,
+            child: Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: const Color(0xFFFDB32A).withValues(alpha: 0.15),
+                border: Border.all(color: const Color(0xFFFDB32A), width: 1.5),
+              ),
+              child: const Icon(Icons.fingerprint,
+                  size: 36, color: Color(0xFFFDB32A)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Biyometrik giriş',
+            style: TextStyle(color: Colors.white70, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _bottomLinks() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text('Hesabınız yok mu?',
+                style: TextStyle(color: Colors.white70)),
+            TextButton(
+              onPressed: _busy ? null : () => context.toRegister(),
+              child: const Text(
+                'Kayıt olun',
+                style: TextStyle(
+                  color: Color(0xFFFDB32A),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        TextButton.icon(
+          onPressed: _busy ? null : _enterGuest,
+          icon: Icon(Icons.play_circle_outline,
+              color: Colors.white.withValues(alpha: 0.6), size: 18),
+          label: Text(
+            'Misafir olarak devam et',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _errorBanner(String message) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red.shade900.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade400),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    required String label,
+    required IconData icon,
+    Widget? suffix,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: Colors.white70),
+      filled: true,
+      fillColor: Colors.white.withValues(alpha: 0.08),
+      prefixIcon: Icon(icon, color: Colors.white70),
+      suffixIcon: suffix,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.white24),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFFDB32A), width: 2),
+      ),
+    );
+  }
+
+  String? _validateEmail(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return 'E-posta gerekli';
+    final ok = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+        .hasMatch(email);
+    return ok ? null : 'Geçerli bir e-posta girin';
+  }
+}
+
+// ---------- Sub-widgets ----------
+
+class _Header extends StatelessWidget {
+  const _Header();
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Text(
-          _userName != null ? 'Hoş Geldin' : 'Hoş Geldiniz',
+          'Hoş Geldiniz',
           style: const TextStyle(
-            fontSize: 32,
+            fontSize: 30,
             fontWeight: FontWeight.bold,
             color: Colors.white,
             letterSpacing: 0.5,
           ),
         ),
-        if (_userName != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            _userName!,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFFFDB32A),
-              letterSpacing: 1.0,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-        const SizedBox(height: 12),
+        const SizedBox(height: 6),
         Text(
           'Hesabınıza giriş yapın',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: 15,
             color: Colors.white.withValues(alpha: 0.8),
-            fontWeight: FontWeight.w400,
           ),
         ),
       ],
@@ -1383,4 +721,93 @@ class _LoginScreenState extends State<LoginScreen>
   }
 }
 
+class _ForgotPasswordDialog extends StatefulWidget {
+  const _ForgotPasswordDialog();
 
+  @override
+  State<_ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<_ForgotPasswordDialog> {
+  final _ctrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1E3A3A),
+      title: const Text('Şifre Sıfırlama',
+          style: TextStyle(color: Colors.white)),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'E-posta adresinizi girin, size sıfırlama bağlantısı gönderelim.',
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: _ctrl,
+              keyboardType: TextInputType.emailAddress,
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                labelText: 'E-posta',
+                labelStyle: const TextStyle(color: Colors.white70),
+                filled: true,
+                fillColor: Colors.white.withValues(alpha: 0.08),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              validator: (v) {
+                final s = v?.trim() ?? '';
+                if (s.isEmpty) return 'E-posta gerekli';
+                final ok = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+                    .hasMatch(s);
+                return ok ? null : 'Geçerli bir e-posta girin';
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.pop(context),
+          child: const Text('İptal', style: TextStyle(color: Colors.white70)),
+        ),
+        ElevatedButton(
+          onPressed: _busy
+              ? null
+              : () {
+                  if (!_formKey.currentState!.validate()) return;
+                  setState(() => _busy = true);
+                  Navigator.pop(context, _ctrl.text.trim());
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFFDB32A),
+          ),
+          child: _busy
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                  ),
+                )
+              : const Text('Gönder'),
+        ),
+      ],
+    );
+  }
+}

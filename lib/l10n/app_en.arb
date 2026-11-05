@@ -306,5 +306,7 @@
   "groupColor": "Group color",
   "deleteGroup": "Delete Group",
   "deleteGroupConfirm": "{name} group and all shared expenses, budgets and debts will be deleted. Do you want to continue?",
-  "recordSettlement": "Record Settlement"
+  "recordSettlement": "Record Settlement",
+  "welcomeBack": "Welcome back",
+  "helloUser": "Hello, {name}"
 }

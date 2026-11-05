@@ -362,12 +362,12 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 168,
+                height: 120,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   itemCount: featured.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 10),
                   itemBuilder: (context, i) => _buildFeaturedCard(featured[i], theme, isDark),
                 ),
               ),
@@ -529,6 +529,7 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
             ),
             const SizedBox(height: 12),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: _buildCurrencyDropdown(
@@ -542,10 +543,7 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
                     },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Icon(Icons.arrow_forward, color: theme.colorScheme.onSecondaryContainer),
-                ),
+                _buildSwapButton(theme),
                 Expanded(
                   child: _buildCurrencyDropdown(
                     value: _toCurrency,
@@ -601,6 +599,38 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
     );
   }
 
+  Widget _buildSwapButton(ThemeData theme) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Tooltip(
+        message: 'Para birimlerini değiştir',
+        child: Material(
+          color: theme.colorScheme.primary.withValues(alpha: 0.12),
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: () {
+              setState(() {
+                final tmp = _fromCurrency;
+                _fromCurrency = _toCurrency;
+                _toCurrency = tmp;
+              });
+              _convert();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Icon(
+                Icons.swap_horiz_rounded,
+                color: theme.colorScheme.primary,
+                size: 22,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCurrencyDropdown({
     required String value,
     required String label,
@@ -639,10 +669,10 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
     final flag = _flags[rate.code] ?? '';
 
     return Container(
-      width: 180,
-      padding: const EdgeInsets.all(18),
+      width: 140,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -654,8 +684,8 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
         boxShadow: [
           BoxShadow(
             color: theme.colorScheme.primary.withValues(alpha: 0.3),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -667,21 +697,21 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   '1 ${rate.code}',
                   style: TextStyle(
                     color: theme.colorScheme.onPrimary,
                     fontWeight: FontWeight.w700,
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                 ),
               ),
-              Text(flag, style: const TextStyle(fontSize: 28)),
+              Text(flag, style: const TextStyle(fontSize: 20)),
             ],
           ),
           Column(
@@ -692,16 +722,16 @@ class _ExchangeRatesScreenState extends State<ExchangeRatesScreen> {
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary,
                   fontWeight: FontWeight.w800,
-                  fontSize: 24,
-                  letterSpacing: -0.5,
+                  fontSize: 18,
+                  letterSpacing: -0.3,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 1),
               Text(
                 rate.name,
                 style: TextStyle(
                   color: theme.colorScheme.onPrimary.withValues(alpha: 0.85),
-                  fontSize: 12,
+                  fontSize: 10,
                   fontWeight: FontWeight.w500,
                 ),
                 maxLines: 1,

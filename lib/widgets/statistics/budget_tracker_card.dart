@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/design/app_text_styles.dart';
 import '../../models/cash_flow_data.dart';
+import '../common/premium_widgets.dart';
 class BudgetTrackerCard extends StatelessWidget {
   final Map<String, BudgetComparison> budgetComparisons;
   final Map<String, Color> categoryColors;
@@ -21,10 +22,10 @@ class BudgetTrackerCard extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
 
     if (budgetComparisons.isEmpty) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxxl),
-          child: Center(
+      return GlassmorphicCard(
+        borderRadius: 20.0,
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
+        child: Center(
             child: Column(
               children: [
                 Icon(
@@ -50,7 +51,6 @@ class BudgetTrackerCard extends StatelessWidget {
               ],
             ),
           ),
-        ),
       );
     }
     final filteredComparisons = showOnlyExceeded
@@ -62,10 +62,10 @@ class BudgetTrackerCard extends StatelessWidget {
         b.value.usagePercentage.compareTo(a.value.usagePercentage));
 
     if (filteredComparisons.isEmpty && showOnlyExceeded) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxxl),
-          child: Center(
+      return GlassmorphicCard(
+        borderRadius: 20.0,
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
+        child: Center(
             child: Column(
               children: [
                 Icon(
@@ -84,14 +84,13 @@ class BudgetTrackerCard extends StatelessWidget {
               ],
             ),
           ),
-        ),
       );
     }
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
+    return GlassmorphicCard(
+      borderRadius: 20.0,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -126,7 +125,6 @@ class BudgetTrackerCard extends StatelessWidget {
             }),
           ],
         ),
-      ),
     );
   }
 
@@ -399,10 +397,10 @@ class BudgetSummaryCard extends StatelessWidget {
     final overallUsage = totalBudget > 0 ? (totalActual / totalBudget) * 100 : 0.0;
     final onTrackCount = budgetComparisons.length - exceededCount;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
+    return GlassmorphicCard(
+      borderRadius: 20.0,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
@@ -495,7 +493,6 @@ class BudgetSummaryCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 

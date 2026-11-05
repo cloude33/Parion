@@ -4,11 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import '../models/credit_card.dart';
+import '../models/card_design/card_brand.dart';
 import '../services/credit_card_service.dart';
 import '../widgets/icon_picker_dialog.dart';
 import '../utils/category_icons.dart';
-import '../utils/bank_card_helper.dart';
-import '../widgets/cards/bank_card_visual_widget.dart';
+import '../utils/bank_card_entity_helper.dart';
+import '../widgets/cards/bank_card_widget.dart';
+import '../widgets/cards/bank_brand_badge.dart';
 import '../services/data_service.dart';
 
 class AddCreditCardScreen extends StatefulWidget {
@@ -404,38 +406,86 @@ class _AddCreditCardScreenState extends State<AddCreditCardScreen> {
   }
 
   Widget _buildCardImageSection() {
-    final cardImage = _cardImageBase64;
+    final bankName = _bankNameController.text.trim();
+    final cardName = _cardNameController.text.trim();
+    final detectedBrand = CardBrand.fromBankName(
+      cardName.isNotEmpty ? cardName : bankName,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Kart Önizleme',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Row(
+          children: [
+            const Text(
+              'Kart Önizleme',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const Spacer(),
+            _buildDetectedThemeChip(detectedBrand),
+          ],
         ),
         const SizedBox(height: 16),
         Center(
-          child: BankCardVisualWidget(
-            bankName: _bankNameController.text,
-            cardName: _cardNameController.text,
-            last4Digits: _last4DigitsController.text,
-            currentDebt: _parseNumber(_initialDebtController.text),
-            limit: _parseNumber(_creditLimitController.text),
-            colorHex: '0x${_selectedColor.toARGB32().toRadixString(16)}',
-            cardImagePath: cardImage,
-            cardHolderName: _userName,
+          child: BankCardWidget(
+            bankName: bankName.isEmpty ? 'BANKA' : bankName,
+            last4Digits: _last4DigitsController.text.isEmpty
+                ? '0000'
+                : _last4DigitsController.text,
+            brand: detectedBrand,
+            cardHolderName: _userName.isEmpty ? 'KART SAHİBİ' : _userName,
             expirationDate: _expirationDateController.text,
+            currentDebt: _parseNumber(_initialDebtController.text),
+            creditLimit: _parseNumber(_creditLimitController.text),
+            showDebtInfo: true,
           ),
         ),
       ],
     );
   }
 
+  Widget _buildDetectedThemeChip(CardBrand brand) {
+    final isGeneric = brand == CardBrand.generic;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isGeneric
+            ? Colors.grey.withValues(alpha: 0.15)
+            : Colors.green.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isGeneric
+              ? Colors.grey.withValues(alpha: 0.4)
+              : Colors.green.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          BankBrandBadge(brand: brand, size: 14),
+          const SizedBox(width: 6),
+          Text(
+            isGeneric ? 'Tema: Genel' : 'Tema: ${brand.displayName}',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isGeneric ? Colors.grey[700] : Colors.green.shade700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _updateCardStyleFromInput() {
     final bankName = _bankNameController.text;
-    
+    final cardName = _cardNameController.text;
+
     setState(() {
-      _selectedColor = BankCardHelper.getBankColor(bankName);
+      _selectedColor = BankCardEntityHelper.resolveThemeColor(
+        bankName: bankName,
+        cardName: cardName,
+      );
       _cardImageBase64 = null; // Always use coded card
     });
   }

@@ -5,6 +5,7 @@ import '../../models/savings_rate_trend_data.dart';
 import '../../core/design/app_colors.dart';
 import '../../core/design/app_text_styles.dart';
 import '../../core/design/app_spacing.dart';
+import '../common/premium_widgets.dart';
 
 /// Displays the last 12 months of savings rate trend as a line chart.
 ///
@@ -59,10 +60,10 @@ class _SavingsRateTrendChartState extends State<SavingsRateTrendChart> {
     return Semantics(
       label: semanticLabel,
       excludeSemantics: true,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
+      child: GlassmorphicCard(
+        borderRadius: 20.0,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeader(theme),
@@ -80,7 +81,6 @@ class _SavingsRateTrendChartState extends State<SavingsRateTrendChart> {
             ],
           ),
         ),
-      ),
     );
   }
 
@@ -276,17 +276,21 @@ class _SavingsRateTrendChartState extends State<SavingsRateTrendChart> {
       LineChartBarData(
         spots: allSpots,
         isCurved: true,
-        color: AppColors.success,
-        barWidth: 2.5,
+        gradient: const LinearGradient(
+          colors: [AppColors.success, AppColors.error],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+        ),
+        barWidth: 3.2,
         isStrokeCapRound: true,
         dotData: FlDotData(
           show: true,
           getDotPainter: (spot, percent, barData, index) {
             final isSelected = _touchedIndex == _spotOriginalIndex(spot);
             return FlDotCirclePainter(
-              radius: isSelected ? 6 : 3.5,
+              radius: isSelected ? 6.5 : 4.0,
               color: spot.y >= 0 ? AppColors.success : AppColors.error,
-              strokeWidth: isSelected ? 2 : 0,
+              strokeWidth: isSelected ? 2.5 : 1.5,
               strokeColor: isDark ? Colors.black : Colors.white,
             );
           },
@@ -295,13 +299,27 @@ class _SavingsRateTrendChartState extends State<SavingsRateTrendChart> {
           show: true,
           cutOffY: 0,
           applyCutOffY: true,
-          color: AppColors.success.withValues(alpha: 0.25),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.success.withValues(alpha: 0.35),
+              AppColors.success.withValues(alpha: 0.02),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
         aboveBarData: BarAreaData(
           show: true,
           cutOffY: 0,
           applyCutOffY: true,
-          color: AppColors.error.withValues(alpha: 0.25),
+          gradient: LinearGradient(
+            colors: [
+              AppColors.error.withValues(alpha: 0.02),
+              AppColors.error.withValues(alpha: 0.35),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
         ),
       ),
     ];

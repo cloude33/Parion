@@ -18,6 +18,11 @@ import '../utils/error_handler.dart';
 import '../utils/transaction_form_validator.dart';
 import '../utils/app_icons.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../models/recurring_transaction.dart';
+import '../models/recurrence_frequency.dart';
+import '../repositories/recurring_transaction_repository.dart';
+import 'manage_wallets_screen.dart';
+import 'add_category_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final List<Wallet> wallets;
@@ -52,6 +57,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   List<Category> _categories = [];
   int _installmentCount = 1;
   Timer? _suggestionDebounce;
+  String _recurrenceFrequency = 'Tek Seferlik';
 
   @override
   void initState() {
@@ -236,6 +242,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
         await _creditCardService.addTransaction(creditCardTransaction);
 
+        if (_recurrenceFrequency != 'Tek Seferlik') {
+          await _saveRecurring(totalAmount);
+        }
+
         if (mounted) {
           Navigator.pop(context, true);
           ErrorHandler.showSuccess(
@@ -282,6 +292,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             creditLimit: wallet.creditLimit,
           );
           await _dataService.saveWallets(wallets);
+        }
+
+        if (_recurrenceFrequency != 'Tek Seferlik') {
+          await _saveRecurring(totalAmount);
         }
 
         if (mounted) {
@@ -408,6 +422,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         children: [_buildDateField()],
                       ),
                       const SizedBox(height: 16),
+                      _buildRepeatFrequencySection(),
+                      const SizedBox(height: 16),
                       _buildIOSSection(
                         title: 'Fotoğraflar',
                         children: [_buildImageSection()],
@@ -502,84 +518,119 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _isIncome
-                            ? Colors.green.withValues(alpha: 0.1)
-                            : Colors.red.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _isIncome
-                                ? Icons.arrow_downward
-                                : Icons.arrow_upward,
-                            color: _isIncome ? Colors.green : Colors.red,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _isIncome ? 'Gelir' : 'Gider',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: _isIncome ? Colors.green : Colors.red,
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withAlpha(25),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_isIncome) {
+                              setState(() {
+                                _isIncome = false;
+                                _selectedCategory = '';
+                              });
+                              _loadCategories();
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: !_isIncome
+                                  ? const Color(0xFFE53935)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: !_isIncome
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFFE53935).withAlpha(80),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ]
+                                  : [],
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    CupertinoSlidingSegmentedControl<bool>(
-                      groupValue: _isIncome,
-                      children: {
-                        false: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            'Gider',
-                            style: TextStyle(
-                              color: !_isIncome ? Colors.white : Colors.black54,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        true: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 8,
-                          ),
-                          child: Text(
-                            'Gelir',
-                            style: TextStyle(
-                              color: _isIncome ? Colors.white : Colors.black54,
-                              fontWeight: FontWeight.w600,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.arrow_downward,
+                                  size: 16,
+                                  color: !_isIncome ? Colors.white : Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Gider (-)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: !_isIncome ? Colors.white : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      },
-                      onValueChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _isIncome = value;
-                            _selectedCategory = '';
-                          });
-                          _loadCategories();
-                        }
-                      },
-                      thumbColor: _isIncome ? Colors.green : Colors.red,
-                    ),
-                  ],
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (!_isIncome) {
+                              setState(() {
+                                _isIncome = true;
+                                _selectedCategory = '';
+                              });
+                              _loadCategories();
+                            }
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            decoration: BoxDecoration(
+                              color: _isIncome
+                                  ? const Color(0xFF2E7D32)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: _isIncome
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFF2E7D32).withAlpha(80),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ]
+                                  : [],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.arrow_upward,
+                                  size: 16,
+                                  color: _isIncome ? Colors.white : Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Gelir (+)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: _isIncome ? Colors.white : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 20),
                 TextField(
@@ -1064,13 +1115,47 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Kategori',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF8E8E93),
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Kategori',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF8E8E93),
+                ),
+              ),
+              InkWell(
+                onTap: () async {
+                  final res = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddCategoryScreen(),
+                    ),
+                  );
+                  if (res == true) _loadCategories();
+                },
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.add_circle_outline,
+                      size: 14,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Yeni Kategori Ekle',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           DropdownButtonHideUnderline(
@@ -1185,113 +1270,251 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Cüzdan',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF8E8E93),
-            ),
-          ),
-          const SizedBox(height: 8),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedWalletId.isNotEmpty ? _selectedWalletId : null,
-              isExpanded: true,
-              icon: Icon(
-                Icons.arrow_drop_down,
-                color: Colors.grey.shade400,
-                size: 24,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Ödeme Yöntemi / Kasa',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF8E8E93),
+                ),
               ),
-              style: const TextStyle(fontSize: 16, color: Color(0xFF1C1C1E)),
-              items: widget.wallets.map((wallet) {
-                final isCreditCard = wallet.id.startsWith('cc_');
-                return DropdownMenuItem(
-                  value: wallet.id,
-                  child: Row(
-                    children: [
-                      Icon(
-                        isCreditCard
-                            ? Icons.credit_card
-                            : _getWalletIcon(wallet.type),
-                        size: 20,
-                        color: isCreditCard ? Colors.purple : Colors.blue,
+              InkWell(
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ManageWalletsScreen(),
+                    ),
+                  );
+                  if (mounted) setState(() {});
+                },
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 14,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Cüzdanlarım & Kasalarım',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).primaryColor,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 64,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              itemCount: widget.wallets.length,
+              separatorBuilder: (_, index) => const SizedBox(width: 10),
+              itemBuilder: (context, index) {
+                final wallet = widget.wallets[index];
+                final isSelected = wallet.id == _selectedWalletId;
+                final isCreditCard = wallet.id.startsWith('cc_');
+
+                return InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedWalletId = wallet.id;
+                    });
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.blue.withAlpha(25)
+                          : Colors.grey.withAlpha(15),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFF1976D2)
+                            : Colors.grey.withAlpha(50),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isCreditCard
+                                ? Colors.purple.withAlpha(30)
+                                : Colors.blue.withAlpha(30),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            isCreditCard
+                                ? Icons.credit_card
+                                : _getWalletIcon(wallet.type),
+                            size: 20,
+                            color: isCreditCard
+                                ? Colors.purple
+                                : const Color(0xFF1976D2),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
                               _cleanWalletName(wallet.name),
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 15),
-                            ),
-                            Text(
-                              isCreditCard ? 'Kredi Kartı' : 'Hesap',
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade500,
+                                fontSize: 13,
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              isCreditCard
+                                  ? 'Kredi Kartı'
+                                  : 'Bakiye: ${NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 2).format(wallet.balance)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                      if (!isCreditCard)
-                        Text(
-                          NumberFormat.currency(
-                            locale: 'tr_TR',
-                            symbol: '₺',
-                            decimalDigits: 0,
-                          ).format(wallet.balance),
-                          style: TextStyle(
-                            color: wallet.balance >= 0
-                                ? Colors.green
-                                : Colors.red,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
-              }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _selectedWalletId = value;
-                  });
-                }
-              },
-              selectedItemBuilder: (context) {
-                return widget.wallets.map((wallet) {
-                  final isCreditCard = wallet.id.startsWith('cc_');
-                  return Row(
-                    children: [
-                      Icon(
-                        isCreditCard
-                            ? Icons.credit_card
-                            : _getWalletIcon(wallet.type),
-                        size: 18,
-                        color: isCreditCard ? Colors.purple : Colors.blue,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _cleanWalletName(wallet.name),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList();
               },
             ),
           ),
         ],
       ),
     );
+  }
+
+  Widget _buildRepeatFrequencySection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Icon(Icons.repeat, color: Color(0xFFE53935), size: 20),
+              SizedBox(width: 8),
+              Text(
+                'Tekrarlama Sıklığı',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: ['Tek Seferlik', 'Haftalık', 'Aylık'].map((frequency) {
+              final isSelected = _recurrenceFrequency == frequency;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: InkWell(
+                    onTap: () =>
+                        setState(() => _recurrenceFrequency = frequency),
+                    borderRadius: BorderRadius.circular(12),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? const Color(0xFFE53935).withAlpha(20)
+                            : const Color(0xFFF5F5F5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected
+                              ? const Color(0xFFE53935)
+                              : Colors.transparent,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Text(
+                        frequency,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
+                          color: isSelected
+                              ? const Color(0xFFE53935)
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveRecurring(double totalAmount) async {
+    try {
+      final recurringRepo = RecurringTransactionRepository();
+      await recurringRepo.init();
+      await recurringRepo.add(
+        RecurringTransaction(
+          id: const Uuid().v4(),
+          title: _descriptionController.text.trim().isNotEmpty
+              ? _descriptionController.text.trim()
+              : _selectedCategory,
+          amount: totalAmount,
+          category: _selectedCategory,
+          description: 'Otomatik tekrarlayan işlem',
+          frequency: _recurrenceFrequency == 'Haftalık'
+              ? RecurrenceFrequency.weekly
+              : RecurrenceFrequency.monthly,
+          startDate: _selectedDate,
+          isActive: true,
+          isIncome: _isIncome,
+          createdAt: DateTime.now(),
+          notificationEnabled: true,
+          reminderDaysBefore: 1,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Tekrarlayan işlem kaydetme hatası: $e');
+    }
   }
 
   IconData _getWalletIcon(String type) {
