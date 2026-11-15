@@ -71,6 +71,76 @@ class GoogleSignInHelper {
   /// Google ile giriş yapıp Firebase credential döner.
   Future<GoogleSignInOutcome> signIn() async {
     try {
+      // 🌐 WEB PLATFORMU:
+      // Web üzerinde google_sign_in eklentisi (GIS) yerine doğrudan
+      // Firebase Auth'un signInWithPopup API'si kullanılır.
+      // Bu sayede pop-up blocker kilitlenmeleri ve sonsuz dönen imleç sorunu çözülür.
+      if (kIsWeb) {
+        debugPrint('🌐 [GSIH] Web platformu: FirebaseAuth signInWithPopup başlatılıyor...');
+        try {
+          await FirebaseAuth.instance.signOut();
+        } catch (e) {
+          debugPrint('🔐 [GSIH] Web signOut ignored: $e');
+        }
+
+        final googleProvider = GoogleAuthProvider();
+        for (final scope in _driveScopes) {
+          googleProvider.addScope(scope);
+        }
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        googleProvider.setCustomParameters({
+          'prompt': 'select_account',
+        });
+
+        try {
+          final userCredential = await FirebaseAuth.instance
+              .signInWithPopup(googleProvider)
+              .timeout(
+                const Duration(minutes: 2),
+                onTimeout: () =>
+                    throw TimeoutException('Google ile giriş işlemi zaman aşımına uğradı'),
+              );
+
+          debugPrint('✅ [GSIH] Web Google Sign-In başarılı: ${userCredential.user?.email}');
+          return GoogleSignInOutcome.success(userCredential);
+        } on FirebaseAuthException catch (e) {
+          debugPrint('❌ [GSIH] Web FirebaseAuthException: ${e.code} - ${e.message}');
+          if (e.code == 'popup-closed-by-user' || e.code == 'cancelled') {
+            return const GoogleSignInOutcome.cancelled();
+          }
+          if (e.code == 'popup-blocked') {
+            return const GoogleSignInOutcome.failure(
+              'Açılır pencere (pop-up) tarayıcınız tarafından engellendi. Lütfen adres çubuğundaki engellenen pencere simgesine tıklayıp pop-up izni verin ve tekrar deneyin.',
+              errorCode: 'popup-blocked',
+            );
+          }
+          if (e.code == 'unauthorized-domain') {
+            final host = Uri.base.host;
+            return GoogleSignInOutcome.failure(
+              'Bu alan adı ($host) Firebase Console > Authentication > Settings > Authorized domains listesinde yetkilendirilmemiş. Lütfen ekleyin.',
+              errorCode: 'unauthorized-domain',
+            );
+          }
+          return GoogleSignInOutcome.failure(
+            _mapFirebaseError(e),
+            errorCode: e.code,
+          );
+        } on TimeoutException catch (_) {
+          return const GoogleSignInOutcome.failure(
+            'Google ile giriş zaman aşımına uğradı. Lütfen tekrar deneyin.',
+            errorCode: 'timeout',
+          );
+        } catch (e) {
+          debugPrint('❌ [GSIH] Web beklenmeyen hata: $e');
+          return GoogleSignInOutcome.failure(
+            'Google ile giriş sırasında hata oluştu: $e',
+            errorCode: 'web_unknown',
+          );
+        }
+      }
+
+      // 📱 MOBİL PLATFORM (Android / iOS):
       // Eski oturumu temizle (hesap seçiciyi tekrar göstermek için)
       try {
         await _googleSignIn.signOut();
@@ -80,7 +150,11 @@ class GoogleSignInHelper {
       }
 
       // v6 API: signIn() — hesap seçici gösterir
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn().timeout(
+        const Duration(minutes: 2),
+        onTimeout: () =>
+            throw TimeoutException('Google hesap seçimi zaman aşımına uğradı'),
+      );
 
       if (googleUser == null) {
         return const GoogleSignInOutcome.cancelled();
@@ -130,6 +204,12 @@ class GoogleSignInHelper {
         _mapPlatformError(e),
         errorCode: e.code,
       );
+    } on TimeoutException catch (e) {
+      debugPrint('❌ [GSIH] TimeoutException: $e');
+      return GoogleSignInOutcome.failure(
+        e.message ?? 'Google ile giriş zaman aşımına uğradı.',
+        errorCode: 'timeout',
+      );
     } catch (e, st) {
       debugPrint('❌ [GSIH] Unexpected: $e\n$st');
       return GoogleSignInOutcome.failure(
@@ -156,6 +236,9 @@ class GoogleSignInHelper {
 
   /// Sign-in durumunu kontrol eder.
   Future<bool> isSignedIn() async {
+    if (kIsWeb) {
+      return FirebaseAuth.instance.currentUser != null;
+    }
     try {
       final account = await _googleSignIn.signInSilently();
       return account != null;
@@ -165,10 +248,12 @@ class GoogleSignInHelper {
   }
 
   Future<void> signOut() async {
-    try {
-      await _googleSignIn.signOut();
-    } catch (e) {
-      debugPrint('⚠️ [GSIH] googleSignIn.signOut: $e');
+    if (!kIsWeb) {
+      try {
+        await _googleSignIn.signOut();
+      } catch (e) {
+        debugPrint('⚠️ [GSIH] googleSignIn.signOut: $e');
+      }
     }
     try {
       await FirebaseAuth.instance.signOut();
@@ -182,6 +267,13 @@ class GoogleSignInHelper {
 
   String _mapFirebaseError(FirebaseAuthException e) {
     switch (e.code) {
+      case 'popup-closed-by-user':
+      case 'cancelled':
+        return 'Google ile giriş iptal edildi.';
+      case 'popup-blocked':
+        return 'Tarayıcınız açılır pencereyi (pop-up) engelledi. Lütfen adres çubuğundan pop-up izni verin.';
+      case 'unauthorized-domain':
+        return 'Bu alan adı Firebase Console > Authentication > Settings > Authorized domains listesinde yetkilendirilmemiş.';
       case 'network-request-failed':
         return 'İnternet bağlantısı yok veya Firebase sunucularına ulaşılamıyor.';
       case 'invalid-credential':
