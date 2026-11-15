@@ -20,6 +20,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 
 import '../l10n/app_localizations.dart';
 import 'currency_settings_screen.dart';
+import '../utils/responsive_helper.dart';
 import 'user_selection_screen.dart';
 import 'debt_list_screen.dart';
 import 'bill_templates_screen.dart';
@@ -230,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: Theme.of(context).appBarTheme.backgroundColor,
         boxShadow: const [
@@ -258,7 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSettings() {
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       children: [
         Center(
           child: GestureDetector(
@@ -1233,7 +1234,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: ResponsiveHelper.getResponsivePadding(context),
                 child: Text(
                   AppLocalizations.of(context)!.selectLanguage,
                   style: const TextStyle(

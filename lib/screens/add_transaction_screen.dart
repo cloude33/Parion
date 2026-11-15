@@ -23,6 +23,7 @@ import '../models/recurrence_frequency.dart';
 import '../repositories/recurring_transaction_repository.dart';
 import 'manage_wallets_screen.dart';
 import 'add_category_screen.dart';
+import '../utils/responsive_helper.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final List<Wallet> wallets;
@@ -444,7 +445,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: Theme.of(context).appBarTheme.backgroundColor,
         border: Border(
@@ -514,7 +515,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: ResponsiveHelper.getResponsivePadding(context),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -881,7 +882,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildDescriptionField() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1111,7 +1112,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     } catch (_) {}
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1266,7 +1267,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildWalletField() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1411,7 +1412,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildRepeatFrequencySection() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1544,7 +1545,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         : 0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1617,7 +1618,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildImageSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1635,7 +1636,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               },
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(32),
+                padding: ResponsiveHelper.getResponsivePadding(context),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(12),
@@ -1763,7 +1764,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Widget _buildDateField() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1793,7 +1794,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     child: Column(
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: ResponsiveHelper.getResponsivePadding(context),
                           decoration: BoxDecoration(
                             border: Border(
                               bottom: BorderSide(
@@ -1888,7 +1889,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               );
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: ResponsiveHelper.getResponsivePadding(context),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(12),
