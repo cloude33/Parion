@@ -285,7 +285,7 @@ class SessionManager implements ISessionManager {
       
       // Start background lock timer based on security configuration
       final config = await _getSecurityConfig();
-      if (config.sessionConfig.enableBackgroundLock) {
+      if (!kIsWeb && config.sessionConfig.enableBackgroundLock) {
         _backgroundLockTimer?.cancel();
         _backgroundLockTimer = Timer(config.sessionConfig.backgroundLockDelay, () {
           _onBackgroundLockTimeout();

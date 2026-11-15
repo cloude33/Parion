@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../core/di/service_locator.dart';
 import '../models/security/security_models.dart';
@@ -57,19 +58,20 @@ class _LoginScreenState extends State<LoginScreen> {
       await _auth.initialize();
       await _biometric.initialize();
 
-      // Web redirect dönüşünü kontrol et
+      // Web redirect veya mevcut oturum kontrolü
       if (kIsWeb) {
         final redirectCredential =
             await GoogleSignInHelper.instance.checkRedirectResult();
-        if (redirectCredential?.user != null) {
+        final user = redirectCredential?.user ?? FirebaseAuth.instance.currentUser;
+        if (user != null) {
           debugPrint(
-              '✅ [LoginScreen] Redirect ile giriş başarılı: ${redirectCredential!.user?.email}');
+              '✅ [LoginScreen] Oturum açmış Google kullanıcısı tespit edildi: ${user.email}');
           await _persistUserFromResult({
             'provider': 'google',
-            'userId': redirectCredential.user!.uid,
-            'email': redirectCredential.user!.email,
-            'displayName': redirectCredential.user!.displayName,
-            'photoUrl': redirectCredential.user!.photoURL,
+            'userId': user.uid,
+            'email': user.email,
+            'displayName': user.displayName,
+            'photoUrl': user.photoURL,
           });
           if (mounted) {
             context.toHome();
@@ -163,26 +165,51 @@ class _LoginScreenState extends State<LoginScreen> {
         {'provider': 'google'},
       );
       if (!mounted) return;
-      if (!result.isSuccess) {
-        if (result.errorMessage != null &&
-            !result.errorMessage!.contains('iptal edildi')) {
-          _showError(result.errorMessage!);
+
+      // Firebase kullanıcısı var mı (popup veya arka planda tamamlanan oturum)
+      final fbUser = FirebaseAuth.instance.currentUser;
+      if (result.isSuccess || fbUser != null) {
+        final metadata = result.metadata ?? {
+          'provider': 'google',
+          'userId': fbUser?.uid,
+          'email': fbUser?.email,
+          'displayName': fbUser?.displayName,
+          'photoUrl': fbUser?.photoURL,
+        };
+        await _persistUserFromResult(metadata);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Hoş geldin, ${metadata['displayName'] ?? metadata['email'] ?? 'kullanıcı'}!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.toHome();
         }
         return;
       }
-      await _persistUserFromResult(result.metadata);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Hoş geldin, ${result.metadata?['displayName'] ?? result.metadata?['email'] ?? 'kullanıcı'}!',
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.toHome();
+
+      if (result.errorMessage != null &&
+          !result.errorMessage!.contains('iptal edildi')) {
+        _showError(result.errorMessage!);
       }
     } catch (e) {
+      final fbUser = FirebaseAuth.instance.currentUser;
+      if (fbUser != null) {
+        await _persistUserFromResult({
+          'provider': 'google',
+          'userId': fbUser.uid,
+          'email': fbUser.email,
+          'displayName': fbUser.displayName,
+          'photoUrl': fbUser.photoURL,
+        });
+        if (mounted) {
+          context.toHome();
+          return;
+        }
+      }
       if (mounted) _showError('Google girişi sırasında hata: $e');
     } finally {
       if (mounted) setState(() => _busy = false);

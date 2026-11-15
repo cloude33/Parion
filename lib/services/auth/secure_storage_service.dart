@@ -897,6 +897,9 @@ class AuthSecureStorageService {
     } catch (e) {
       debugPrint('Failed to get fallback encryption key: $e');
       // Use a device-specific key as last resort
+      if (kIsWeb) {
+        return 'web_fallback_key';
+      }
       return Platform.isAndroid ? 'android_fallback_key' : 'ios_fallback_key';
     }
   }

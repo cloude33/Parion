@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../core/di/service_locator.dart';
 import '../services/auth/interfaces/auth_orchestrator_interface.dart';
@@ -37,8 +39,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     try {
       final authOrchestrator = getIt<IAuthOrchestrator>();
 
-      // Check if user is already authenticated
-      final isAuthenticated = await authOrchestrator.isAuthenticated();
+      // Check if user is already authenticated (Firebase veya Session)
+      final fbUser = FirebaseAuth.instance.currentUser;
+      final isAuthenticated = (fbUser != null) || await authOrchestrator.isAuthenticated();
       if (isAuthenticated && mounted) {
         context.toHome();
         return;

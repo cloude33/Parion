@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
 import 'services/theme_service.dart';
@@ -12,6 +13,9 @@ import 'services/auto_backup_service.dart';
 import 'services/guest_mode_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/battery_optimization_service.dart';
+import 'services/data_service.dart';
+import 'services/user_service.dart';
+import 'models/user.dart' as user_models;
 import 'services/auth/interfaces/auth_orchestrator_interface.dart';
 import 'services/auth/auth_orchestrator.dart';
 import 'services/auth/session_manager.dart';
@@ -184,6 +188,7 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
     _loadTheme();
     _loadOnboardingStatus();
     _loadGuestMode();
+    _initFirebaseAuthListener();
     _authOrchestrator.authStateStream.listen((authState) {
       if (mounted) {
         final wasAuthenticated = _authState.isAuthenticated;
@@ -193,6 +198,10 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
 
         // Eğer uygulama kilitlenmişse (local auth gerekli hale gelmişse) giriş ekranına yönlendir
         if (!authState.isAuthenticated && wasAuthenticated) {
+          if (FirebaseAuth.instance.currentUser != null) {
+            debugPrint('Session expired but Firebase user is active, keeping logged in');
+            return;
+          }
           debugPrint('App locked or logged out - redirecting');
           _navigatorKey.currentState?.pushNamedAndRemoveUntil(
             '/login',
@@ -211,6 +220,102 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
 
     // Uygulama açılışında vadesi gelen faturaları kontrol et
     _billPaymentService.checkAndProcessDuePayments();
+  }
+
+  void _initFirebaseAuthListener() {
+    // Web redirect sonucunu kontrol et
+    if (kIsWeb) {
+      FirebaseAuth.instance.getRedirectResult().then((credential) async {
+        final user = credential.user ?? FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          debugPrint('🔥 [ParionApp] Web redirect ile kullanıcı doğrulandı: ${user.email}');
+          await _syncFirebaseUser(user);
+          if (mounted) {
+            setState(() {
+              _authState = AuthState.authenticated(
+                sessionId: user.uid,
+                authMethod: AuthMethod.social,
+                metadata: {
+                  'provider': 'google',
+                  'userId': user.uid,
+                  'email': user.email,
+                  'displayName': user.displayName,
+                  'photoUrl': user.photoURL,
+                },
+              );
+            });
+            _navigatorKey.currentState?.pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+              (route) => false,
+            );
+          }
+        }
+      }).catchError((e) {
+        debugPrint('⚠️ [ParionApp] getRedirectResult kontrolü: $e');
+      });
+    }
+
+    // authStateChanges dinleyicisi
+    FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user != null && mounted) {
+        debugPrint('🔥 [ParionApp] Firebase authStateChanges: ${user.email}');
+        await _syncFirebaseUser(user);
+        if (mounted) {
+          final wasAuthed = _authState.isAuthenticated;
+          setState(() {
+            _authState = AuthState.authenticated(
+              sessionId: user.uid,
+              authMethod: AuthMethod.social,
+              metadata: {
+                'provider': 'google',
+                'userId': user.uid,
+                'email': user.email,
+                'displayName': user.displayName,
+                'photoUrl': user.photoURL,
+              },
+            );
+          });
+          // Eğer oturum yeni açıldıysa ve kullanıcı giriş/hoş geldiniz ekranındaysa ana ekrana yönlendir
+          if (!wasAuthed) {
+            _navigatorKey.currentState?.pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+              (route) => false,
+            );
+          }
+        }
+      }
+    });
+  }
+
+  Future<void> _syncFirebaseUser(User user) async {
+    try {
+      final dataService = getIt<DataService>();
+      await dataService.init();
+      final existing = await dataService.getCurrentUser();
+      final newUser = user_models.User(
+        id: user.uid,
+        name: user.displayName ?? (existing?.name ?? 'Kullanıcı'),
+        email: user.email ?? (existing?.email ?? ''),
+        avatar: user.photoURL ?? existing?.avatar,
+        currencyCode: existing?.currencyCode ?? 'TRY',
+        currencySymbol: existing?.currencySymbol ?? '₺',
+        authMethod: user_models.AuthMethod.google,
+      );
+      await dataService.saveUser(newUser);
+
+      final userService = getIt<UserService>();
+      await userService.init();
+      await userService.saveUserProfile(UserProfile(
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email ?? '',
+        photoUrl: newUser.avatar,
+        createdAt: DateTime.now(),
+        authMethod: newUser.authMethod.toString(),
+      ));
+    } catch (e) {
+      debugPrint('⚠️ [ParionApp] Firebase kullanıcı eşitleme hatası: $e');
+    }
   }
 
   Future<void> _loadTheme() async {
@@ -258,7 +363,9 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
 
     switch (state) {
       case AppLifecycleState.resumed:
-        _authOrchestrator.onAppForeground();
+        if (!kIsWeb) {
+          _authOrchestrator.onAppForeground();
+        }
         // Uygulama ön plana geldiğinde otomatik yedekleme kontrolü yap
         _autoBackupService.checkAndPerformBackupIfNeeded();
         // Vadesi gelen faturaları kontrol et
@@ -266,16 +373,22 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
-        _authOrchestrator.onAppBackground();
+        if (!kIsWeb) {
+          _authOrchestrator.onAppBackground();
+        }
         break;
       case AppLifecycleState.detached:
         // Uygulama tamamen kapatılıyor - oturumu sonlandır
-        _authOrchestrator.logout();
+        if (!kIsWeb) {
+          _authOrchestrator.logout();
+        }
         _autoBackupService.dispose();
         break;
       case AppLifecycleState.hidden:
         // Uygulama gizlendi - arka plan işlemi başlat
-        _authOrchestrator.onAppBackground();
+        if (!kIsWeb) {
+          _authOrchestrator.onAppBackground();
+        }
         break;
     }
   }
@@ -330,7 +443,8 @@ class _ParionAppState extends State<ParionApp> with WidgetsBindingObserver {
     if (_isGuestMode) {
       return const HomeScreen();
     }
-    if (_authState.isAuthenticated) {
+    final isAuthed = _authState.isAuthenticated || FirebaseAuth.instance.currentUser != null;
+    if (isAuthed) {
       // Onboarding durumu henüz yüklenmemişse yükleme göster
       if (_onboardingCompleted == null) {
         return const Scaffold(

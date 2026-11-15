@@ -262,6 +262,8 @@ class AuthOrchestrator implements IAuthOrchestrator {
   Future<bool> isAuthenticated() async {
     try {
       await _ensureInitialized();
+      if (_currentAuthState.isAuthenticated) return true;
+      if (_firebaseAuthService.currentUser != null) return true;
       return await _sessionManager.isSessionValid();
     } catch (e) {
       debugPrint('❌ Authentication check error: $e');
@@ -462,6 +464,20 @@ class AuthOrchestrator implements IAuthOrchestrator {
           authTime: sessionState.sessionData!.createdAt,
           metadata: sessionState.metadata,
         );
+      } else if (_firebaseAuthService.currentUser != null) {
+        final fbUser = _firebaseAuthService.currentUser!;
+        _currentAuthState = AuthState.authenticated(
+          sessionId: fbUser.uid,
+          authMethod: AuthMethod.social,
+          authTime: DateTime.now(),
+          metadata: {
+            'provider': 'google',
+            'userId': fbUser.uid,
+            'email': fbUser.email,
+            'displayName': fbUser.displayName,
+            'photoUrl': fbUser.photoURL,
+          },
+        );
       } else {
         _currentAuthState = AuthState.unauthenticated();
       }
@@ -596,15 +612,16 @@ class AuthOrchestrator implements IAuthOrchestrator {
       switch (provider) {
         case 'google':
           final userCredential = await _firebaseAuthService.signInWithGoogle();
-          if (userCredential?.user != null) {
+          final user = userCredential?.user ?? _firebaseAuthService.currentUser;
+          if (user != null) {
             return AuthResult.success(
               method: AuthMethod.social,
               metadata: {
                 'provider': 'google',
-                'userId': userCredential!.user!.uid,
-                'email': userCredential.user!.email,
-                'displayName': userCredential.user!.displayName,
-                'photoUrl': userCredential.user!.photoURL,
+                'userId': user.uid,
+                'email': user.email,
+                'displayName': user.displayName,
+                'photoUrl': user.photoURL,
               },
             );
           } else {
