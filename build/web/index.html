@@ -23,6 +23,8 @@
 
   <!-- Google Sign-In Web Client ID -->
   <meta name="google-signin-client_id" content="195092382674-ca5q05m7idrstrqpfb5bc6e00thqiu20.apps.googleusercontent.com">
+  <!-- Google Identity Services (GIS) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
@@ -64,7 +66,7 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('flutter_service_worker.js?v=3819579061') /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */.then(function (registration) {
+        navigator.serviceWorker.register('flutter_service_worker.js?v=4188255296') /* Flutter's service worker is deprecated and will be removed in a future Flutter release. */.then(function (registration) {
           console.log('Service Worker başarıyla kaydedildi:', registration.scope);
         }).catch(function (err) {
           console.log('Service Worker kaydı başarısız:', err);
