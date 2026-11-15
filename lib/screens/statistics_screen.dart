@@ -22,6 +22,7 @@ import '../core/design/app_spacing.dart';
 import '../core/design/app_text_styles.dart';
 
 import '../utils/cache_manager.dart';
+import '../utils/responsive_helper.dart';
 import '../widgets/statistics/interactive_pie_chart.dart';
 import '../widgets/statistics/debt_statistics_tab.dart';
 import '../widgets/statistics/card_reporting_tab.dart';
@@ -494,10 +495,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
-        ),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -1079,10 +1077,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
-        ),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
