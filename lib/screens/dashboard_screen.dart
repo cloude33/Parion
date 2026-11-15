@@ -18,6 +18,7 @@ import '../services/data_service.dart';
 import '../utils/app_icons.dart';
 import '../utils/currency_helper.dart';
 import '../widgets/common/amount_display.dart';
+import '../utils/responsive_helper.dart';
 
 import '../widgets/common/app_empty_state.dart';
 import '../widgets/common/app_error_state.dart';
@@ -230,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return const Padding(
-        padding: EdgeInsets.all(AppSpacing.lg),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: AppLoadingState(itemCount: 5, itemHeight: 80),
       );
     }
@@ -428,7 +429,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: GlassmorphicCard(
         gradient: incomeGrad,
         borderRadius: 16.0,
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -493,7 +494,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: GlassmorphicCard(
         gradient: expenseGrad,
         borderRadius: 16.0,
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -572,7 +573,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: GlassmorphicCard(
         gradient: ccGrad,
         borderRadius: 16.0,
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -642,7 +643,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: GlassmorphicCard(
         gradient: warningGrad,
         borderRadius: 16.0,
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -741,7 +742,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AnimatedPressScale(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         decoration: BoxDecoration(
           color: color.withValues(alpha: isDark ? 0.12 : 0.08),
           borderRadius: BorderRadius.circular(16),

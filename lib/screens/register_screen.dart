@@ -9,6 +9,7 @@ import '../services/auth/interfaces/data_sync_interface.dart';
 import '../services/data_service.dart';
 import '../services/user_service.dart';
 import '../utils/auth_navigation.dart';
+import '../utils/responsive_helper.dart';
 
 /// Yeni hesap oluşturma ekranı.
 ///
@@ -228,7 +229,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         content: Text(message),
         backgroundColor: isError ? Colors.red.shade700 : Colors.green,
         behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
+        margin: ResponsiveHelper.getResponsivePadding(context),
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -508,7 +509,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _termsBox() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: const Color(0xFFF2F2F7),
         borderRadius: BorderRadius.circular(12),
