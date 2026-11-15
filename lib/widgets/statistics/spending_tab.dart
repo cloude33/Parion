@@ -16,6 +16,7 @@ import 'period_comparison_card.dart';
 import 'budget_tracker_card.dart';
 import 'spending_habits_card.dart';
 import 'responsive_statistics_layout.dart';
+import '../../utils/responsive_helper.dart';
 
 class SpendingTab extends StatefulWidget {
   final DateTime startDate;
@@ -213,7 +214,7 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.xxl),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -316,7 +317,7 @@ class _SpendingTabState extends State<SpendingTab> {
     if (data.categoryBreakdown.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxxl),
+          padding: ResponsiveHelper.getResponsivePadding(context),
           child: Text(
             'Bu dönem için harcama bulunmamaktadır',
             style: AppTextStyles.bodyMedium.copyWith(
@@ -352,10 +353,7 @@ class _SpendingTabState extends State<SpendingTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xs,
-            vertical: AppSpacing.sm,
-          ),
+          padding: ResponsiveHelper.getResponsivePadding(context),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -448,7 +446,7 @@ class _SpendingTabState extends State<SpendingTab> {
     final budgetComparison = data.budgetComparisons[category];
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: isDark ? AppColors.surfaceDark : AppColors.background,
         borderRadius: BorderRadius.circular(8),
@@ -519,7 +517,7 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -542,7 +540,7 @@ class _SpendingTabState extends State<SpendingTab> {
                   : AppColors.success;
 
               return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                padding: ResponsiveHelper.getResponsivePadding(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -626,10 +624,7 @@ class _SpendingTabState extends State<SpendingTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xs,
-            vertical: AppSpacing.sm,
-          ),
+          padding: ResponsiveHelper.getResponsivePadding(context),
           child: Text(
             'Harcama Detayları',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -691,7 +686,7 @@ class _SpendingTabState extends State<SpendingTab> {
             },
             child: Container(
               margin: const EdgeInsets.only(bottom: AppSpacing.md),
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: ResponsiveHelper.getResponsivePadding(context),
               decoration: BoxDecoration(
                 color: _selectedCategory == category
                     ? color.withValues(alpha: 0.1)
@@ -718,7 +713,7 @@ class _SpendingTabState extends State<SpendingTab> {
                           color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(categoryIcon, color: color, size: 24),
+                        child: Icon(categoryIcon, color: color, size: ResponsiveHelper.getIconSize(context)),
                       ),
                       const SizedBox(width: AppSpacing.lg),
                       Expanded(
@@ -810,7 +805,7 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -901,7 +896,7 @@ class _SpendingTabState extends State<SpendingTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -976,7 +971,7 @@ class _SpendingTabState extends State<SpendingTab> {
   Widget _buildInsufficientDataWarning() {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: ResponsiveHelper.getResponsivePadding(context),
       decoration: BoxDecoration(
         color: AppColors.warning.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
@@ -1013,10 +1008,7 @@ class _SpendingTabState extends State<SpendingTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.xs,
-              vertical: AppSpacing.sm,
-            ),
+            padding: ResponsiveHelper.getResponsivePadding(context),
             child: Text(
               'Gelir Kaynakları',
               style: theme.textTheme.titleLarge?.copyWith(
@@ -1058,10 +1050,7 @@ class _SpendingTabState extends State<SpendingTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xs,
-            vertical: AppSpacing.sm,
-          ),
+          padding: ResponsiveHelper.getResponsivePadding(context),
           child: Text(
             'Gelir Kaynakları',
             style: theme.textTheme.titleLarge?.copyWith(
