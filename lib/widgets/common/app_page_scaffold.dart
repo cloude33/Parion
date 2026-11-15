@@ -1,9 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:parion/core/design/app_colors.dart';
 import 'package:parion/core/design/app_text_styles.dart';
 
 /// Standard page scaffold widget that standardizes AppBar, body,
 /// and optional FAB areas across all screens.
+///
+/// Mobile-first: body is wrapped in [SafeArea] so iOS notch / home
+/// indicator safe areas are respected on web PWA. On tablet and
+/// desktop the content is constrained to a readable max-width so lines
+/// don't over-stretch.
 class AppPageScaffold extends StatelessWidget {
   const AppPageScaffold({
     super.key,
@@ -13,6 +19,7 @@ class AppPageScaffold extends StatelessWidget {
     this.actions,
     this.floatingActionButton,
     this.bottomNavigationBar,
+    this.contentMaxWidth,
   });
 
   final String title;
@@ -22,8 +29,22 @@ class AppPageScaffold extends StatelessWidget {
   final Widget? floatingActionButton;
   final Widget? bottomNavigationBar;
 
+  /// Optional max-width for the content column. Defaults to 480px on
+  /// screens wider than 768px (tablet+), otherwise full width.
+  final double? contentMaxWidth;
+
+  static const _tabletBreakpoint = 768.0;
+  static const _defaultMaxWidth = 520.0;
+  static const _mobilePadding = 20.0;
+  static const _widePadding = 32.0;
+
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final isWide = size.width > _tabletBreakpoint;
+    final maxWidth = contentMaxWidth ?? (isWide ? _defaultMaxWidth : double.infinity);
+    final horizontalPadding = isWide ? _widePadding : _mobilePadding;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -46,7 +67,17 @@ class AppPageScaffold extends StatelessWidget {
             Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
       ),
-      body: body,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              child: body,
+            ),
+          ),
+        ),
+      ),
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: bottomNavigationBar,
     );
