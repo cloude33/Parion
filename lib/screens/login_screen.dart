@@ -11,6 +11,7 @@ import '../services/data_service.dart';
 import '../services/guest_mode_service.dart';
 import '../services/user_service.dart';
 import '../utils/auth_navigation.dart';
+import '../utils/responsive_helper.dart';
 
 /// Uygulamanın giriş ekranı.
 ///
@@ -319,7 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              padding: ResponsiveHelper.getResponsivePadding(context),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 460),
                 child: Column(
