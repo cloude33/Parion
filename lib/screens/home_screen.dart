@@ -19,6 +19,7 @@ import '../services/guest_mode_service.dart';
 import '../services/data_service.dart';
 import '../services/notification_service.dart';
 import '../utils/currency_helper.dart';
+import '../utils/responsive_helper.dart';
 import 'welcome_screen.dart';
 import '../utils/app_icons.dart';
 import '../core/design/app_colors.dart';
@@ -404,6 +405,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final topInset = MediaQuery.paddingOf(context).top;
 
+    final hp = ResponsiveHelper.getResponsiveHorizontalPadding(context).horizontal;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -423,7 +426,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(14, topInset + 10, 14, 14),
+      padding: EdgeInsets.fromLTRB(hp, topInset + 10, hp, 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -699,9 +702,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       color: const Color(0xFF00BFA5),
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom + 8,
-        ),
+        padding: ResponsiveHelper.getResponsiveHorizontalPadding(context)
+            .copyWith(bottom: MediaQuery.paddingOf(context).bottom + 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -780,7 +782,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
     if (allTransactions.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+        padding: ResponsiveHelper.getResponsiveHorizontalPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -821,7 +823,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         : 0.0;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: ResponsiveHelper.getResponsiveHorizontalPadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1979,7 +1981,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: ResponsiveHelper.getResponsiveHorizontalPadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2312,7 +2314,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildKmhAlertsSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: ResponsiveHelper.getResponsiveHorizontalPadding(context),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
