@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:parion/core/design/app_colors.dart';
 import 'package:parion/core/design/app_text_styles.dart';

@@ -67,6 +67,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   late TabController _tabController;
   final List<bool> _tabLoaded = List.filled(7, false);
   TimeFilter _selectedTimeFilter = TimeFilter.monthly;
+  DateTime _referenceDate = DateTime.now();
   DateTime? _customStartDate;
   DateTime? _customEndDate;
   final String _selectedWalletId = 'all';
@@ -96,24 +97,37 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
   /// Seçili zaman filtresine göre başlangıç/bitiş tarihini hesaplar
   DateTimeRange _getCurrentPeriod() {
+    final ref = _referenceDate;
     final now = DateTime.now();
 
     switch (_selectedTimeFilter) {
       case TimeFilter.daily:
-        final start = DateTime(now.year, now.month, now.day);
-        final end = DateTime(now.year, now.month, now.day, 23, 59, 59);
+        final start = DateTime(ref.year, ref.month, ref.day);
+        final end = DateTime(ref.year, ref.month, ref.day, 23, 59, 59);
         return DateTimeRange(start: start, end: end);
       case TimeFilter.weekly:
-        final start = now.subtract(const Duration(days: 7));
-        return DateTimeRange(start: start, end: now);
+        final start = DateTime(ref.year, ref.month, ref.day)
+            .subtract(Duration(days: ref.weekday - 1));
+        final end = DateTime(
+          start.year,
+          start.month,
+          start.day + 6,
+          23,
+          59,
+          59,
+        );
+        return DateTimeRange(start: start, end: end);
       case TimeFilter.monthly:
-        final start = DateTime(now.year, now.month, 1);
-        return DateTimeRange(start: start, end: now);
+        final start = DateTime(ref.year, ref.month, 1);
+        final lastDay = DateTime(ref.year, ref.month + 1, 0).day;
+        final end = DateTime(ref.year, ref.month, lastDay, 23, 59, 59);
+        return DateTimeRange(start: start, end: end);
       case TimeFilter.yearly:
-        final start = DateTime(now.year, 1, 1);
-        return DateTimeRange(start: start, end: now);
+        final start = DateTime(ref.year, 1, 1);
+        final end = DateTime(ref.year, 12, 31, 23, 59, 59);
+        return DateTimeRange(start: start, end: end);
       case TimeFilter.custom:
-        final start = _customStartDate ?? DateTime(now.year, now.month, 1);
+        final start = _customStartDate ?? DateTime(ref.year, ref.month, 1);
         final end = _customEndDate ?? now;
         return DateTimeRange(start: start, end: end);
     }
@@ -165,6 +179,17 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   void _onFilterChanged(TimeFilter filter) {
     setState(() {
       _selectedTimeFilter = filter;
+      for (int i = 0; i < _tabLoaded.length; i++) {
+        _tabLoaded[i] = false;
+      }
+      _tabLoaded[_tabController.index] = true;
+    });
+  }
+
+  /// Seçili ay veya tarih değiştiğinde tüm sekmeleri sıfırlar, aktif sekmeyi hemen günceller.
+  void _onDateChanged(DateTime date) {
+    setState(() {
+      _referenceDate = date;
       for (int i = 0; i < _tabLoaded.length; i++) {
         _tabLoaded[i] = false;
       }
@@ -297,10 +322,12 @@ class _StatisticsScreenState extends State<StatisticsScreen>
                       ],
                     ),
                   ),
-                  // Evrensel zaman filtresi (Aşağı açılan dropdown)
+                  // Evrensel modern zaman ve ay seçici çubuğu
                   TimeFilterBar(
                     selectedFilter: _selectedTimeFilter,
                     onFilterChanged: _onFilterChanged,
+                    referenceDate: _referenceDate,
+                    onDateChanged: _onDateChanged,
                     customStartDate: _customStartDate,
                     customEndDate: _customEndDate,
                     onStartDateChanged: (d) =>
@@ -481,7 +508,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       return SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: ResponsiveHelper.getResponsivePadding(context),
           child: StatisticsEmptyState(
             icon: Icons.bar_chart_outlined,
             title: 'Veri Bulunamadı',
@@ -692,7 +719,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.all(12),
+                padding: ResponsiveHelper.getResponsivePadding(context),
                 decoration: BoxDecoration(
                   color: isDark
                       ? AppColors.surfaceDark
@@ -757,7 +784,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -859,7 +886,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1046,7 +1073,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
       return SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: ResponsiveHelper.getResponsivePadding(context),
           child: StatisticsEmptyState(
             icon: Icons.account_balance_wallet_outlined,
             title: 'Cüzdan Bulunamadı',
@@ -1114,7 +1141,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
             if (kmhWallets.isNotEmpty) ...[
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: ResponsiveHelper.getResponsivePadding(context),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -1245,7 +1272,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
   }) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../core/design/app_colors.dart';
+import '../core/design/app_spacing.dart';
 import '../models/credit_card.dart';
 import '../models/card_design/card_brand.dart';
 import '../services/credit_card_service.dart';
@@ -171,10 +173,12 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
           : Column(
               children: [
                 _buildTabSelector(),
-                if (_selectedTab == 0) _buildSummaryCard(),
                 Expanded(
                   child: _selectedTab == 0
-                      ? (_cards.isEmpty ? _buildEmptyState() : _buildCardList())
+                      ? RefreshIndicator(
+                          onRefresh: _loadCards,
+                          child: _buildCardsTabContent(),
+                        )
                       : const InstallmentTrackingScreen(),
                 ),
               ],
@@ -283,82 +287,385 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     );
   }
 
-  Widget _buildSummaryCard() {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSummaryItem(
-                  'Toplam Borç',
-                  _currencyFormat.format(_totalDebt),
-                  Colors.red,
-                  Icons.credit_card,
-                ),
-                _buildSummaryItem(
-                  'Kullanılabilir Limit',
-                  _currencyFormat.format(_totalAvailableCredit),
-                  Colors.green,
-                  Icons.account_balance_wallet,
-                ),
+  Color _getUtilizationColor(double utilization) {
+    if (utilization >= 80) return AppColors.error;
+    if (utilization >= 50) return AppColors.warning;
+    if (utilization >= 30) return AppColors.primary;
+    return AppColors.success;
+  }
+
+  String _getUtilizationLabel(double utilization) {
+    if (utilization >= 80) return 'KRİTİK';
+    if (utilization >= 50) return 'YÜKSEK';
+    if (utilization >= 30) return 'ORTA';
+    return 'DÜŞÜK';
+  }
+
+  Widget _buildHeaderSection() {
+    final totalCreditLimit =
+        _cards.fold<double>(0.0, (sum, c) => sum + c.creditLimit);
+    final utilization = totalCreditLimit > 0
+        ? ((_totalDebt / totalCreditLimit) * 100).clamp(0.0, 100.0)
+        : 0.0;
+    final utilizationColor = _getUtilizationColor(utilization);
+    final utilizationLabel = _getUtilizationLabel(utilization);
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F1424).withValues(alpha: 0.25),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+          BoxShadow(
+            color: const Color(0xFF0F1424).withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFF0F1424),
+                Color(0xFF1A1D2E),
+                Color(0xFF2D3250),
               ],
+              stops: [0.0, 0.55, 1.0],
             ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.payment, color: Colors.orange),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Bu Ay Ödenecek: ${_currencyFormat.format(_totalDueThisMonth)}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -90,
+                right: -90,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 260,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.goldAccent.withValues(alpha: 0.10),
+                          AppColors.goldAccent.withValues(alpha: 0.0),
+                        ],
+                      ),
                     ),
                   ),
-                ],
+                ),
+              ),
+              Positioned(
+                bottom: -70,
+                left: -50,
+                child: IgnorePointer(
+                  child: Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppColors.primary.withValues(alpha: 0.08),
+                          AppColors.primary.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.xl),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: const BoxDecoration(
+                                color: AppColors.goldAccent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'TOPLAM KART BORCU',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.white.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 1.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.12),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: AppColors.success,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'GÜNCEL',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white.withValues(alpha: 0.95),
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      _currencyFormat.format(_totalDebt),
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -1.0,
+                        height: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _cards.isEmpty
+                          ? 'Henüz kart eklenmedi'
+                          : '${_cards.length} aktif kart • Bu ay ödenecek: ${_currencyFormat.format(_totalDueThisMonth)}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.65),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                    Container(
+                      height: 1,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withValues(alpha: 0.0),
+                            AppColors.goldAccent.withValues(alpha: 0.5),
+                            Colors.white.withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildHeaderMetric(
+                            'KULLANILABİLİR',
+                            _currencyFormat.format(_totalAvailableCredit),
+                            AppColors.success,
+                            Icons.check_circle_outline_rounded,
+                          ),
+                        ),
+                        _buildMetricDivider(),
+                        Expanded(
+                          child: _buildHeaderMetric(
+                            'TOPLAM LİMİT',
+                            _currencyFormat.format(totalCreditLimit),
+                            AppColors.goldAccent,
+                            Icons.account_balance_wallet_outlined,
+                          ),
+                        ),
+                        _buildMetricDivider(),
+                        Expanded(
+                          child: _buildHeaderMetric(
+                            'BU AY ÖDENECEK',
+                            _currencyFormat.format(_totalDueThisMonth),
+                            _totalDueThisMonth > 0
+                                ? const Color(0xFFFF9F0A)
+                                : Colors.white70,
+                            Icons.event_note_rounded,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildGlowProgressBar(
+                            utilization,
+                            utilizationColor,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: utilizationColor.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            utilizationLabel,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: utilizationColor,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderMetric(
+    String label,
+    String value,
+    Color color,
+    IconData icon,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 13, color: color.withValues(alpha: 0.85)),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.white.withValues(alpha: 0.55),
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: -0.2,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricDivider() {
+    return Container(
+      width: 1,
+      height: 32,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.white.withValues(alpha: 0.0),
+            Colors.white.withValues(alpha: 0.18),
+            Colors.white.withValues(alpha: 0.0),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSummaryItem(
-    String label,
-    String value,
-    Color color,
-    IconData icon,
-  ) {
-    return Expanded(
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: color,
+  Widget _buildGlowProgressBar(double utilization, Color color) {
+    final widthFactor = (utilization / 100).clamp(0.0, 1.0);
+    return Stack(
+      children: [
+        Container(
+          height: 8,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: widthFactor,
+              child: Container(
+                height: 8,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      color.withValues(alpha: 0.7),
+                      color,
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.5),
+                      blurRadius: 8,
+                      offset: const Offset(0, 0),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -384,26 +691,29 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
     );
   }
 
-  Widget _buildCardList() {
+  Widget _buildCardsTabContent() {
     final filteredCards = _filterCards();
     final displayCards = filteredCards.isEmpty ? _cards : filteredCards;
 
-    if (displayCards.isEmpty) {
-      return _buildEmptyState();
-    }
-
     return CustomScrollView(
       slivers: [
-        // 1. Marka filtre şeridi
-        SliverToBoxAdapter(child: _buildBrandFilterStrip()),
+        SliverToBoxAdapter(child: _buildHeaderSection()),
+        if (displayCards.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: _buildEmptyState(),
+          )
+        else ...[
+          // 1. Marka filtre şeridi
+          SliverToBoxAdapter(child: _buildBrandFilterStrip()),
 
-        // 2. Öne çıkan kart carousel'i
-        SliverToBoxAdapter(child: _buildCarouselSection(displayCards)),
+          // 2. Öne çıkan kart carousel'i
+          SliverToBoxAdapter(child: _buildCarouselSection(displayCards)),
 
-        // 3. Tüm kartlar başlığı
-        SliverToBoxAdapter(child: _buildListHeader(displayCards.length)),
+          // 3. Tüm kartlar başlığı
+          SliverToBoxAdapter(child: _buildListHeader(displayCards.length)),
 
-        // 4. Sıralanabilir kompakt liste
+          // 4. Sıralanabilir kompakt liste
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           sliver: SliverReorderableList(
@@ -454,6 +764,7 @@ class _CreditCardListScreenState extends State<CreditCardListScreen> {
         ),
 
         const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
+      ],
       ],
     );
   }
