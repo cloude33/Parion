@@ -330,38 +330,40 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           value: _statusBarStyle,
           child: Scaffold(
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-            body: Stack(
-              children: [
-                IndexedStack(
-                  index: _selectedIndex,
-                  children: [
-                    _buildHomeContent(),
-                    const CreditCardListScreen(),
-                    const KmhListScreen(),
-                    StatisticsScreen(
-                      transactions: transactions,
-                      wallets: wallets,
-                      loans: _loans,
-                      creditCardTransactions: _creditCardTransactions,
-                    ),
-                    const SettingsScreen(),
-                  ],
-                ),
-                if (_showFabMenu)
-                  Positioned.fill(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _showFabMenu = false),
-                      child: ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
-                          child: Container(
-                            color: Colors.black.withAlpha(85),
+            body: SafeArea(
+              child: Stack(
+                children: [
+                  IndexedStack(
+                    index: _selectedIndex,
+                    children: [
+                      _buildHomeContent(),
+                      const CreditCardListScreen(),
+                      const KmhListScreen(),
+                      StatisticsScreen(
+                        transactions: transactions,
+                        wallets: wallets,
+                        loans: _loans,
+                        creditCardTransactions: _creditCardTransactions,
+                      ),
+                      const SettingsScreen(),
+                    ],
+                  ),
+                  if (_showFabMenu)
+                    Positioned.fill(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _showFabMenu = false),
+                        child: ClipRect(
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                            child: Container(
+                              color: Colors.black.withAlpha(85),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
             bottomNavigationBar: AppBottomNavBar(
               currentIndex: _selectedIndex,
