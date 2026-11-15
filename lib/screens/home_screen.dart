@@ -1047,7 +1047,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
@@ -1243,7 +1243,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(24),
@@ -1730,7 +1730,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveHelper.getResponsivePadding(context),
               decoration: BoxDecoration(
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
@@ -1776,7 +1776,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: ResponsiveHelper.getResponsivePadding(context),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -1827,7 +1827,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         children: [
           Expanded(
             child: Container(
-              padding: const EdgeInsets.all(16),
+              padding: ResponsiveHelper.getResponsivePadding(context),
               decoration: const BoxDecoration(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 color: Color(0xFFC62828), // Dark Red
@@ -2033,7 +2033,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: ResponsiveHelper.getResponsivePadding(context),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
