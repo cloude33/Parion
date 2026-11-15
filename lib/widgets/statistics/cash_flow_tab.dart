@@ -8,6 +8,7 @@ import 'summary_card.dart';
 import 'metric_card.dart';
 import 'responsive_statistics_layout.dart';
 import 'package:parion/core/design/app_spacing.dart';
+import '../../utils/responsive_helper.dart';
 class CashFlowTab extends StatefulWidget {
   final DateTime startDate;
   final DateTime endDate;
@@ -216,13 +217,13 @@ class _CashFlowTabState extends State<CashFlowTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(trendIcon, color: trendColor, size: 24),
+                Icon(trendIcon, color: trendColor, size: ResponsiveHelper.getIconSize(context)),
                 const SizedBox(width: 8),
                 Text(
                   trendText,
@@ -314,7 +315,7 @@ class _CashFlowTabState extends State<CashFlowTab> {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: ResponsiveHelper.getResponsivePadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
