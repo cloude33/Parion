@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../core/di/service_locator.dart';
 import '../models/security/security_models.dart';
 import '../models/user.dart' as user_models;
+import '../services/auth/google_sign_in_helper.dart';
 import '../services/auth/interfaces/auth_orchestrator_interface.dart';
 import '../services/auth/interfaces/biometric_auth_interface.dart';
 import '../services/auth/interfaces/data_sync_interface.dart';
@@ -55,6 +56,27 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _auth.initialize();
       await _biometric.initialize();
+
+      // Web redirect dönüşünü kontrol et
+      if (kIsWeb) {
+        final redirectCredential =
+            await GoogleSignInHelper.instance.checkRedirectResult();
+        if (redirectCredential?.user != null) {
+          debugPrint(
+              '✅ [LoginScreen] Redirect ile giriş başarılı: ${redirectCredential!.user?.email}');
+          await _persistUserFromResult({
+            'provider': 'google',
+            'userId': redirectCredential.user!.uid,
+            'email': redirectCredential.user!.email,
+            'displayName': redirectCredential.user!.displayName,
+            'photoUrl': redirectCredential.user!.photoURL,
+          });
+          if (mounted) {
+            context.toHome();
+            return;
+          }
+        }
+      }
     } catch (e) {
       debugPrint('LoginScreen: auth init hatası: $e');
     }
@@ -142,7 +164,10 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       if (!mounted) return;
       if (!result.isSuccess) {
-        _showError(result.errorMessage ?? 'Google ile giriş başarısız.');
+        if (result.errorMessage != null &&
+            !result.errorMessage!.contains('iptal edildi')) {
+          _showError(result.errorMessage!);
+        }
         return;
       }
       await _persistUserFromResult(result.metadata);

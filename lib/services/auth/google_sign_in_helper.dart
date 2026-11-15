@@ -68,25 +68,28 @@ class GoogleSignInHelper {
   /// Başka servisler (Drive vb.) bu getter üzerinden erişir.
   GoogleSignIn get googleSignIn => _googleSignIn;
 
+  /// Web redirect ile giriş yapılmışsa UserCredential döner.
+  Future<UserCredential?> checkRedirectResult() async {
+    if (!kIsWeb) return null;
+    try {
+      final credential = await FirebaseAuth.instance.getRedirectResult();
+      return credential;
+    } catch (e) {
+      debugPrint('⚠️ [GSIH] checkRedirectResult: $e');
+      return null;
+    }
+  }
+
   /// Google ile giriş yapıp Firebase credential döner.
   Future<GoogleSignInOutcome> signIn() async {
     try {
       // 🌐 WEB PLATFORMU:
-      // Web üzerinde google_sign_in eklentisi (GIS) yerine doğrudan
-      // Firebase Auth'un signInWithPopup API'si kullanılır.
-      // Bu sayede pop-up blocker kilitlenmeleri ve sonsuz dönen imleç sorunu çözülür.
+      // Web üzerinde doğrudan Firebase Auth kullanılır.
+      // Önce signInWithPopup denenir (anında tık event'inde açılır).
+      // Pop-up engellenirse otomatik olarak signInWithRedirect fallback'i devreye girer.
       if (kIsWeb) {
-        debugPrint('🌐 [GSIH] Web platformu: FirebaseAuth signInWithPopup başlatılıyor...');
-        try {
-          await FirebaseAuth.instance.signOut();
-        } catch (e) {
-          debugPrint('🔐 [GSIH] Web signOut ignored: $e');
-        }
-
+        debugPrint('🌐 [GSIH] Web platformu: Google Provider oluşturuluyor...');
         final googleProvider = GoogleAuthProvider();
-        for (final scope in _driveScopes) {
-          googleProvider.addScope(scope);
-        }
         googleProvider.addScope('email');
         googleProvider.addScope('profile');
         googleProvider.setCustomParameters({
@@ -97,24 +100,37 @@ class GoogleSignInHelper {
           final userCredential = await FirebaseAuth.instance
               .signInWithPopup(googleProvider)
               .timeout(
-                const Duration(minutes: 2),
+                const Duration(seconds: 45),
                 onTimeout: () =>
                     throw TimeoutException('Google ile giriş işlemi zaman aşımına uğradı'),
               );
 
-          debugPrint('✅ [GSIH] Web Google Sign-In başarılı: ${userCredential.user?.email}');
+          debugPrint('✅ [GSIH] Web Google Sign-In (Popup) başarılı: ${userCredential.user?.email}');
           return GoogleSignInOutcome.success(userCredential);
         } on FirebaseAuthException catch (e) {
-          debugPrint('❌ [GSIH] Web FirebaseAuthException: ${e.code} - ${e.message}');
+          debugPrint('⚠️ [GSIH] Web Popup FirebaseAuthException: ${e.code} - ${e.message}');
           if (e.code == 'popup-closed-by-user' || e.code == 'cancelled') {
             return const GoogleSignInOutcome.cancelled();
           }
-          if (e.code == 'popup-blocked') {
-            return const GoogleSignInOutcome.failure(
-              'Açılır pencere (pop-up) tarayıcınız tarafından engellendi. Lütfen adres çubuğundaki engellenen pencere simgesine tıklayıp pop-up izni verin ve tekrar deneyin.',
-              errorCode: 'popup-blocked',
-            );
+
+          // Pop-up tarayıcı tarafından engellendiyse (Chrome COOP/third-party storage vb.)
+          // doğrudan tam sayfa yönlendirme (redirect) fallback'ini çalıştır:
+          if (e.code == 'popup-blocked' ||
+              e.code == 'cancelled-popup-request' ||
+              e.code.contains('popup')) {
+            debugPrint('🔄 [GSIH] Pop-up engellendi, signInWithRedirect başlatılıyor...');
+            try {
+              await FirebaseAuth.instance.signInWithRedirect(googleProvider);
+              return const GoogleSignInOutcome.cancelled();
+            } catch (redirErr) {
+              debugPrint('❌ [GSIH] signInWithRedirect hatası: $redirErr');
+              return GoogleSignInOutcome.failure(
+                'Google giriş sayfasına yönlendirilemedi: $redirErr',
+                errorCode: 'redirect-failed',
+              );
+            }
           }
+
           if (e.code == 'unauthorized-domain') {
             final host = Uri.base.host;
             return GoogleSignInOutcome.failure(
@@ -122,6 +138,7 @@ class GoogleSignInHelper {
               errorCode: 'unauthorized-domain',
             );
           }
+
           return GoogleSignInOutcome.failure(
             _mapFirebaseError(e),
             errorCode: e.code,
@@ -132,11 +149,16 @@ class GoogleSignInHelper {
             errorCode: 'timeout',
           );
         } catch (e) {
-          debugPrint('❌ [GSIH] Web beklenmeyen hata: $e');
-          return GoogleSignInOutcome.failure(
-            'Google ile giriş sırasında hata oluştu: $e',
-            errorCode: 'web_unknown',
-          );
+          debugPrint('❌ [GSIH] Web beklenmeyen hata, redirect deneniyor: $e');
+          try {
+            await FirebaseAuth.instance.signInWithRedirect(googleProvider);
+            return const GoogleSignInOutcome.cancelled();
+          } catch (_) {
+            return GoogleSignInOutcome.failure(
+              'Google ile giriş sırasında hata oluştu: $e',
+              errorCode: 'web_unknown',
+            );
+          }
         }
       }
 

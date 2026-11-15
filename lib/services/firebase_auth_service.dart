@@ -241,6 +241,10 @@ class FirebaseAuthService {
       return outcome.userCredential;
     }
 
+    if (outcome.isCancelled) {
+      return null;
+    }
+
     final message = outcome.errorMessage ?? 'Google Sign-In başarısız';
     debugPrint('❌ FirebaseAuthService: Google Sign-In hatası '
         '(${outcome.errorCode}): $message');
