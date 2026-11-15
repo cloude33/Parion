@@ -1,35 +1,24 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Kullanıcılar sadece kendi verilerine erişebilir
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // A user owns the whole tree below /users/{uid}. Every read and write must
+    // stay inside that tree; there is no top-level collection rule because the
+    // client never writes outside /users/{uid}.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Kullanıcının yedekleri - boyut kontrolü ile
-      match /backups/{backupId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId
-          && (request.method == 'get' || 
-              request.method == 'delete' ||
-              (request.method == 'create' && 
-               resource == null && 
-               request.resource.data.size() < 16777216)); // 16MB limit
-      }
-      
-      // Diğer kullanıcı verileri
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+
       match /{collection}/{document} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-        
-        // Alt koleksiyonlar
-        match /{document=**} {
-          allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+
+        match /{nested=**} {
+          allow read, write: if isSignedIn() && request.auth.uid == userId;
         }
       }
-    }
-    
-    // Doğrudan kullanıcı koleksiyonları (eski yapı uyumluluğu için)
-    match /{collection}/{document} {
-      allow read, write: if request.auth != null && 
-        (resource == null || resource.data.userId == request.auth.uid);
     }
   }
 }

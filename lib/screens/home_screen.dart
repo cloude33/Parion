@@ -52,6 +52,7 @@ import 'exchange_rates_screen.dart';
 import 'add_investment_screen.dart';
 import 'ocr_scan_screen.dart';
 import '../widgets/common/premium_widgets.dart';
+import '../widgets/home/safe_to_spend_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -711,6 +712,15 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ],
                 const SizedBox(height: 12),
                 _buildSummaryCard(),
+                const SizedBox(height: 12),
+                SafeToSpendCard(
+                  user: _currentUser,
+                  refreshToken:
+                      transactions.length +
+                      _loans.length +
+                      wallets.length +
+                      _creditCardTransactions.length,
+                ),
               ],
             ),
             const SizedBox(height: 12),

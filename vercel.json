@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "build/web/**", "use": "@vercel/static" }
+  ],
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "dest": "/build/web/assets/$1"
+    },
+    {
+      "src": "/canvaskit/(.*)",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "dest": "/build/web/canvaskit/$1"
+    },
+    {
+      "src": "/icons/(.*)",
+      "headers": { "cache-control": "public, max-age=31536000, immutable" },
+      "dest": "/build/web/icons/$1"
+    },
+    {
+      "src": "/flutter_service_worker.js",
+      "dest": "/build/web/flutter_service_worker.js"
+    },
+    {
+      "src": "/flutter.js",
+      "dest": "/build/web/flutter.js"
+    },
+    {
+      "src": "/flutter_bootstrap.js",
+      "dest": "/build/web/flutter_bootstrap.js"
+    },
+    {
+      "src": "/main.dart.js",
+      "dest": "/build/web/main.dart.js"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/build/web/manifest.json"
+    },
+    {
+      "src": "/favicon.png",
+      "dest": "/build/web/favicon.png"
+    },
+    {
+      "src": "/version.json",
+      "dest": "/build/web/version.json"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/build/web/index.html"
+    }
+  ]
+}

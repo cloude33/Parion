@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/credit_card.dart';
+import '../models/credit_card_statement.dart';
 import '../models/credit_card_transaction.dart';
 import '../models/credit_card_payment.dart';
 import '../repositories/credit_card_repository.dart';
@@ -195,6 +196,16 @@ class CreditCardService {
     await _transactionRepo.delete(transactionId);
   }
 
+  Future<List<CreditCardTransaction>> getAllCardTransactions(
+    String cardId,
+  ) async {
+    return await _transactionRepo.findByCardId(cardId);
+  }
+
+  Future<List<CreditCardStatement>> getCardStatements(String cardId) async {
+    return await _statementRepo.findByCardId(cardId);
+  }
+
   Future<List<CreditCardTransaction>> getCardTransactions(String cardId) async {
     // Sadece son ekstre kesim tarihinden sonraki işlemleri göster
     // Veya bekleyen ekstre dönemindeki işlemleri
@@ -238,9 +249,7 @@ class CreditCardService {
     String cardId,
   ) async {
     final allTransactions = await _transactionRepo.findByCardId(cardId);
-    return allTransactions
-        .where((t) => t.installmentCount > 1)
-        .toList()
+    return allTransactions.where((t) => t.installmentCount > 1).toList()
       ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate));
   }
 

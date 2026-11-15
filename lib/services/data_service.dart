@@ -18,6 +18,7 @@ import '../models/bill_payment.dart';
 import '../models/credit_card.dart';
 import '../models/credit_card_transaction.dart';
 import '../models/credit_card_payment.dart';
+import '../utils/money.dart';
 import 'cache_service.dart';
 import 'credit_card_service.dart';
 import 'kmh_box_service.dart';
@@ -39,6 +40,12 @@ class DataService {
   SharedPreferences? _prefs;
   final CacheService _cache = CacheService();
 
+  /// Account whose local data is currently being read or written.
+  ///
+  /// SharedPreferences keys are namespaced per user so two profiles on the
+  /// same device can never see each other's wallets, transactions or goals.
+  String? _scopedUserId;
+
   List<Wallet> _wallets = [];
   List<Transaction> _transactions = [];
   List<Category> _categories = [];
@@ -49,6 +56,68 @@ class DataService {
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    _scopedUserId = _readUserId(_prefs);
+  }
+
+  static String? _readUserId(SharedPreferences? prefs) {
+    final raw = prefs?.getString('current_user');
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = json.decode(raw);
+      if (decoded is Map) {
+        final id = decoded['id'];
+        if (id is String && id.isNotEmpty) return id;
+      }
+    } catch (_) {
+      // A corrupted profile record must not block access to local data.
+    }
+    return null;
+  }
+
+  static String? _userIdFromBackup(Map<String, dynamic> backupData) {
+    final currentUser = backupData['currentUser'];
+    if (currentUser is Map) {
+      final id = currentUser['id'];
+      if (id is String && id.isNotEmpty) return id;
+    }
+    final users = backupData['users'];
+    if (users is List && users.isNotEmpty) {
+      final first = users.first;
+      if (first is Map) {
+        final id = first['id'];
+        if (id is String && id.isNotEmpty) return id;
+      }
+    }
+    return null;
+  }
+
+  String _key(String base) {
+    final userId = _scopedUserId;
+    if (userId == null || userId.isEmpty) return 'guest_$base';
+    return 'u_${userId}_$base';
+  }
+
+  Future<String?> _readScoped(String base) async {
+    final prefs = _prefs ?? await getPrefs();
+    final scopedKey = _key(base);
+    final scopedValue = prefs.getString(scopedKey);
+    if (scopedValue != null) return scopedValue;
+
+    // One-time migration of data written before per-user storage existed.
+    // The marker is global so a second profile cannot inherit the same data.
+    final migrationKey = 'migrated_$base';
+    if (prefs.getBool(migrationKey) == true) return null;
+    await prefs.setBool(migrationKey, true);
+
+    final legacyValue = prefs.getString(base);
+    if (legacyValue == null) return null;
+    await prefs.setString(scopedKey, legacyValue);
+    return legacyValue;
+  }
+
+  Future<void> _writeScoped(String base, String value) async {
+    final prefs = _prefs ?? await getPrefs();
+    await prefs.setString(_key(base), value);
   }
 
   Future<SharedPreferences> getPrefs() async {
@@ -59,13 +128,23 @@ class DataService {
   }
 
   Future<User?> getCurrentUser() async {
-    final userJson = _prefs?.getString('current_user');
+    final prefs = _prefs ?? await getPrefs();
+    final userJson = prefs.getString('current_user');
     if (userJson == null) return null;
     return User.fromJson(json.decode(userJson));
   }
 
   Future<void> saveUser(User user) async {
-    await _prefs?.setString('current_user', json.encode(user.toJson()));
+    final prefs = _prefs ?? await getPrefs();
+    await prefs.setString('current_user', json.encode(user.toJson()));
+
+    if (_scopedUserId != user.id) {
+      // Switching profiles: drop cached state that belongs to the old user.
+      _scopedUserId = user.id;
+      _wallets = [];
+      _transactions = [];
+      _cache.clear();
+    }
   }
 
   Future<void> updateUser(User user) async {
@@ -79,18 +158,20 @@ class DataService {
   }
 
   Future<List<User>> getAllUsers() async {
-    final usersJson = _prefs?.getString('users') ?? '[]';
+    final prefs = _prefs ?? await getPrefs();
+    final usersJson = prefs.getString('users') ?? '[]';
     final List<dynamic> usersList = json.decode(usersJson);
     return usersList.map((u) => User.fromJson(u)).toList();
   }
 
   Future<void> saveAllUsers(List<User> users) async {
+    final prefs = _prefs ?? await getPrefs();
     final usersJson = json.encode(users.map((u) => u.toJson()).toList());
-    await _prefs?.setString('users', usersJson);
+    await prefs.setString('users', usersJson);
   }
 
   Future<List<Wallet>> getWallets() async {
-    final walletsJson = _prefs?.getString('wallets') ?? '[]';
+    final walletsJson = await _readScoped('wallets') ?? '[]';
     final List<dynamic> walletsList = json.decode(walletsJson);
     final wallets = walletsList.map((w) => Wallet.fromJson(w)).toList();
     try {
@@ -127,8 +208,8 @@ class DataService {
     final walletsJson = json.encode(
       regularWallets.map((w) => w.toJson()).toList(),
     );
-    await _prefs?.setString('wallets', walletsJson);
-    _cache.invalidate('wallets');
+    await _writeScoped('wallets', walletsJson);
+    _cache.invalidate(_key('wallets'));
   }
 
   Future<void> addWallet(Wallet wallet) async {
@@ -153,18 +234,19 @@ class DataService {
   }
 
   Future<List<Transaction>> getTransactions() async {
-    final cached = _cache.get<List<Transaction>>('transactions');
+    final cached = _cache.get<List<Transaction>>(_key('transactions'));
     if (cached != null) {
       _transactions = cached;
       return cached;
     }
-    final transactionsJson = _prefs?.getString('transactions') ?? '[]';
+
+    final transactionsJson = await _readScoped('transactions') ?? '[]';
     final List<dynamic> transactionsList = json.decode(transactionsJson);
     final transactions = transactionsList
         .map((t) => Transaction.fromJson(t))
         .toList();
     _transactions = transactions;
-    _cache.put('transactions', transactions);
+    _cache.put(_key('transactions'), transactions);
 
     return transactions;
   }
@@ -173,8 +255,8 @@ class DataService {
     final transactionsJson = json.encode(
       transactions.map((t) => t.toJson()).toList(),
     );
-    await _prefs?.setString('transactions', transactionsJson);
-    _cache.invalidate('transactions');
+    await _writeScoped('transactions', transactionsJson);
+    _cache.invalidate(_key('transactions'));
   }
 
   Future<void> addTransaction(Transaction transaction) async {
@@ -242,7 +324,7 @@ class DataService {
         : transaction.amount;
 
     wallets[walletIndex] = wallet.copyWith(
-      balance: wallet.balance + adjustment,
+      balance: roundMoney(wallet.balance + adjustment),
     );
     await saveWallets(wallets);
   }
@@ -265,7 +347,7 @@ class DataService {
         : -transaction.amount;
 
     wallets[walletIndex] = wallet.copyWith(
-      balance: wallet.balance + adjustment,
+      balance: roundMoney(wallet.balance + adjustment),
     );
     await saveWallets(wallets);
   }
@@ -341,14 +423,14 @@ class DataService {
     final fromIndex = wallets.indexWhere((w) => w.id == fromWalletId);
     if (fromIndex != -1) {
       wallets[fromIndex] = wallets[fromIndex].copyWith(
-        balance: wallets[fromIndex].balance - amount,
+        balance: roundMoney(wallets[fromIndex].balance - amount),
       );
     }
 
     final toIndex = wallets.indexWhere((w) => w.id == toWalletId);
     if (toIndex != -1) {
       wallets[toIndex] = wallets[toIndex].copyWith(
-        balance: wallets[toIndex].balance + amount,
+        balance: roundMoney(wallets[toIndex].balance + amount),
       );
     }
 
@@ -356,14 +438,14 @@ class DataService {
   }
 
   Future<List<Goal>> getGoals() async {
-    final goalsJson = _prefs?.getString('goals') ?? '[]';
+    final goalsJson = await _readScoped('goals') ?? '[]';
     final List<dynamic> goalsList = json.decode(goalsJson);
     return goalsList.map((g) => Goal.fromJson(g)).toList();
   }
 
   Future<void> saveGoals(List<Goal> goals) async {
     final goalsJson = json.encode(goals.map((g) => g.toJson()).toList());
-    await _prefs?.setString('goals', goalsJson);
+    await _writeScoped('goals', goalsJson);
   }
 
   Future<void> addGoal(Goal goal) async {
@@ -388,7 +470,7 @@ class DataService {
   }
 
   Future<List<Category>> getCategories() async {
-    final categoriesJson = _prefs?.getString('categories');
+    final categoriesJson = await _readScoped('categories');
     if (categoriesJson == null) {
       await saveCategories(defaultCategories);
       _categories = defaultCategories;
@@ -425,7 +507,7 @@ class DataService {
     final categoriesJson = json.encode(
       categories.map((c) => c.toJson()).toList(),
     );
-    await _prefs?.setString('categories', categoriesJson);
+    await _writeScoped('categories', categoriesJson);
   }
 
   Future<void> addCategory(Category category) async {
@@ -450,14 +532,14 @@ class DataService {
   }
 
   Future<List<Loan>> getLoans() async {
-    final loansJson = _prefs?.getString('loans') ?? '[]';
+    final loansJson = await _readScoped('loans') ?? '[]';
     final List<dynamic> loansList = json.decode(loansJson);
     return loansList.map((l) => Loan.fromJson(l)).toList();
   }
 
   Future<void> saveLoans(List<Loan> loans) async {
     final loansJson = json.encode(loans.map((l) => l.toJson()).toList());
-    await _prefs?.setString('loans', loansJson);
+    await _writeScoped('loans', loansJson);
   }
 
   Future<void> addLoan(Loan loan) async {
@@ -535,9 +617,8 @@ class DataService {
         .where((i) => !i.isPaid)
         .toList();
 
-    final remainingAmount = unpaidInstallments.fold(
-      0.0,
-      (sum, i) => sum + i.amount,
+    final remainingAmount = sumMoney(
+      unpaidInstallments.map((installment) => installment.amount),
     );
 
     final updatedLoan = Loan(
@@ -571,6 +652,9 @@ class DataService {
 
   Future<void> clearAllData() async {
     await _prefs?.clear();
+    _scopedUserId = null;
+    _wallets = [];
+    _transactions = [];
     _cache.clear();
     try {
       final creditCardService = CreditCardService();
@@ -611,6 +695,13 @@ class DataService {
 
       // Reinitialize SharedPreferences after clear
       _prefs = await SharedPreferences.getInstance();
+
+      // Pick the account that will own the restored data up front. If the
+      // backup has no user record, the default user created below reuses this
+      // id so the restored data is never written under an abandoned scope.
+      final fallbackOwnerId =
+          _userIdFromBackup(backupData) ?? const Uuid().v4();
+      _scopedUserId = fallbackOwnerId;
 
       // Clear other services
       try {
@@ -756,7 +847,7 @@ class DataService {
       final currentUsers = await getAllUsers();
       if (currentUsers.isEmpty) {
         final defaultUser = User(
-          id: const Uuid().v4(),
+          id: fallbackOwnerId,
           name: 'Kullanıcı',
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
